@@ -1,0 +1,35 @@
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+.pnpm-store/
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Build artifacts
+dist/
+build/
+coverage/
+
+# IDE
+.idea/
+.vscode/
+
+# Plotly images
+gantt_chart.png
+gantt_chart.svg
+

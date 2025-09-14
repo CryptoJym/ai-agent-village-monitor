@@ -1,0 +1,246 @@
+{
+  "product": "AI Agent Village Monitor",
+  "version": "MVP 1.0",
+  "timeline_weeks": 6,
+  "phases": [
+    { "name": "foundation", "title": "Phase 1: Foundation", "weeks": [1, 2] },
+    { "name": "integration", "title": "Phase 2: Integration", "weeks": [3, 4] },
+    { "name": "polish_launch", "title": "Phase 3: Polish & Launch", "weeks": [5, 6] }
+  ],
+  "weeks": {
+    "1": {
+      "title": "Week 1: Village Rendering Engine",
+      "goal": "Basic village visualization with static data",
+      "tasks": [
+        "Set up Phaser.js project with TypeScript",
+        "Create isometric tilemap system",
+        "Implement house sprites for different repo types",
+        "Add agent sprites with basic animations",
+        "Build pan/zoom camera controls",
+        "Create responsive canvas sizing"
+      ],
+      "acceptance_criteria": [
+        "Village renders 50+ houses smoothly",
+        "Camera controls feel natural",
+        "Houses show distinct visual styles"
+      ],
+      "deliverables": [
+        "Working village demo with mock data",
+        "60 FPS performance benchmark",
+        "Mobile-responsive rendering"
+      ]
+    },
+    "2": {
+      "title": "Week 2: RPG Dialogue System",
+      "goal": "Interactive dialogue interface with agent communication",
+      "tasks": [
+        "Build DialogueUI component with slide animation",
+        "Create tabbed interface (Thread, Control, Info)",
+        "Implement real-time message streaming",
+        "Add user input system",
+        "Connect to mock MCP client",
+        "Style dialogue for readability"
+      ],
+      "acceptance_criteria": [
+        "Dialogue opens/closes smoothly (<300ms open)",
+        "Messages stream in real-time via WebSocket",
+        "User can send questions and see contextual responses"
+      ],
+      "deliverables": [
+        "Functional dialogue system",
+        "Mock work thread streaming",
+        "Basic agent control buttons"
+      ]
+    },
+    "3": {
+      "title": "Week 3: MCP & GitHub Integration",
+      "goal": "Real agent control and GitHub data",
+      "tasks": [
+        "Integrate MCP TypeScript SDK",
+        "Build agent session management",
+        "Connect GitHub OAuth and API",
+        "Sync repos to houses automatically",
+        "Implement basic agent commands",
+        "Add error handling and retries"
+      ],
+      "acceptance_criteria": [
+        "Can start/stop real MCP agents",
+        "Village updates from GitHub data",
+        "Tool commands execute successfully"
+      ],
+      "deliverables": [
+        "Live MCP agent connections",
+        "GitHub repo data synchronization",
+        "Working agent control commands"
+      ]
+    },
+    "4": {
+      "title": "Week 4: Bug Bot System",
+      "goal": "Gamified issue management",
+      "tasks": [
+        "Set up Probot GitHub App",
+        "Create bug bot sprite system",
+        "Implement issue webhook handling",
+        "Build agent assignment logic",
+        "Add bot lifecycle management",
+        "Create resolution celebrations"
+      ],
+      "acceptance_criteria": [
+        "Issues create bots within 10 seconds",
+        "Agents can be assigned to bots",
+        "Resolved issues remove bots"
+      ],
+      "deliverables": [
+        "Working Probot app",
+        "Bug bot spawning system",
+        "Agent-to-bot assignment"
+      ]
+    },
+    "5": {
+      "title": "Week 5: Performance & UX",
+      "goal": "Production-ready performance and user experience",
+      "tasks": [
+        "Profile and optimize rendering performance",
+        "Add loading states and error handling",
+        "Implement user onboarding flow",
+        "Create settings and preferences",
+        "Add keyboard shortcuts",
+        "Write comprehensive documentation"
+      ],
+      "acceptance_criteria": [
+        "60 FPS with 100+ sprites",
+        "New users can set up village in <2 minutes",
+        "All major features documented"
+      ],
+      "deliverables": [
+        "Performance optimizations",
+        "Smooth user onboarding",
+        "Complete documentation"
+      ]
+    },
+    "6": {
+      "title": "Week 6: Testing & Deployment",
+      "goal": "Launch-ready product with monitoring",
+      "tasks": [
+        "End-to-end testing suite",
+        "Security audit and fixes",
+        "Set up production monitoring",
+        "Deploy to production infrastructure",
+        "Create feedback collection system",
+        "Plan launch communications"
+      ],
+      "acceptance_criteria": [
+        "All tests passing",
+        "Security vulnerabilities addressed",
+        "Production environment stable"
+      ],
+      "deliverables": [
+        "Production deployment",
+        "Monitoring dashboards",
+        "Launch announcement"
+      ]
+    }
+  },
+  "features": [
+    {
+      "id": "F1",
+      "title": "Village Visualization Engine",
+      "priority": "P0",
+      "acceptance": [
+        "Village renders from GitHub org data in <3 seconds",
+        "Houses show correct repo names and basic stats",
+        "Agent sprites animate and show status indicators",
+        "Pan/zoom works smoothly on desktop and mobile",
+        "Village persists state between sessions"
+      ]
+    },
+    {
+      "id": "F2",
+      "title": "RPG Dialogue System",
+      "priority": "P0",
+      "acceptance": [
+        "Dialogue opens in <300ms after agent click",
+        "Work thread updates in real-time via WebSocket",
+        "Control buttons (Run Tool, Commit, PR) work end-to-end",
+        "Text input accepts questions and shows responses",
+        "Clean, readable design"
+      ]
+    },
+    {
+      "id": "F3",
+      "title": "MCP Agent Integration",
+      "priority": "P0",
+      "acceptance": [
+        "Connect to existing MCP servers",
+        "Tool execution streams results to dialogue",
+        "Session management works reliably",
+        "Error states clearly communicated",
+        "Core Omnara-equivalent features accessible"
+      ]
+    },
+    {
+      "id": "F4",
+      "title": "GitHub Integration",
+      "priority": "P0",
+      "acceptance": [
+        "OAuth completes in <30 seconds",
+        "Repo data syncs automatically",
+        "File changes update house status",
+        "Trigger GitHub Actions from dialogue",
+        "Issues appear as Bug Bots within 10 seconds"
+      ]
+    },
+    {
+      "id": "F5",
+      "title": "Bug Bot System",
+      "priority": "P1",
+      "acceptance": [
+        "New issues spawn Bug Bots within 10 seconds",
+        "Bug Bots show severity/type",
+        "Agent assignment works",
+        "Progress affects bot appearance",
+        "Resolved issues remove bots with animation"
+      ]
+    },
+    {
+      "id": "F6",
+      "title": "World Map System",
+      "priority": "P1",
+      "acceptance": [
+        "World map loads orgs as distinct regions",
+        "Travel between villages takes <2 seconds",
+        "Agent states persist across navigation",
+        "Performance smooth with 10+ orgs",
+        "Mini-map shows current location"
+      ]
+    }
+  ],
+  "apis": {
+    "rest": [
+      "POST /auth/github/callback",
+      "GET /auth/me",
+      "POST /auth/logout",
+      "GET /api/villages",
+      "POST /api/villages",
+      "GET /api/villages/:id",
+      "PUT /api/villages/:id",
+      "DELETE /api/villages/:id",
+      "GET /api/villages/:id/houses",
+      "POST /api/villages/:id/houses/sync",
+      "GET /api/villages/:id/agents",
+      "POST /api/villages/:id/agents",
+      "PUT /api/agents/:id",
+      "DELETE /api/agents/:id",
+      "POST /api/agents/:id/start",
+      "POST /api/agents/:id/stop",
+      "POST /api/agents/:id/command",
+      "GET /api/agents/:id/stream",
+      "GET /api/villages/:id/bugs",
+      "POST /api/bugs/:id/assign",
+      "PUT /api/bugs/:id/status",
+      "POST /api/github/webhook",
+      "POST /api/github/dispatch"
+    ]
+  }
+}
+
