@@ -55,3 +55,12 @@ dev-debug.log
 # tasks/ 
 
 /generated/prisma
+# Build & test artifacts
+coverage/
+dist/
+test-results/
+playwright-report/
+.vite/
+
+# OS files
+.DS_Store

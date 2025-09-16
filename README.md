@@ -70,6 +70,19 @@ Core docs live under `docs/`:
 - CI/CD: `docs/operations/ci-cd.md`
 - Changelog: `CHANGELOG.md`
 
+## Community & Contributing
+
+- Contributing Guide: `CONTRIBUTING.md`
+- Code of Conduct: `CODE_OF_CONDUCT.md`
+- Security Policy: `SECURITY.md`
+- Support: `SUPPORT.md`
+- Roadmap: `ROADMAP.md`
+- Issue Templates: GitHub → New Issue
+
+## License
+
+MIT — see `LICENSE`.
+
 Launch
 
 - Runbook: `docs/launch/runbook.md`
