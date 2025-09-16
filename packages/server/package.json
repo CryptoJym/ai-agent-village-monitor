@@ -28,7 +28,7 @@
     "db:reset": "prisma migrate reset -f --schema=prisma/schema.prisma",
     "db:seed": "prisma db seed --schema=prisma/schema.prisma",
     "db:seed:load": "node prisma/seed.load.cjs",
-    "db:seed:synthetic": "node prisma/seed.synthetic.cjs"
+    "db:seed:synthetic": "node prisma/seed.synthetic.cjs",
     "webhook:send": "node scripts/send-webhook.mjs"
   },
   "dependencies": {

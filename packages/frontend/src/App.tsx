@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { nowIso } from '@shared/index';
+import { nowIso } from '@shared';
 import { useParams } from 'react-router-dom';
 // Scenes loaded lazily to avoid importing Phaser in tests
 import { DialogueUI } from './ui/DialogueUI';
@@ -113,11 +113,10 @@ export default function App() {
                   typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
                 if (isJsdom) return [];
                 try {
-                   
                   const { PreloaderScene } = require('./scenes/PreloaderScene');
-                   
+
                   const { WorldMapScene } = require('./scenes/WorldMapScene');
-                   
+
                   const { MainScene } = require('./scenes/MainScene');
                   return [PreloaderScene, WorldMapScene, MainScene];
                 } catch {
@@ -247,7 +246,6 @@ export default function App() {
             onEnterVillage={(villageId) => {
               // Switch to the MainScene with village, close overlay
               try {
-                 
                 const game = (document.querySelector('canvas') as any)?._phaserGame || null;
                 if (game) {
                   const scene = game.scene.getScene('MainScene');

@@ -1,4 +1,4 @@
-import type { AnalyticsEvent, AnalyticsBatch } from '@shared/index';
+import type { AnalyticsEvent, AnalyticsBatch } from '@shared';
 
 const CONSENT_KEY = 'aavm_analytics_consent_v1';
 const CLIENT_ID_KEY = 'aavm_client_id_v1';

@@ -10,7 +10,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      '@shared': path.resolve(__dirname, '../shared/src'),
+      // Ensure TS source is used during Vite build to avoid CJS interop issues
+      '@shared': path.resolve(__dirname, '../shared/src/index.ts'),
+      '@shared/index': path.resolve(__dirname, '../shared/src/index.ts'),
       '@sentry/browser': path.resolve(__dirname, 'src/observability/sentry.browser.stub.ts'),
     },
   },

@@ -17,10 +17,12 @@ export class WebSocketService {
   private rafScheduled = false;
 
   constructor(options: WebSocketOptions = {}) {
+    const envWs = (import.meta as any)?.env?.VITE_WS_URL as string | undefined;
     const defaultUrl =
-      typeof location !== 'undefined'
+      envWs ??
+      (typeof location !== 'undefined'
         ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:3000`
-        : 'ws://localhost:3000';
+        : 'ws://localhost:3000');
     this.opts = {
       url: options.url ?? defaultUrl,
       token: options.token ?? '',
@@ -75,7 +77,6 @@ export class WebSocketService {
   private enqueue(type: 'agent_update' | 'work_stream', payload: any) {
     // In Vitest, emit synchronously to simplify tests
     try {
-       
       const inTest =
         typeof process !== 'undefined' &&
         ((process as any).env?.VITEST || (process as any).env?.VITEST_WORKER_ID);

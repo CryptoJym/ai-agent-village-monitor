@@ -4977,7 +4977,7 @@
               "85.1"
             ],
             "details": "- Generate 100 villages; map 10 users per village (1000 users total)\n- Create user accounts and JWTs or OAuth tokens with appropriate scopes\n- Seed minimal domain data needed for representative API flows\n- Produce CSV/JSON datasets for k6 and Artillery parameterization (village_id, user_id, token)\n- Implement teardown/cleanup scripts and secure storage for secrets",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6752,7 +6752,7 @@
     ],
     "metadata": {
       "created": "2025-09-14T14:46:03.477Z",
-      "updated": "2025-09-16T01:37:48.466Z",
+      "updated": "2025-09-16T02:01:04.114Z",
       "description": "Tasks for mvp context"
     }
   }

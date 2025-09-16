@@ -89,4 +89,3 @@ export function updateStatus(id: string, status: BugStatus) {
   }
   return b;
 }
-

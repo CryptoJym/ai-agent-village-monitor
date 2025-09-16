@@ -20,7 +20,13 @@ export class AgentManager {
     const id = String(agentId);
     const existing = this.runtimes.get(id);
     if (existing) return existing;
-    const rt: AgentRuntime = { agentId: id, state: 'disconnected', updatedAt: Date.now(), backoffAttempt: 0, retryTimer: null };
+    const rt: AgentRuntime = {
+      agentId: id,
+      state: 'disconnected',
+      updatedAt: Date.now(),
+      backoffAttempt: 0,
+      retryTimer: null,
+    };
     this.runtimes.set(id, rt);
     return rt;
   }
@@ -52,7 +58,12 @@ export class AgentManager {
       const session = await ensureActiveSession(id, { restart: opts?.restart });
       const { ok, sessionToken } = await this.controller.start(id);
       if (!ok) throw new Error('start failed');
-      this.setState(id, 'connected', { sessionToken, connectedAt: Date.now(), backoffAttempt: 0, sessionId: String(session.id) });
+      this.setState(id, 'connected', {
+        sessionToken,
+        connectedAt: Date.now(),
+        backoffAttempt: 0,
+        sessionId: String(session.id),
+      });
       observe('agent_connect_ms', Date.now() - t0);
       inc('agent_connected_total');
       audit.log('agent.connected', { agentId: id, sessionId: String(session.id) });
@@ -118,15 +129,31 @@ export class AgentManager {
       await appendEvent(rtForPersist.sessionId, evt.type, evt.message).catch(() => {});
     }
     // Broadcast to agent room for UI consumption
+    const timestamp = new Date().toISOString();
     if (evt.type === 'progress') {
-      const dto: WorkStreamEventDTO = { agentId, message: `progress ${(evt.progress ?? 0) * 100}%`, ts: Date.now() };
-      emitToAgent(agentId, 'work_stream', jsonSafe(dto));
+      const dto: WorkStreamEventDTO = {
+        event_type: 'progress',
+        content: `${Math.round((evt.progress ?? 0) * 100)}%`,
+        metadata: null,
+        timestamp,
+      };
+      emitToAgent(agentId, 'work_stream', jsonSafe({ agentId, ...dto }));
     } else if (evt.type === 'status' || evt.type === 'log') {
-      const dto: WorkStreamEventDTO = { agentId, message: evt.message ?? evt.type, ts: Date.now() };
-      emitToAgent(agentId, 'work_stream', jsonSafe(dto));
+      const dto: WorkStreamEventDTO = {
+        event_type: evt.type,
+        content: evt.message ?? evt.type,
+        metadata: null,
+        timestamp,
+      };
+      emitToAgent(agentId, 'work_stream', jsonSafe({ agentId, ...dto }));
     } else if (evt.type === 'error') {
-      const dto: WorkStreamEventDTO = { agentId, message: `error: ${evt.message || 'unknown'}`, ts: Date.now() };
-      emitToAgent(agentId, 'work_stream', jsonSafe(dto));
+      const dto: WorkStreamEventDTO = {
+        event_type: 'error',
+        content: evt.message || 'unknown',
+        metadata: null,
+        timestamp,
+      };
+      emitToAgent(agentId, 'work_stream', jsonSafe({ agentId, ...dto }));
       this.setState(agentId, 'error', { lastError: evt.message || 'unknown error' });
       inc('agent_error_total');
       audit.log('agent.error', { agentId, error: evt.message || 'unknown' });
@@ -137,13 +164,21 @@ export class AgentManager {
   async shutdown() {
     const tasks: Array<Promise<any>> = [];
     for (const [id, rt] of this.runtimes.entries()) {
-      try { this.clearRetryTimer(id); } catch {}
+      try {
+        this.clearRetryTimer(id);
+      } catch {}
       tasks.push(this.controller.stop(id).catch(() => {}));
       tasks.push(endActiveSession(id).catch(() => {}));
-      this.setState(id, 'disconnected', { backoffAttempt: 0, sessionToken: undefined, sessionId: undefined });
+      this.setState(id, 'disconnected', {
+        backoffAttempt: 0,
+        sessionToken: undefined,
+        sessionId: undefined,
+      });
     }
     await Promise.allSettled(tasks);
-    try { await this.controller.shutdown?.(); } catch {}
+    try {
+      await this.controller.shutdown?.();
+    } catch {}
   }
 }
 

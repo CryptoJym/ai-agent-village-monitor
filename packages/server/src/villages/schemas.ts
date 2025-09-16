@@ -8,7 +8,7 @@ export const listQuerySchema = z.object({
 });
 
 export const idParamSchema = z.object({
-  id: z.coerce.number().int().positive(),
+  id: z.string().min(1),
 });
 
 export const createVillageSchema = z.object({
@@ -20,17 +20,16 @@ export const createVillageSchema = z.object({
       throw new Error('Invalid githubOrgId');
     }
   }),
-  villageConfig: z.record(z.string(), z.any()).default({}).optional(),
-  isPublic: z.boolean().default(false).optional(),
+  config: z.record(z.string(), z.any()).default({}).optional(),
 });
 
-export const updateVillageSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  villageConfig: z.record(z.string(), z.any()).optional(),
-  isPublic: z.boolean().optional(),
-}).refine((obj) => Object.keys(obj).length > 0, { message: 'No fields to update' });
+export const updateVillageSchema = z
+  .object({
+    name: z.string().min(1).max(100).optional(),
+    config: z.record(z.string(), z.any()).optional(),
+  })
+  .refine((obj) => Object.keys(obj).length > 0, { message: 'No fields to update' });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
 export type CreateVillageBody = z.infer<typeof createVillageSchema>;
 export type UpdateVillageBody = z.infer<typeof updateVillageSchema>;
-
