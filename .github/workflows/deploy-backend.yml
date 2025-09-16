@@ -1,0 +1,94 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: false
+        default: "production"
+
+concurrency:
+  group: backend-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  NODE_ENV: production
+
+jobs:
+  deploy-railway:
+    if: ${{ secrets.RAILWAY_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build server
+        run: pnpm -C packages/server build
+      - name: Railway CLI
+        run: pnpm dlx @railway/cli@latest --version
+      - name: Deploy (Railway)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway deploy --project "$RAILWAY_PROJECT_ID" --service "$RAILWAY_SERVICE_ID" --detach
+      - name: Run migrations (Prisma)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway run --service "$RAILWAY_SERVICE_ID" -- pnpm -C packages/server exec prisma migrate deploy
+      - name: Health check
+        run: |
+          echo "Skipping health check example; configure service URL as needed"
+
+  deploy-fly:
+    if: ${{ secrets.RAILWAY_TOKEN == '' && secrets.FLY_API_TOKEN != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: superfly/flyctl-actions/setup-flyctl@v1
+      - name: Deploy (Fly.io)
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ secrets.FLY_APP_NAME }}
+        run: |
+          flyctl deploy --remote-only -a "$FLY_APP_NAME"
+      - name: Run migrations (Prisma)
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ secrets.FLY_APP_NAME }}
+        run: |
+          flyctl ssh console -C "pnpm -C packages/server exec prisma migrate deploy" -a "$FLY_APP_NAME"
+      - name: Health check
+        run: |
+          echo "Skipping health check example; configure service URL as needed"
+
