@@ -1,6 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions & Discussions
-    url: https://github.com/NEW-ORG/REPO/discussions
+    url: https://github.com/h3ro-dev/ai-agent-village-monitor/discussions
     about: Ask questions and start discussions here.
-
