@@ -1,0 +1,98 @@
+# Task ID: 80
+# Title: Documentation and API Reference
+# Status: pending
+# Dependencies: 42
+# Priority: medium
+# Description: Write developer docs, API reference for REST/WS, and architecture overview.
+# Details:
+Docs: Getting started, local dev, env vars, DB schema, REST endpoints, WS event contracts, MCP integration guide, deployment runbooks. Generate OpenAPI spec (swagger) for /api. Add README with diagrams.
+
+
+# Test Strategy:
+Have a new developer follow docs to run project end-to-end in <30 minutes. Validate OpenAPI spec with swagger-ui. Keep endpoints in sync via tests that compare route registrations with spec.
+
+# Subtasks:
+## 1. Environment Variables and Configuration Guide [pending]
+### Dependencies: None
+### Description: Document all environment variables, configuration options, and how to manage them across environments.
+### Details:
+- Inventory all env vars from the codebase (API, WS, DB, auth, feature flags, third-party keys).
+- For each variable: name, purpose, type, allowed values, default, example, required/optional, scope (dev/stage/prod).
+- Provide .env.example with safe defaults and comments; document local overrides and secrets handling.
+- Describe config loading order and precedence (env, config files, CLI flags).
+- Include security guidance: storing secrets, rotation, and what must never be committed.
+- Output: docs/configuration.md, .env.example, links from README.
+
+## 2. Architecture Overview and Diagrams + README [pending]
+### Dependencies: None
+### Description: Produce high-level architecture docs and diagrams; update root README to orient developers.
+### Details:
+- Create system context, container, and component diagrams (source files and rendered images).
+- Show data flow for REST /api and WebSocket pathways, auth, and persistence layers.
+- Add sequence diagrams for key flows (login, typical request, WS subscription/event).
+- Note scaling strategy, stateless components, and external dependencies.
+- Update README.md: intro, key features, quick links to docs, diagram embeds, repo structure.
+- Store diagram sources (e.g., Mermaid/PlantUML) under docs/diagrams with export instructions.
+
+## 3. Database Schema Reference [pending]
+### Dependencies: None
+### Description: Document the database schema, relationships, and migration workflow.
+### Details:
+- Enumerate tables, columns, types, defaults, constraints, indexes, and relationships.
+- Generate ERD and include as image and source.
+- Document migrations: tooling, how to create/apply/rollback, naming conventions.
+- Provide sample queries and guidance for common operations and performance considerations.
+- Output: docs/db/schema.md, docs/diagrams/erd, link from README.
+
+## 4. REST API OpenAPI Spec and Swagger-UI [pending]
+### Dependencies: 80.2, 80.3
+### Description: Generate OpenAPI spec for /api and serve it via Swagger UI; add validation and sync tests.
+### Details:
+- Author OpenAPI 3.x spec (openapi.yaml or openapi.json) covering all /api endpoints.
+- Define components schemas, request/response examples, error model, and authentication (e.g., bearer/JWT) and pagination conventions.
+- Version the API and document deprecation policy.
+- Integrate swagger-ui in dev environment and document access URL.
+- Add CI lint/validation for the spec and a test that compares runtime route registrations to the spec to prevent drift.
+- Output: openapi spec file, docs/api/rest.md with usage examples and links to swagger-ui.
+
+## 5. WebSocket Event Contracts [pending]
+### Dependencies: 80.2
+### Description: Define and document WS event types, payload schemas, and connection lifecycle.
+### Details:
+- List all server->client and client->server events with names, purpose, and JSON schemas.
+- Specify connection/auth handshake, heartbeat (ping/pong), reconnection, backoff, and rate limits.
+- Describe delivery guarantees, acks, idempotency keys, and versioning strategy for events.
+- Provide example messages and end-to-end flows; include a basic contract test or schema validation examples.
+- Output: docs/api/websocket.md and schemas under docs/schemas.
+
+## 6. MCP Integration Guide [pending]
+### Dependencies: 80.1, 80.4, 80.5
+### Description: Write a practical guide for integrating with MCP, covering configuration, capabilities, and examples.
+### Details:
+- Explain MCP purpose, supported transports, and how this project exposes capabilities.
+- Map MCP operations to REST endpoints and WS events; include required env vars and permissions.
+- Provide example setup, registration, and request/response flows.
+- Document error handling, timeouts, retries, and security considerations.
+- Output: docs/integrations/mcp.md with step-by-step walkthroughs and troubleshooting.
+
+## 7. Getting Started and Local Development [pending]
+### Dependencies: 80.1, 80.2, 80.3, 80.4, 80.5
+### Description: Create a quickstart guide enabling a new developer to run the project end-to-end in under 30 minutes.
+### Details:
+- Prerequisites: OS, runtimes, package managers, Docker (if used).
+- Steps: clone, install dependencies, configure .env from .env.example, initialize DB (migrate/seed), start services.
+- Verify: open swagger-ui, call a sample REST endpoint, establish a WS connection and receive an event.
+- Include common troubleshooting, hot-reload workflow, test commands, and lint/format.
+- Add a smoke test checklist to confirm success within 30 minutes.
+- Output: docs/getting-started.md with copy-paste commands.
+
+## 8. Deployment Guides and Runbooks [pending]
+### Dependencies: 80.1, 80.2, 80.3, 80.4, 80.5
+### Description: Provide deployment documentation for staging/production and operational runbooks.
+### Details:
+- Describe build artifacts, environment-specific configs, secrets, and infra prerequisites.
+- Deployment procedures: migrations, zero-downtime rollout, rollback, and post-deploy verification.
+- Operational runbooks: scaling, rotating secrets, backups/restore, certificate renewal, log/metric collection, alert response.
+- Health checks, SLOs, dashboards, and incident handling checklists.
+- Output: docs/operations/deployment.md and docs/operations/runbooks.md.
+

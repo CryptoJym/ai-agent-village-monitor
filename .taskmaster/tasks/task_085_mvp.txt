@@ -1,0 +1,106 @@
+# Task ID: 85
+# Title: Load and Soak Testing (k6/Artillery)
+# Status: pending
+# Dependencies: 45
+# Priority: medium
+# Description: Test API and WebSocket under concurrent load to validate scalability targets.
+# Details:
+Scenarios: 1000 concurrent users across 100 villages; WS message broadcast rate 50/sec per village. Artillery for WS; k6 for HTTP. Capture latency, error rates, and CPU/memory.
+
+# Test Strategy:
+Define thresholds: <1% error, p95 HTTP <300ms, WS p95 <200ms. Run against staging infra. Identify bottlenecks and regressions.
+
+# Subtasks:
+## 1. Staging environment setup for load/soak [pending]
+### Dependencies: None
+### Description: Provision and validate a staging environment mirroring production for HTTP and WebSocket testing.
+### Details:
+- Ensure staging mirrors prod topology, feature flags, and scaling settings
+- Provision dedicated load generators with sufficient CPU, memory, and bandwidth; enable NTP time sync
+- Verify HTTP base URL and Socket.io endpoints are reachable from load generators
+- Enable APM/telemetry agents on services; open firewall rules for metrics collection
+- Smoke test: connect via JWT, join village rooms, and call key API endpoints
+
+## 2. Synthetic dataset and identity generation [pending]
+### Dependencies: 85.1
+### Description: Create fixtures for 100 villages and 1000 users, including auth material and mappings.
+### Details:
+- Generate 100 villages; map 10 users per village (1000 users total)
+- Create user accounts and JWTs or OAuth tokens with appropriate scopes
+- Seed minimal domain data needed for representative API flows
+- Produce CSV/JSON datasets for k6 and Artillery parameterization (village_id, user_id, token)
+- Implement teardown/cleanup scripts and secure storage for secrets
+
+## 3. Performance thresholds and SLAs [pending]
+### Dependencies: 85.1
+### Description: Define pass/fail criteria and embed thresholds for HTTP and WebSocket workloads.
+### Details:
+- Error rate < 1% overall
+- HTTP latency: p95 < 300 ms (track p99 too)
+- WebSocket end-to-end message latency: p95 < 200 ms
+- Resource targets: CPU avg < 75%, no sustained memory growth during soak
+- Document success criteria, alert thresholds, and error budget accounting
+- Prepare k6 thresholds and Artillery expectations to enforce SLAs during runs
+
+## 4. Ramp-up profiles and soak plan [pending]
+### Dependencies: 85.1, 85.3
+### Description: Design arrival/connection profiles and durations for load and soak phases.
+### Details:
+- k6 HTTP: ramp 0→1000 VUs over 10m, hold 60m (soak), ramp-down 10m; include realistic think times
+- WS: 100 villages, sustain 50 msgs/sec per village (≈5000 msgs/sec total); ramp message rate over 5m, hold 60m
+- Define coordinated start windows to avoid thundering herd on auth and joins
+- Specify recovery/backoff for reconnects; cap max inflight messages per client
+- Document target RPS, expected DB/QPS, and bandwidth estimates
+
+## 5. k6 HTTP scenario implementation [pending]
+### Dependencies: 85.1, 85.2, 85.3, 85.4
+### Description: Author k6 scripts that model user API flows across villages with thresholds and stages.
+### Details:
+- Parameterize by village_id/user_id/token from dataset; distribute users ~10 per village
+- Implement core flows (e.g., auth, fetch village data, post updates, list resources) with realistic pacing
+- Apply thresholds from SLAs; configure stages per ramp plan
+- Tag requests (endpoint, village_id) and capture custom metrics (latency, errors)
+- Output to Prometheus/Influx/JSON summary; include checks and fail-fast on auth errors
+- Include smoke profile to validate before full runs
+
+## 6. Artillery WebSocket broadcast scenarios [pending]
+### Dependencies: 85.1, 85.2, 85.3, 85.4
+### Description: Create Artillery config to join village rooms and validate 50 msg/sec/village broadcast behavior.
+### Details:
+- Use Socket.io engine; authenticate with JWT; emit join_village per connection
+- Create 100 village cohorts; maintain connection pool reflecting 1000 concurrent users
+- Produce/broadcast 50 msgs/sec per village; verify all clients receive and measure end-to-end latency
+- Add expectations: error rate <1%, p95 WS latency <200 ms; capture dropped/late messages
+- Export metrics (StatsD/JSON/Prometheus) and logs for message delivery verification
+- Include smoke and full profiles aligned with ramp plan
+
+## 7. Metrics and observability setup [pending]
+### Dependencies: 85.1, 85.5, 85.6
+### Description: Configure collection of latency, error rates, CPU/memory, and test metrics with dashboards.
+### Details:
+- k6: enable output (Prometheus remote write/InfluxDB); include checks and thresholds in scripts
+- Artillery: enable StatsD/Prometheus/JSON output; capture per-village delivery metrics
+- Infra: deploy Node Exporter/cAdvisor and scrape with Prometheus; integrate APM traces for hot endpoints
+- Dashboards: Grafana views for HTTP, WS, system resources, and error rates; add alerting on SLA breaches
+- Validate pipeline with smoke runs; ensure time synchronization across components
+
+## 8. Execute runs and bottleneck analysis [pending]
+### Dependencies: 85.7
+### Description: Run coordinated load and soak tests and analyze hotspots across the stack.
+### Details:
+- Execute full ramp and 60m soak for HTTP and WS concurrently
+- Analyze results: SLA compliance, error taxonomy, GC pauses, DB/query latency, WS backlog, network saturation
+- Use profiling (flame graphs), slow query logs, and APM traces to localize bottlenecks
+- Identify capacity headroom and determine scaling needs; validate autoscaling responsiveness
+- Produce prioritized list of issues with evidence and suggested fixes
+
+## 9. Report and remediation plan [pending]
+### Dependencies: 85.8
+### Description: Deliver findings, pass/fail summary, and an actionable remediation and retest plan.
+### Details:
+- Summarize KPIs vs thresholds: error rates, HTTP p95, WS p95, CPU/memory
+- Document test methodology, datasets, and traffic profiles
+- Detail bottlenecks and root causes; map to tickets with owners and timelines
+- Propose configuration/code changes, scaling adjustments, and infra tweaks
+- Define acceptance criteria for fixes and schedule follow-up verification runs
+

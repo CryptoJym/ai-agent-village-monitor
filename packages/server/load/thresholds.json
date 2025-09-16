@@ -1,0 +1,11 @@
+{
+  "http": {
+    "error_rate": { "threshold": 0.01 },
+    "p95_ms": { "threshold": 300 }
+  },
+  "ws": {
+    "p95_rtt_ms": { "threshold": 200 },
+    "error_rate": { "threshold": 0.01 }
+  }
+}
+

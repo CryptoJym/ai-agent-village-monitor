@@ -1,0 +1,97 @@
+# Task ID: 78
+# Title: Keyboard Shortcuts and Accessibility
+# Status: pending
+# Dependencies: 57
+# Priority: medium
+# Description: Implement keyboard shortcuts and ARIA-compliant UI for Dialogue and navigation.
+# Details:
+Shortcuts: T to talk, ESC to close panel, 1/2/3 for tabs. Focus management in DialogueUI. Provide screen reader labels for controls. High contrast option.
+
+
+# Test Strategy:
+Accessibility audit with axe. Keyboard-only navigation works. Shortcuts do not conflict with browser defaults. Screen reader announces new messages politely.
+
+# Subtasks:
+## 1. Implement Shortcut Registry (T/ESC/1-3) [pending]
+### Dependencies: None
+### Description: Create a centralized keyboard shortcut registry and handlers for T, ESC, and number keys 1/2/3.
+### Details:
+- Add a global shortcut manager to register/unregister handlers.
+- Map keys: T to focus/open Talk input, ESC to close the Dialogue panel, 1/2/3 to switch tabs.
+- Scope shortcuts to the app (ignore when focus is in input/textarea/contenteditable unless intended).
+- Prevent default only when the shortcut is handled; do not interfere with standard browser shortcuts.
+- Provide enable/disable API to pause shortcuts when Dialogue is closed or when modals take precedence.
+- Log or expose events for analytics/debugging.
+
+## 2. Dialogue Focus Management [pending]
+### Dependencies: None
+### Description: Implement robust focus management for DialogueUI including trap, initial focus, and focus restoration.
+### Details:
+- On open: move focus to the Dialogue container or first interactive element; set aria-hidden on background or use inert where supported.
+- Trap focus within the Dialogue; support Tab/Shift+Tab cycling; handle escape to close via provided API.
+- On close: restore focus to the element that opened the Dialogue.
+- When switching tabs (keyboard or click), move focus to the active tab/panel appropriately and keep logical tab order.
+- Ensure focus-visible outlines are clear and meet contrast requirements.
+- Provide programmatic focus methods for Talk input and Close button.
+
+## 3. Apply ARIA Roles and Labels [pending]
+### Dependencies: None
+### Description: Add ARIA roles, properties, and accessible names/labels to Dialogue and controls.
+### Details:
+- Dialogue: role="dialog" (or alertdialog if appropriate), aria-modal="true", aria-labelledby/id link to the title.
+- Tabs: role=tablist; each tab role=tab with aria-selected, aria-controls; each panel role=tabpanel with aria-labelledby.
+- Buttons/controls: ensure accessible names (aria-label or visible label associations) for Talk, Close, Settings, etc.
+- Provide landmarks (e.g., nav/main) where applicable; avoid redundant roles.
+- Ensure proper heading hierarchy inside Dialogue.
+- Verify interactive elements are focusable and not hidden from assistive tech.
+
+## 4. Screen Reader Announcements for New Messages [pending]
+### Dependencies: 78.3
+### Description: Introduce polite live region announcements when new messages arrive in the Dialogue.
+### Details:
+- Add a role="status" or aria-live="polite" region associated with the message list.
+- Announce concise text (e.g., sender + short summary) to avoid verbosity; use aria-atomic appropriately.
+- Debounce/queue multiple messages to prevent overwhelming announcements.
+- Provide API/hooks to push announcement strings when messages are appended.
+- Ensure announcements are suppressed when Dialogue is not relevant (e.g., not visible) or user opted out.
+- Localize announcement strings.
+
+## 5. Shortcut Conflict Resolution with Browser Defaults [pending]
+### Dependencies: 78.1
+### Description: Detect and mitigate conflicts with browser/system shortcuts; offer safe behavior and user settings.
+### Details:
+- Only use single-letter shortcuts when app context is focused and not in text inputs; never override critical browser combos (Ctrl/Cmd+L, Ctrl/Cmd+T, etc.).
+- Provide a setting to disable or remap shortcuts (e.g., require Alt/Option modifier for T/1-3 if needed).
+- Document behavior and show discoverability (help tooltip or shortcuts panel) without stealing focus.
+- Consider screen reader environments where single-letter navigation keys are used; allow users to switch to modified shortcuts.
+- Implement a safeguard to no-op shortcuts if the browser indicates a protected context (e.g., within iframes not owned).
+
+## 6. High-Contrast Mode [pending]
+### Dependencies: None
+### Description: Implement a high-contrast theme and respect system preferences for improved visibility.
+### Details:
+- Use CSS custom properties to define a high-contrast palette meeting WCAG 2.1 AA (>=4.5:1 text, >=3:1 UI components).
+- Support forced-colors and prefers-contrast media queries; ensure SVG icons adapt (currentColor or forced-colors adjustments).
+- Ensure focus outlines are thick and high-contrast; avoid relying solely on color for state.
+- Provide a user-toggle with persisted preference and fall back to system preference by default.
+- Audit component states (hover, active, disabled, selected) for sufficient contrast.
+
+## 7. Axe Accessibility Audit and Fixes [pending]
+### Dependencies: 78.2, 78.3, 78.4, 78.6
+### Description: Integrate axe-core, run audits on Dialogue/navigation states, and resolve violations.
+### Details:
+- Add axe-core to development and CI; create scenarios for Dialogue open/closed, each tab active, message updates.
+- Fix issues reported (labels, roles, color contrast, focusable controls, name/role/value, landmark regions).
+- Re-run until zero serious/critical issues remain; document any accepted minor issues with rationale.
+- Output reports as CI artifacts and add a gating check for regressions.
+
+## 8. Keyboard-Only Navigation Tests [pending]
+### Dependencies: 78.1, 78.2, 78.3, 78.4, 78.5, 78.6
+### Description: Add automated tests ensuring full keyboard navigation and shortcut behavior without a mouse.
+### Details:
+- Write integration/E2E tests (e.g., Playwright) covering: opening Dialogue, focus trap, ESC to close, T focusing Talk, 1/2/3 switching tabs with aria-selected and focus updates.
+- Verify tab order through interactive elements and that background is not focusable when Dialogue is open.
+- Assert live region updates when new messages arrive (polite, no duplicate announcements).
+- Validate that shortcuts do not fire in text inputs and do not override critical browser combos.
+- Include visual assertions for focus indicators in high-contrast mode where feasible.
+

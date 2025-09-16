@@ -1,0 +1,65 @@
+# Task ID: 69
+# Title: Permissions and Access Control UI
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Implement UI and API linkage for village access roles (owner, member, visitor).
+# Details:
+Settings page to invite users (by GitHub username) and assign roles. Backend creates village_access rows.
+- Public village toggle (is_public)
+- UI badges that indicate user's role
+- Gate controls based on role (e.g., only owners can delete village)
+
+
+# Test Strategy:
+Invite flow adds member with correct role. Visitors can view but not control agents. Toggle public allows unauthenticated viewing of village read-only scene (if enabled).
+
+# Subtasks:
+## 1. API linkage for village_access and public flag [pending]
+### Dependencies: None
+### Description: Integrate frontend with backend endpoints to fetch/update roles and toggle public visibility.
+### Details:
+Implement API client methods for: (a) fetching current user's role and village access list, (b) inviting a user by GitHub username, (c) updating a user's role, (d) removing access, and (e) toggling is_public. Define types: Role = 'owner' | 'member' | 'visitor'; AccessEntry { userId, githubUsername, role, addedAt }. Add error handling (e.g., 404 user not found, 409 duplicate invite, 403 forbidden). Provide loading/in-flight and optimistic update helpers. Ensure auth headers are included and CSRF handled if needed.
+
+## 2. Settings page: Permissions section UI [pending]
+### Dependencies: 69.1
+### Description: Create the settings page section to manage village access and visibility.
+### Details:
+Add /villages/:id/settings route with a Permissions panel. Layout includes: (1) Access list with user rows, (2) Invite by GitHub username form, (3) Public village toggle, and (4) contextual help text. Implement loading, empty, and error states. Fetch initial is_public, currentUserRole, and access list via the API client. Prepare placeholders for role dropdowns and action buttons.
+
+## 3. Invite by GitHub username flow [pending]
+### Dependencies: 69.1, 69.2
+### Description: Implement invite form and flow to add users by GitHub username.
+### Details:
+Provide input field with basic validation (non-empty, allowed chars). On submit, call invite API; show progress, success, and error toasts. Prevent duplicates by checking current list. On success, append new entry to access list (default role 'member' unless API allows specifying role). Handle common errors: user not found, already has access, rate-limited. Include keyboard accessibility and form-level error display.
+
+## 4. Role assignment UI [pending]
+### Dependencies: 69.1, 69.2
+### Description: Add controls to assign and change roles for existing users.
+### Details:
+In each user row, add a role dropdown (owner/member/visitor) visible to owners only. Call update-role API on change; show loading state and revert on failure. Enforce constraints: cannot demote the last remaining owner; owners cannot remove their own sole ownership without transferring. Confirm dialogs for demoting an owner or removing access. Update list reactively.
+
+## 5. Public village toggle (is_public) [pending]
+### Dependencies: 69.1, 69.2
+### Description: Implement UI control to toggle village public visibility.
+### Details:
+Add a switch with label and helper text explaining that public allows unauthenticated read-only viewing. Restrict toggling to owners. On change, call API to update is_public; show success/error toasts and disable while in-flight. Optionally confirm when making village public. Reflect new state in UI immediately.
+
+## 6. Badges and role indicators [pending]
+### Dependencies: 69.1
+### Description: Display role badges across the UI to indicate a user's role in the village.
+### Details:
+Add role badges (Owner, Member, Visitor) in the members list, village header, and user menus. Include a 'You' indicator for the current user. Use consistent colors and tooltips for clarity. Ensure badges are readable with high contrast and accessible labels.
+
+## 7. Gating controls in UI based on role [pending]
+### Dependencies: 69.1, 69.6
+### Description: Hide or disable controls according to user role (e.g., only owners can delete village).
+### Details:
+Implement permission helpers (e.g., isOwner, isMemberOrOwner) and apply to critical actions: delete village (owner only), settings modifications (owner), agent control actions (member/owner; visitors read-only). Hide actions when possible; otherwise disable with tooltip explaining required role. Add route guards for settings if needed. Ensure keyboard and screen-reader users receive clear feedback.
+
+## 8. Tests for role-based visibility and flows [pending]
+### Dependencies: 69.3, 69.4, 69.5, 69.6, 69.7
+### Description: Add unit/integration tests covering gating, invites, role changes, and public visibility.
+### Details:
+Write unit tests for permission helpers. Integration tests (with mocked API/MSW): invite flow success and error cases; role change including last-owner guard; public toggle behavior; UI gating for delete village and agent controls per role; badges display. E2E smoke test: when is_public=true, unauthenticated user can view village read-only; when false, access is restricted.
+

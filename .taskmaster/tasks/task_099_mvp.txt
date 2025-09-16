@@ -1,0 +1,163 @@
+# Task ID: 99
+# Title: Privacy and Compliance Checklist
+# Status: pending
+# Dependencies: 42
+# Priority: medium
+# Description: Review data handling, PII storage, and implement necessary user controls.
+# Details:
+Minimize stored tokens (hash or encrypt). Provide account deletion endpoint. Log retention policy. Update privacy notice. Disable sensitive logs. Implement Do Not Track respect for analytics.
+
+# Test Strategy:
+Security review: no plaintext tokens. Deletion request removes personal data and access. Logs scrubbed of PII. Analytics disabled when opted out.
+
+# Subtasks:
+## 1. Data inventory and classification [pending]
+### Dependencies: None
+### Description: Catalog all data assets, data elements, and flows; identify PII and token locations.
+### Details:
+- Scope: Databases, caches, object storage, data warehouse, backups, logs, analytics, third-party processors.
+- For each system: list fields, PII classification, purpose, lawful basis (if applicable), retention, location, owner, processors.
+- Produce: data inventory, data flow diagram, deletion map per entity, ROPA-like record.
+- Acceptance: 100% identified systems; reviewed with Eng/Data leads; gaps tracked with owners.
+
+## 2. Token minimization and encryption [pending]
+### Dependencies: 99.1
+### Description: Eliminate plaintext token storage; minimize token data and apply hashing/encryption with rotation.
+### Details:
+- Implement: store only hashed tokens (e.g., HMAC or bcrypt/argon2), encrypt at rest via KMS, minimize attributes (e.g., last 4, issuer, expiry), short TTLs.
+- Add secure rotation and revocation mechanisms; migrate existing tokens safely.
+- Update code paths, secrets management, and DB schemas as needed.
+- Acceptance: scans and DB queries show no plaintext tokens; security review passes; migration plan executed without auth breakages.
+
+## 3. Log retention and PII scrubbing [pending]
+### Dependencies: 99.1
+### Description: Define and enforce log retention; scrub or mask PII in all logs and pipelines.
+### Details:
+- Set retention by log type (app, access, audit); implement automatic purge jobs.
+- Configure redaction/denylist for PII (emails, tokens, IDs) at source and in log processors.
+- Disable sensitive/verbose logs in production; ensure sampling strategy keeps security signal.
+- Acceptance: sample logs contain no PII; retention jobs verified; policy documented and approved.
+
+## 4. Account deletion endpoint and verification [pending]
+### Dependencies: 99.1, 99.3
+### Description: Provide authenticated deletion request endpoint and verified deletion across systems.
+### Details:
+- Build endpoint with identity verification, cooldown, and confirmation flow.
+- Implement backend job to delete/anonymize user data in primary DBs, caches, files; queue deletions for third parties; respect legal holds.
+- Document what cannot be deleted immediately (e.g., immutable logs) and align with retention.
+- Acceptance: test user deletion removes access and personal data across mapped stores; confirmation sent; audit trail recorded.
+
+## 5. DNT and analytics opt-out [pending]
+### Dependencies: 99.1
+### Description: Respect Do Not Track and provide explicit analytics opt-out controls.
+### Details:
+- Detect DNT header and disable analytics collection accordingly.
+- Provide user-facing opt-out toggle stored server-side; persist across sessions and devices.
+- Ensure SDKs and tags respect opt-out (no beacons, no identifiers); implement consent mode where applicable.
+- Acceptance: analytics disabled when DNT is on or user opts out; verification in network traces and analytics dashboards.
+
+## 6. Privacy notice and policy updates [pending]
+### Dependencies: 99.2, 99.3, 99.4, 99.5
+### Description: Update privacy notice to reflect data handling, retention, deletion rights, and analytics controls.
+### Details:
+- Update disclosures: categories of data, purposes, retention periods, processors, deletion process, DNT/opt-out behavior.
+- Review with legal; ensure clear, plain language and regional notices as needed.
+- Publish on website/app; version and archive prior policy.
+- Acceptance: legal approval recorded; updated notice deployed; links accessible from app and sign-up flows.
+
+## 7. Access reviews and least privilege [pending]
+### Dependencies: 99.1
+### Description: Conduct access reviews and enforce least-privilege for systems handling PII.
+### Details:
+- Audit IAM roles, DB grants, logging/analytics access; remove unnecessary privileges.
+- Enforce MFA, break-glass controls, and periodic recertification.
+- Document SoD and access request/approval workflows.
+- Acceptance: review completed; remediations applied; evidence captured for audit.
+
+## 8. Audit logging policy and configuration [pending]
+### Dependencies: 99.3, 99.7
+### Description: Define and implement audit logging for security events while avoiding sensitive data.
+### Details:
+- Specify events to log (auth, privilege changes, data exports/deletions) with unique IDs and timestamps; exclude PII payloads.
+- Configure tamper-resistant storage and retention for audit logs per policy.
+- Establish review procedures and alerting for critical events.
+- Acceptance: audit logs present for key events, contain no PII, retention enforced, and alerts tested.
+
+## 9. Incident response for data issues [pending]
+### Dependencies: 99.1, 99.8
+### Description: Create and test an incident response plan for data breaches and privacy events.
+### Details:
+- Define severity levels, roles (IM, Comms, Legal, Eng), and runbooks for data exposure, misconfiguration, or processor breach.
+- Include containment, forensics, notification timelines, and regulator/user communications templates.
+- Run a tabletop exercise focused on PII leakage via logs and third-party analytics.
+- Acceptance: IR plan approved; tabletop completed with action items tracked; contact lists current.
+
+## 10. Compliance checklist and sign-off [pending]
+### Dependencies: 99.1, 99.2, 99.3, 99.4, 99.5, 99.6, 99.7, 99.8, 99.9
+### Description: Compile evidence, run final verification, and obtain security/legal sign-off.
+### Details:
+- Assemble artifacts: data inventory, policies, code diffs, test results, logs samples, retention configs, IR plan, privacy notice.
+- Verify test strategy: no plaintext tokens; deletion removes personal data and access; logs scrubbed of PII; analytics disabled on opt-out/DNT.
+- Conduct final review meeting and record approvals.
+- Acceptance: checklist complete; approvals captured; ticket closed with linked evidence.
+
+## 11. Data Inventory and Data Flow Mapping [pending]
+### Dependencies: None
+### Description: Catalog all PII/tokens, systems, processors, storage locations, and data flows.
+### Details:
+Identify all data elements (PII, auth tokens, analytics identifiers) and classify sensitivity; map data sources, processing steps, transfers, and storage; document processors/vendors and cross-border transfers; record lawful basis and purposes; produce a data inventory register and data flow diagrams; note current retention and deletion mechanisms.
+
+## 12. Token Minimization and Hash/Encrypt Strategy [pending]
+### Dependencies: 99.11
+### Description: Define and implement minimization, hashing, or encryption for stored tokens.
+### Details:
+Decide which tokens must be stored vs. derived on demand; replace persistent tokens with hashed (HMAC) or encrypted values using KMS/HSM; implement key rotation schedule and access controls; update schemas to store non-reversible digests where possible; migrate existing data; add safeguards to prevent plaintext token logging or storage; create tests to assert no plaintext tokens at rest or in logs.
+
+## 13. Account Deletion Endpoint and Verification Workflow [pending]
+### Dependencies: 99.11
+### Description: Create authenticated deletion endpoint and end-to-end verified deletion process.
+### Details:
+Design API and UI for user-initiated deletion with strong auth and re-verification; define soft vs. hard delete and dependencies (e.g., subscriptions, billing); implement cascading deletion/anonymization across all systems identified in the inventory; revoke tokens/credentials; send confirmation and provide export option where applicable; implement background jobs and idempotency; add automated tests to verify PII removal and loss of access.
+
+## 14. Log Retention Policy and PII Scrubbing [pending]
+### Dependencies: 99.11
+### Description: Define log retention and implement scrubbing/disable sensitive logs.
+### Details:
+Set retention by log type (app, access, audit) and implement deletion schedules; implement structured logging filters to redact PII and secrets by default; disable verbose/sensitive log levels in production; ensure processors (SIEM/log pipeline) enforce retention; mask IPs or truncate where appropriate; add sampling to reduce data collection; add tests to confirm PII is scrubbed and retention jobs run.
+
+## 15. DNT/GPC and Analytics Opt-Out Enforcement [pending]
+### Dependencies: 99.11
+### Description: Respect Do Not Track/Global Privacy Control and provide analytics opt-out.
+### Details:
+Detect and honor DNT and GPC signals; implement user-facing preference toggle and cookie banner integration; prevent client and server-side analytics from firing when opted-out; configure providers to disable tracking or use cookieless mode; ensure no identifiers emitted when opted-out; document coverage; add automated tests to assert analytics disabled under DNT/opt-out.
+
+## 16. Privacy Notice and Policy Updates [pending]
+### Dependencies: 99.12, 99.13, 99.14, 99.15
+### Description: Update privacy notice to reflect data inventory, retention, rights, and analytics choices.
+### Details:
+Revise notices to describe categories of data, purposes, lawful bases, recipients, retention, deletion rights/process, tokens handling, logging practices, and analytics opt-out/DNT; include contact methods and appeals; version and date the policy; obtain legal review and approvals; publish and link in product; plan comms for material changes.
+
+## 17. Access Reviews and Least-Privilege Enforcement [pending]
+### Dependencies: 99.11, 99.14
+### Description: Conduct access reviews and enforce RBAC/MFA on PII and production systems.
+### Details:
+Identify all roles and principals with access to PII; remove unused accounts and excessive privileges; enforce MFA and conditional access; implement role-based access with least privilege and break-glass procedures; create quarterly access review cadence; document approvals and remediation; monitor for privilege escalations.
+
+## 18. Audit Logging Policy and Secure Audit Trail [pending]
+### Dependencies: 99.11, 99.14
+### Description: Define compliant audit events and implement tamper-evident audit logs without PII.
+### Details:
+Specify security-relevant events (auth changes, access to sensitive data, admin actions) and schemas avoiding PII; route to append-only/WORM storage with integrity checks; restrict access and monitor for anomalies; define retention and review procedures; implement correlation IDs; add alerts for critical events; validate policy alignment with SOC 2/ISO 27001.
+
+## 19. Incident Response for Data Issues [pending]
+### Dependencies: 99.14, 99.18
+### Description: Create playbooks for data incidents including detection, containment, and notification.
+### Details:
+Define severity matrix and RACI; write runbooks for token compromise, PII exposure, and vendor breaches; establish evidence handling and forensics steps; set regulatory/user notification timelines and templates; maintain contact lists and on-call rotations; schedule tabletop exercises; add post-incident review template and corrective action tracking.
+
+## 20. Compliance Checklist Validation and Sign-off [pending]
+### Dependencies: 99.11, 99.12, 99.13, 99.14, 99.15, 99.16, 99.17, 99.18, 99.19
+### Description: Verify controls implemented and obtain final compliance sign-off.
+### Details:
+Assemble evidence (tests, configs, policies) for each control; run through checklist covering token handling, deletion, logging, DNT/opt-out, access controls, audit logging, and incident response; perform internal audit/security review; remediate findings; capture approvals from legal/security leadership; record versioned sign-off.
+

@@ -1,0 +1,164 @@
+# Task ID: 44
+# Title: Redis and BullMQ Initialization
+# Status: done
+# Dependencies: 42
+# Priority: medium
+# Description: Configure Redis for sessions/cache and BullMQ for background processing and retries.
+# Details:
+Install ioredis and bullmq. Implement server/services/redis.ts returning shared Redis connection. Implement queues: agentCommandsQueue, githubSyncQueue with retry/backoff.
+Example:
+const connection = new IORedis(process.env.REDIS_URL);
+export const agentCommandsQueue = new Queue('agent-commands',{connection});
+export const githubSyncQueue = new Queue('github-sync',{connection});
+Processors in separate workers to avoid blocking HTTP thread.
+
+
+# Test Strategy:
+Spin Redis locally. Enqueue/dequeue test jobs. Verify retry/backoff by throwing in processor. Measure job throughput. Ensure graceful shutdown closes connections.
+
+# Subtasks:
+## 1. Create ioredis client factory (shared Redis connection) [done]
+### Dependencies: None
+### Description: Implement a reusable Redis client factory and shared connection for sessions/cache and BullMQ.
+### Details:
+- Install deps in server package: pnpm add ioredis bullmq
+- File: packages/server/src/services/redis.ts
+- Implement createRedisClient(url = process.env.REDIS_URL) returning a configured IORedis instance (enable TLS if REDIS_TLS=true, set lazyConnect, maxRetriesPerRequest, enableReadyCheck)
+- Export: connection (shared IORedis for BullMQ), getRedisClient() for non-queue usage (sessions/cache), and a health check ping()
+- Validate env at startup; fail fast if REDIS_URL missing
+- Add basic namespacing via keyPrefix (e.g., app:{env}:) for session/cache clients
+
+## 2. Initialize BullMQ queues (agentCommands, githubSync) [done]
+### Dependencies: 44.1
+### Description: Define and export BullMQ queues using the shared Redis connection.
+### Details:
+- Files:
+  - packages/server/src/queues/agentCommands.queue.ts
+  - packages/server/src/queues/githubSync.queue.ts
+  - packages/server/src/queues/index.ts to export all
+- Import { Queue } from bullmq and the shared connection from services/redis
+- Define queues with names 'agent-commands' and 'github-sync' using the shared connection
+- Define TypeScript interfaces for job payloads (AgentCommandJob, GithubSyncJob) and export queue instances
+- Add helper functions enqueueAgentCommand(data, options?) and enqueueGithubSync(data, options?)
+
+## 3. Implement worker processes for each queue [done]
+### Dependencies: 44.2
+### Description: Create separate worker entry points and processors to avoid blocking the HTTP thread.
+### Details:
+- Files:
+  - packages/server/src/workers/agentCommands.worker.ts
+  - packages/server/src/workers/githubSync.worker.ts
+- Use new Worker(queueName, processor, { connection, concurrency }) from bullmq; import shared connection
+- Implement minimal processors (parse/validate job.data, stub handlers, return result)
+- Add lifecycle listeners (completed, failed) for visibility (details expanded in metrics/logging subtask)
+- Add npm scripts:
+  - server:worker:agent = tsx src/workers/agentCommands.worker.ts
+  - server:worker:github = tsx src/workers/githubSync.worker.ts
+  - server:workers = run-p server:worker:*
+<info added on 2025-09-15T15:15:20.144Z>
+- Consolidate workers into packages/server/src/queue/workers.ts with a single module managing both queues
+- Export startWorkers({ connection, concurrency? }) and stopWorkers() to create/tear down Worker instances for 'agent-commands' and 'github-sync'
+- Default base concurrency provided (configurable via env, e.g., BULLMQ_CONCURRENCY) and shared connection support
+- Minimal processors stubbed with job.data parse/validation and placeholder handlers returning results
+- Event logging listeners added (active, completed, failed) with key metadata for visibility
+- Integrate by calling startWorkers during server bootstrap and stopWorkers on shutdown hooks (SIGINT/SIGTERM or server close)
+- Optionally replace per-queue npm scripts with a single entrypoint that imports startWorkers for unified worker management
+</info added on 2025-09-15T15:15:20.144Z>
+
+## 4. Configure retry/backoff, timeouts, and failure handling [done]
+### Dependencies: 44.2, 44.3
+### Description: Set robust queue defaults and per-queue strategies for retries, backoff, and failure cleanup.
+### Details:
+- In queue definitions, set defaultJobOptions:
+  - attempts: 5 (agent-commands), 8 (github-sync)
+  - backoff: exponential with base delay (e.g., 2000ms) and jitter where appropriate
+  - removeOnComplete: { age: 3600, count: 1000 }
+  - removeOnFail: false (debug) or { age: 86400 } when stable
+  - timeout: per job type if needed (e.g., 30s for agent, 2m for github)
+- Optionally set rate limiter for github-sync (e.g., 5 jobs/sec)
+- In workers, implement on("failed") to log error stack and job.attemptsMade; consider requeueing to a dead-letter queue if needed later
+- Document how to override options per job via enqueue helper functions
+
+## 5. Add metrics and structured logging for queues/workers [done]
+### Dependencies: 44.3
+### Description: Integrate logging and basic metrics to observe queue health and throughput.
+### Details:
+- Logging: use existing logger (e.g., pino); include queue name, jobId, attemptsMade, duration in logs on active/completed/failed
+- Metrics (optional but recommended): add prom-client counters/histograms in workers
+  - Counters: jobs_processed_total, jobs_failed_total per queue
+  - Histogram: job_duration_seconds per queue
+  - Gauges (polled every 15s): waiting, active, delayed, completed, failed counts via queue.getJobCounts()
+- If the server exposes /metrics, register the metrics there; otherwise create a lightweight metrics server for workers (optional)
+- Ensure logs/metrics avoid PII and have reasonable cardinality
+<info added on 2025-09-15T15:17:30.371Z>
+Interim update: Implemented minimal structured logging in worker “completed” and “failed” event handlers using console.log/console.error with a JSON payload containing event, queue name, jobId, job name, attemptsMade, durationMs, and timestamp. Ensured no PII and low-cardinality fields; one log line per event.
+
+Metrics: Added TODO placeholders for future emission to a Socket.IO channel (e.g., queue:metrics) and/or a metrics sink. Deferred prom-client integration; left stubs to:
+- increment jobs_processed_total and jobs_failed_total per queue
+- observe job_duration_seconds per queue
+- poll queue.getJobCounts() every 15s and report waiting/active/delayed/completed/failed
+
+Also left a TODO to expose metrics via an existing /metrics endpoint or a lightweight worker metrics server. Plan to replace console with the existing structured logger in a later task.
+</info added on 2025-09-15T15:17:30.371Z>
+
+## 6. Implement graceful shutdown for server and workers [done]
+### Dependencies: 44.3
+### Description: Ensure clean shutdown on SIGINT/SIGTERM by draining and closing queues, workers, and Redis connections.
+### Details:
+- Add signal handlers in worker entry points and server bootstrap
+- On shutdown: pause workers, drain in-flight jobs or allow current job to finish, then await worker.close() and queue.close()
+- Close Redis connections via connection.quit() with a timeout fallback to .disconnect()
+- Use Promise.race with a 10s timeout to prevent hanging shutdowns
+- Exit with non-zero code if forced shutdown occurs after timeout
+<info added on 2025-09-15T15:18:13.116Z>
+- Implemented in server index.ts: reused existing SIGINT/SIGTERM hooks to invoke queue/worker teardown.
+- On shutdown, stop all BullMQ Workers, close their QueueEvents, then close queues and quit Redis.
+</info added on 2025-09-15T15:18:13.116Z>
+
+## 7. Local Redis via docker-compose and enqueue/dequeue test [done]
+### Dependencies: 44.1, 44.2, 44.3, 44.4
+### Description: Spin up Redis locally and verify enqueue, processing, and retry/backoff behavior end-to-end.
+### Details:
+- docker-compose.yml at repo root with redis:7-alpine; expose 6379; mount volume for persistence
+- .env.local: REDIS_URL=redis://localhost:6379
+- Script: packages/server/src/scripts/test-queues.ts
+  - Enqueue sample agent-commands and github-sync jobs
+  - Await completion via job.waitUntilFinished() and print results
+  - Optionally enqueue one job that throws to validate retry/backoff
+- NPM scripts:
+  - dev:redis: docker compose up -d redis
+  - test:queues: tsx src/scripts/test-queues.ts
+- Verify throughput and retries, observe logs/metrics, and confirm graceful shutdown works during processing
+<info added on 2025-09-15T15:19:07.663Z>
+- Add optional Vitest e2e test that auto-skips without REDIS_URL:
+  - File: packages/server/src/__tests__/redis.queue.test.ts
+  - Use: import { Queue, Worker, QueueEvents } from 'bullmq'; import IORedis from 'ioredis';
+  - Gate execution: const run = process.env.REDIS_URL ? test : test.skip;
+  - Test flow:
+    - Create unique queue name per run (e.g., `redis-test-${Date.now()}`).
+    - Create connection = new IORedis(process.env.REDIS_URL!).
+    - Instantiate Queue, QueueEvents (await queueEvents.waitUntilReady()), and Worker with a trivial processor (e.g., returns { doubled: job.data.n * 2 }).
+    - Add a job (e.g., { n: 21 }); await job.waitUntilFinished(queueEvents); assert result equals { doubled: 42 }.
+    - Cleanup: await worker.close(); await queue.drain(true); await queue.close(); await queueEvents.close(); await connection.quit().
+    - Set generous timeout (e.g., 20s) for the test.
+  - Ensure isolation: use a dedicated test queue name; do not reuse app queues or processors.
+  - NPM script: add test:queues:vitest: vitest run packages/server/src/__tests__/redis.queue.test.ts
+  - Behavior: when REDIS_URL is unset, the test is skipped and does not affect CI; when set, it validates enqueue -> process -> completion end-to-end.
+</info added on 2025-09-15T15:19:07.663Z>
+<info added on 2025-09-15T15:19:32.741Z>
+- Optional Vitest e2e test that auto-skips when REDIS_URL is unset:
+  - File: packages/server/src/__tests__/redis.queue.test.ts
+  - Imports: import { Queue, Worker, QueueEvents } from 'bullmq'; import IORedis from 'ioredis'
+  - Gate execution: const run = process.env.REDIS_URL ? test : test.skip
+  - Test flow:
+    - Create unique queue name per run (e.g., `redis-test-${Date.now()}`)
+    - Create connection = new IORedis(process.env.REDIS_URL!)
+    - Instantiate Queue, QueueEvents (await queueEvents.waitUntilReady()), and Worker with a trivial processor returning { doubled: job.data.n * 2 }
+    - Add a job (e.g., { n: 21 }); await job.waitUntilFinished(queueEvents); assert result equals { doubled: 42 }
+  - Cleanup: await worker.close(); await queue.drain(true); await queue.close(); await queueEvents.close(); await connection.quit()
+  - Timeout: set generous 20s
+  - Isolation: use a dedicated test queue name; do not reuse app queues or processors
+  - NPM script: test:queues:vitest -> vitest run packages/server/src/__tests__/redis.queue.test.ts
+  - Behavior: when REDIS_URL is unset, the test is skipped and does not affect CI; when set, it validates enqueue -> process -> completion end-to-end
+</info added on 2025-09-15T15:19:32.741Z>
+

@@ -1,0 +1,67 @@
+# Task ID: 90
+# Title: Auto Layout and Pathfinding Utilities
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Generate initial house placement and simple pathfinding for agent walking.
+# Details:
+Isometric grid placement using Poisson disk or grid with spacing. Implement A* pathfinding utils avoiding obstacles. Animate agent movement along path.
+
+# Test Strategy:
+Auto layout for 100 repos avoids overlap and appears grid-aligned. Agents can path between houses without clipping. Performance acceptable for multiple agents moving.
+
+# Subtasks:
+## 1. Isometric layout generator (grid + Poisson-disk) [pending]
+### Dependencies: None
+### Description: Build a layout module that places house anchors on an isometric map using either a spaced grid or Poisson-disk sampling.
+### Details:
+Inputs: map bounds (world coords), spacing radius, grid cell size, RNG seed, max attempts. Outputs: list of candidate house anchors (world x,y) with footprint radius. Implement Bridson Poisson-disk in 2D; support deterministic seeding and toggle between grid and Poisson modes.
+
+## 2. Overlap avoidance and boundary enforcement [pending]
+### Dependencies: 90.1
+### Description: Ensure generated houses do not overlap each other or map boundaries; resolve collisions deterministically.
+### Details:
+Perform separation/relaxation pass (e.g., iterative repulsion) using footprint radii. Enforce map bounds via clamping or rejection. Produce final non-overlapping placements and a footprint mask for later obstacle creation. Preserve seed-based determinism.
+
+## 3. Export initial coordinates and isometric transforms [pending]
+### Dependencies: 90.2
+### Description: Serialize house placements and expose world↔screen isometric transform utilities.
+### Details:
+Define shared types (HousePlacement {id, worldX, worldY, footprint, screenX, screenY, depthY}). Implement world-to-iso-screen conversion and depth sort key helper. Provide serialization to packages/shared and a loader for frontend initialization.
+
+## 4. Navigation grid and obstacle map construction [pending]
+### Dependencies: 90.2
+### Description: Build a walkability grid/graph from map bounds and house footprints, marking obstacles for pathfinding.
+### Details:
+Define uniform cell size, 4/8-neighbor connectivity, and per-cell cost (default 1). Mark blocked cells from house footprints and static obstacles. Provide helpers: worldToCell, cellToWorld, isWalkable, getNeighbors. Use compact bitsets for occupancy.
+
+## 5. A* pathfinding utility with obstacle avoidance [pending]
+### Dependencies: 90.4
+### Description: Implement A* search over the navigation grid returning a path from start to goal avoiding obstacles.
+### Details:
+Heuristic: octile for 8-dir, Manhattan for 4-dir. Use binary-heap open set, tie-breaker to prefer straight paths, and early exit on goal. Return list of world-space waypoints. Handle unreachable goals with error/empty result and stats (visited nodes).
+
+## 6. Path simplification and smoothing [pending]
+### Dependencies: 90.5, 90.4
+### Description: Simplify raw A* paths and smooth them without cutting corners into blocked cells.
+### Details:
+Apply Ramer–Douglas–Peucker or grid-aware shortcutting with line-of-sight checks against obstacle grid. Prevent diagonal corner-cutting. Snap final points to walkable centers. Configurable tolerance and max segment length.
+
+## 7. Agent movement animation along path (Phaser) [pending]
+### Dependencies: 90.6, 90.3
+### Description: Animate an agent following a path with speed, easing, facing, and isometric depth sorting.
+### Details:
+Interpolate along smoothed waypoints with constant or eased speed. Update sprite orientation, handle pause/resume/repath, and emit events (onArrive, onStall). Maintain depth via sprite.y sorting. Guard against dynamic obstacles by re-querying A* when blocked.
+
+## 8. Public API for reusable layout and pathfinding [pending]
+### Dependencies: 90.3, 90.6, 90.7
+### Description: Define a stable TypeScript API surface for layout generation, nav grid, pathfinding, smoothing, and movement.
+### Details:
+Expose factory functions and types via packages/shared (e.g., createLayout, createNavGrid, findPath, smoothPath, createMover). Provide options with sane defaults, error types, and docstrings. Ensure tree-shakeable ESM exports and versioned changelog.
+
+## 9. Tests and benchmarks on 100+ nodes/agents [pending]
+### Dependencies: 90.8
+### Description: Add automated tests and performance benchmarks at 100+ houses and multi-agent paths.
+### Details:
+Unit tests: placement (no overlaps), nav grid correctness, A* path validity, smoothing no-corner-cut. Integration: agents can path between random houses without clipping. Benchmarks: time per placement, per path query, and multi-agent throughput; set thresholds and run in CI.
+

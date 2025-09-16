@@ -1,0 +1,49 @@
+# Task ID: 94
+# Title: Command Palette and Quick Actions
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Right-click menu and keyboard palette for quick agent actions.
+# Details:
+Context menu on agent: Start/Stop, Run Tool recent, Go to House. Command palette (Ctrl+K) search across agents/houses/actions.
+
+# Test Strategy:
+Menu opens on right-click and executes actions. Command palette filters and runs selected action. Keyboard accessibility confirmed.
+
+# Subtasks:
+## 1. Context Menu Component for Agents [pending]
+### Dependencies: None
+### Description: Implement right-click context menu on agent items with quick actions.
+### Details:
+Provide context menu on agent cards/list items with actions: Start/Stop (state-aware toggle), Run Tool (recent), Go to House. Open on right-click, position at cursor, close on outside click or Esc. Show disabled/loading states as needed. Stub calls to a central action dispatcher to be wired later.
+
+## 2. Command Palette UI (Ctrl/Cmd+K) [pending]
+### Dependencies: None
+### Description: Create a global command palette overlay accessible via keyboard shortcut.
+### Details:
+Build a modal overlay with an input field and a results list. Open with Ctrl+K (Windows/Linux) and Cmd+K (macOS); close with Esc and clicking outside. Show recent actions when query is empty. Support mouse selection and Enter to execute selected command. Prepare hooks to integrate search results and action execution.
+
+## 3. Search and Index Across Agents/Houses/Actions [pending]
+### Dependencies: None
+### Description: Implement indexing and search APIs to feed the command palette.
+### Details:
+Index entities: agents (name, status), houses (name/location), and available actions (Start/Stop, Run recent tool, Go to House). Provide a query function with fuzzy matching, ranking, and grouping by type. Keep the index updated on data changes. Return normalized items with labels, metadata, and an action reference for execution.
+
+## 4. Action Execution Wiring and Registry [pending]
+### Dependencies: None
+### Description: Create a central action registry/dispatcher and wire actions to app services.
+### Details:
+Define action IDs, payload schemas, and a dispatcher that routes to implementations: startAgent, stopAgent, runRecentTool(agentId, toolId), navigateToHouse(houseId). Handle optimistic updates, concurrency guards, errors (toasts), and result notifications. Expose a single executeAction(actionId, payload) API used by both context menu and palette.
+
+## 5. Keyboard Accessibility and ARIA [pending]
+### Dependencies: 94.1, 94.2
+### Description: Ensure keyboard navigation and screen reader support for menu and palette.
+### Details:
+Keyboard: Ctrl/Cmd+K to open palette, Esc to close, arrow keys to navigate list, Enter to execute; Shift+F10/ContextMenu key to open agent context menu. Focus management: focus trap in palette, return focus to opener, roving tabindex for lists. ARIA roles: menu/menuitem for context menu; combobox/listbox/option for palette; labels and live region announcements for open/close and result counts.
+
+## 6. Tests for Filtering and Execution [pending]
+### Dependencies: 94.1, 94.2, 94.3, 94.4, 94.5
+### Description: Add unit/integration tests for search filtering and action execution paths.
+### Details:
+Unit tests: index builds and updates; fuzzy search ranking; empty and no-match states. Integration/E2E: palette opens with Ctrl/Cmd+K; query filters results; arrow navigation and Enter execute selected action; context menu opens on right-click/keyboard and triggers Start/Stop, Run recent tool, Go to House (mock services). Accessibility tests: focus trap, Esc to close, ARIA attributes present.
+

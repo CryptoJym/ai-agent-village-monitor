@@ -1,0 +1,49 @@
+# Task ID: 97
+# Title: Internationalization Readiness
+# Status: pending
+# Dependencies: 57
+# Priority: medium
+# Description: Prepare UI for i18n with keys and message catalogs.
+# Details:
+Introduce i18n library (e.g., i18next) with en-US default. Externalize strings in DialogueUI and Onboarding. Provide formatting for dates/times in threads.
+
+# Test Strategy:
+Switch locale to test translation coverage. Ensure no hardcoded strings remain in core flows. Date formatting matches locale.
+
+# Subtasks:
+## 1. i18n library setup [pending]
+### Dependencies: None
+### Description: Install and initialize i18next with en-US default and project scaffolding.
+### Details:
+Install i18next and react-i18next. Create i18n.ts with fallbackLng: 'en-US', supportedLngs: ['en-US'], defaultNS: 'common', resources for en-US. Wire I18nextProvider at app root. Create /locales/en-US/{common,dialogue,onboarding}.json. Enable interpolation and pluralization.
+
+## 2. Extract core strings to catalogs [pending]
+### Dependencies: 97.1
+### Description: Externalize DialogueUI and Onboarding strings into message catalogs.
+### Details:
+Identify hardcoded strings in DialogueUI and Onboarding. Create keys under dialogue.* and onboarding.* namespaces. Move text into JSON catalogs with placeholders for variables. Replace strings with t('namespace.key', { vars }). Remove remaining hardcoded labels/tooltips/errors in these flows.
+
+## 3. Locale switcher [pending]
+### Dependencies: 97.1
+### Description: Add runtime locale switcher with persistence and detection.
+### Details:
+Implement UI control (header/settings) using i18next.changeLanguage. Persist selection in localStorage ('locale') and read on init. Support optional ?lang= param. Update document.lang. Prepare list of available locales (start with en-US) for future expansion.
+
+## 4. Date/time formatting utilities [pending]
+### Dependencies: 97.1
+### Description: Provide localized date/time utilities and apply to thread timestamps.
+### Details:
+Create utils wrapping Intl.DateTimeFormat and Intl.RelativeTimeFormat (formatDate, formatDateTime, formatRelative). Use i18next.language and user timezone. Replace thread timestamp formatting to use these utilities. Add edge handling for 12/24h and long/short styles.
+
+## 5. Fallback strategy [pending]
+### Dependencies: 97.1, 97.2
+### Description: Configure robust fallbacks and missing translation handling.
+### Details:
+Set fallbackLng: 'en-US' and supportedLngs. Enable saveMissing or missingKeyHandler in dev to log missing keys. Ensure unknown/unsupported locales default to en-US. Configure key/namespace fallback and avoid rendering raw keys in production. Add Suspense/loading handling for lazy-loaded catalogs.
+
+## 6. Coverage audit and tests [pending]
+### Dependencies: 97.2, 97.3, 97.4, 97.5
+### Description: Audit i18n coverage and implement tests for strings and date formatting.
+### Details:
+Scan code for remaining hardcoded strings in core flows; fix or file issues. Add tests: locale switcher updates UI text, DialogueUI/Onboarding render via t(), and thread timestamps vary by locale. Add a pseudo-locale test for overflow/length. Verify no regressions with en-US default.
+

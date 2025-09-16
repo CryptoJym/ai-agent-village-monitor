@@ -1,0 +1,61 @@
+# Task ID: 76
+# Title: World Map Mini-Map and Fast Travel
+# Status: pending
+# Dependencies: 57, 60
+# Priority: medium
+# Description: Implement mini-map overlay and instant teleport with state persistence.
+# Details:
+Mini-map as scaled render texture. Clicking on region teleports camera in VillageScene; preserves agent UI state (selected agent, dialogue tab). Persist in URL hash or in-memory store.
+
+# Test Strategy:
+Teleport between regions retains selected agent and Dialogue panel state. Mini-map accurately reflects current viewport bounds. Travel completes <2s.
+
+# Subtasks:
+## 1. Render Texture Mini-Map Overlay [pending]
+### Dependencies: None
+### Description: Create a scalable mini-map overlay rendering the VillageScene as a render texture.
+### Details:
+Implement a MiniMap component that renders a downscaled texture of the world and anchors to the UI (e.g., top-right). Maintain aspect ratio and clamp to world extents. Provide API for world<->mini-map coordinate conversion utilities. Add show/hide toggle and configurable resolution/update cadence (e.g., on camera move or at capped FPS).
+
+## 2. Viewport Bounds Overlay [pending]
+### Dependencies: 76.1
+### Description: Draw and update the current camera viewport bounds on the mini-map.
+### Details:
+Render a rectangle on the mini-map representing the camera frustum/viewport. Update in real time on camera move/zoom. Handle zoom levels, letterboxing, and clamping at map edges. Ensure overlay accuracy within 1% or 1px. Provide styles for visibility in light/dark themes.
+
+## 3. Click-to-Teleport Mapping [pending]
+### Dependencies: 76.1
+### Description: Map mini-map clicks to world coordinates for fast travel target selection.
+### Details:
+Capture pointer/touch events on the mini-map, convert to world coordinates via provided transforms, and clamp to valid world bounds. Ignore clicks on non-interactive UI chrome. Provide hover/press feedback and optional ghost viewport preview. Expose a teleportTargetSelected event with world position.
+
+## 4. Camera Teleport/Transition Handler [pending]
+### Dependencies: 76.2, 76.3
+### Description: Implement instant camera teleport (or ultra-fast transition) to the selected world position.
+### Details:
+On teleportTargetSelected, move the camera to the target position, clamped within navigation bounds. Prefer instant snap; allow optional sub-200ms ease if motion is enabled. Emit cameraSettled event when complete. Ensure overlay (viewport rectangle) refreshes immediately and no jitter occurs.
+
+## 5. UI State Persistence (Selected Agent & Dialogue Tab) [pending]
+### Dependencies: 76.4
+### Description: Persist and restore selected agent and dialogue tab across fast travel and reloads.
+### Details:
+Store selected agent ID, dialogue tab, and optional camera pose in an in-memory store and mirror to URL hash (e.g., #agent=ID&tab=dialogue&cam=x,y,z). Update state on change and on teleport. On app load/hashchange, hydrate UI and camera from persisted state. Handle invalid/missing IDs gracefully.
+
+## 6. Performance Budget and Instrumentation (<2s travel) [pending]
+### Dependencies: 76.4, 76.5
+### Description: Measure and enforce that fast travel completes in under 2 seconds end-to-end.
+### Details:
+Add performance marks around click->cameraSettled->UI restored. Log and surface metrics. Cap mini-map refresh rate and resolution on low-end devices. Debounce expensive computations. Ensure main-thread tasks avoid long blocks. Acceptance: 95th percentile end-to-end travel <2s; camera snap <100ms on target devices.
+
+## 7. Accessibility and Input Alternatives [pending]
+### Dependencies: 76.1, 76.3, 76.4
+### Description: Ensure mini-map and fast travel are accessible (keyboard, screen readers, contrast, motion).
+### Details:
+Provide keyboard navigation to mini-map (tab focus), arrow/WASD or discrete grid keys to move preview, Enter/Space to teleport. Add aria-labels/roles and descriptive text for screen readers. Ensure focus outlines and color-contrast for overlays. Respect prefers-reduced-motion (disable animation). Support touch targets ≥44px.
+
+## 8. Testing: Unit, Integration, E2E [pending]
+### Dependencies: 76.1, 76.2, 76.3, 76.4, 76.5, 76.6, 76.7
+### Description: Validate mini-map rendering, viewport overlay, teleport, state persistence, performance, and a11y.
+### Details:
+Unit: coordinate transforms, clamping, URL hash parse/serialize. Integration: viewport overlay accuracy, click-to-world mapping, cameraSettled events, UI state survives teleports. E2E: teleport between regions retains selected agent and Dialogue tab; mini-map reflects viewport. Performance: assert travel <2s. A11y: axe checks and keyboard flows.
+

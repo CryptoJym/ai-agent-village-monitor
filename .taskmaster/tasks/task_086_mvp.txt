@@ -1,0 +1,155 @@
+# Task ID: 86
+# Title: CI/CD Pipelines (GitHub Actions)
+# Status: pending
+# Dependencies: 81, 83, 84
+# Priority: medium
+# Description: Configure workflows for lint, type-check, tests, build, and deploy to Vercel (frontend) and Railway (backend/DB/Redis).
+# Details:
+.github/workflows:
+- ci.yml: pnpm -w lint, typecheck, unit/integration/e2e
+- deploy-frontend.yml: Vercel CLI deploy on main
+- deploy-backend.yml: Railway/Fly.io deploy; run Prisma migrate or SQL migrations
+Secrets managed in GitHub. Cache pnpm store.
+
+# Test Strategy:
+Dry-run workflows on PRs. Verify deployments to staging succeed automatically on merge. Rollback tested by redeploying previous build. Migration step idempotent.
+
+# Subtasks:
+## 1. Define GitHub Environments and Secrets [pending]
+### Dependencies: None
+### Description: Create staging and production environments and configure all required secrets for CI and deployments.
+### Details:
+- Create GitHub Environments: staging (auto-deploy), production (protected with required reviewers).
+- Define repository or environment secrets:
+  - Frontend (Vercel): VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+  - Backend: choose one platform
+    - Railway: RAILWAY_TOKEN, RAILWAY_PROJECT_ID, RAILWAY_SERVICE_ID (backend).
+    - Fly.io: FLY_API_TOKEN, FLY_APP_NAME.
+  - Shared: DATABASE_URL (staging/prod), REDIS_URL (staging/prod), CYPRESS_RECORD_KEY (optional), NEXT_PUBLIC_* as needed.
+- Set GITHUB_TOKEN permissions in workflows (contents: read, actions: read, deployments: write, id-token: write if using OIDC with cloud providers).
+- Document secret ownership, rotation cadence, and environment-level variable overrides.
+
+## 2. Create ci.yml scaffold with pnpm caching [pending]
+### Dependencies: 86.1
+### Description: Add base CI workflow with triggers, concurrency, Node and pnpm setup, and efficient pnpm store caching.
+### Details:
+- Location: .github/workflows/ci.yml.
+- Triggers: pull_request to main, push to main, workflow_dispatch.
+- Concurrency: group by workflow + ref, cancel-in-progress for PRs.
+- Runner: ubuntu-latest; Node 20 LTS.
+- Steps (per job):
+  - actions/checkout@v4 with fetch-depth: 0.
+  - pnpm/action-setup@v3 (version 8 or 9), run_install: false.
+  - actions/setup-node@v4 with cache: pnpm and node-version: 20.
+  - actions/cache@v4 for pnpm store path (~/.pnpm-store) with key on hashFiles('pnpm-lock.yaml').
+  - pnpm -w install --frozen-lockfile.
+- Set default working-directory to repository root and support monorepo with -w (workspace).
+
+## 3. Add lint and type-check jobs to ci.yml [pending]
+### Dependencies: 86.2
+### Description: Implement parallel lint and type-check jobs using pnpm workspace scripts with problem matchers.
+### Details:
+- Jobs: lint, typecheck (both depend on setup from ci.yml base).
+- Lint:
+  - Run: pnpm -w lint.
+  - Output ESLint report (e.g., -f junit -o reports/eslint-junit.xml) if configured.
+  - Fail on warnings optionally via --max-warnings=0 (configurable).
+- Type-check:
+  - Run: pnpm -w typecheck (tsc -b or turbo pipeline as applicable).
+  - Emit tsconfig-based incremental build cache to speed up runs.
+- Set timeouts (e.g., 10m) and add continue-on-error false.
+- Upload reports as artifacts conditionally (handled in artifact task, but jobs should emit files under reports/).
+
+## 4. Add unit, integration, and e2e test jobs to ci.yml [pending]
+### Dependencies: 86.2
+### Description: Implement test jobs with DB/Redis services for integration, Cypress for e2e, and coverage generation.
+### Details:
+- Jobs: test-unit, test-integration, test-e2e.
+- test-unit:
+  - Run: pnpm -w test:unit -- --ci --reporters=default --reporters=junit --coverage.
+  - Emit coverage to coverage/unit and junit to reports/junit-unit.xml.
+- test-integration:
+  - Services: postgres:15, redis:7 with healthchecks.
+  - Env: DATABASE_URL=postgresql://postgres:postgres@localhost:5432/app; REDIS_URL=redis://localhost:6379.
+  - Pre-steps: pnpm -w prisma:generate (if used), pnpm -w prisma:migrate:deploy.
+  - Run: pnpm -w test:integration -- --ci --reporters=junit --coverage.
+  - Emit coverage to coverage/integration and junit to reports/junit-integration.xml.
+- test-e2e:
+  - Start app server: pnpm -w build && pnpm -w start (or use dev server with wait-on http://localhost:3000).
+  - Use cypress-io/github-action@v6 with record: true if CYPRESS_RECORD_KEY is set; otherwise run headless.
+  - Save Cypress videos/screenshots under cypress/**.
+  - Emit junit to reports/junit-e2e.xml and coverage (if configured with nyc or cypress code coverage) to coverage/e2e.
+- Matrix (optional): node-version [20], shard e2e specs if long-running.
+- Ensure all jobs use the pnpm cache and install from lockfile.
+
+## 5. Artifact uploads and test reporting [pending]
+### Dependencies: 86.3, 86.4
+### Description: Upload coverage, junit reports, and Cypress artifacts; publish summary in CI.
+### Details:
+- In ci.yml, add post-test steps to upload artifacts using actions/upload-artifact@v4:
+  - coverage/**, reports/**/*.xml, cypress/**/videos/**, cypress/**/screenshots/**.
+  - Use retention-days: 14 and if-no-files-found: ignore.
+- Optionally add a summary step to combine junit into a check (e.g., dorny/test-reporter or EnricoMi/publish-unit-test-result-action) using reports/**/*.xml.
+- Expose coverage percentage in job summary; consider codecov upload if CODECOV_TOKEN is provided (optional).
+- Ensure artifacts are named per job (e.g., unit-artifacts, integration-artifacts, e2e-artifacts).
+
+## 6. Configure deploy-frontend.yml for Vercel [pending]
+### Dependencies: 86.1, 86.3, 86.4
+### Description: Create Vercel deployment workflow for preview on PRs and production on main.
+### Details:
+- Location: .github/workflows/deploy-frontend.yml.
+- Triggers: pull_request (preview), push to main (production), workflow_dispatch.
+- Permissions: deployments: write, contents: read.
+- Steps:
+  - Checkout, setup pnpm and Node with cache.
+  - Install: pnpm -w install --frozen-lockfile; build frontend (set working-directory to apps/frontend or /).
+  - Install Vercel CLI: pnpm dlx vercel@latest --version.
+  - For preview (PR):
+    - vercel pull --environment=preview --yes --token ${{ secrets.VERCEL_TOKEN }}.
+    - vercel build --token ${{ secrets.VERCEL_TOKEN }}.
+    - vercel deploy --prebuilt --token ${{ secrets.VERCEL_TOKEN }}; capture URL output.
+  - For production (main):
+    - vercel pull --environment=production --yes --token ${{ secrets.VERCEL_TOKEN }}.
+    - vercel build --prod --token ${{ secrets.VERCEL_TOKEN }}.
+    - vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }}; capture URL.
+  - Export env: VERCEL_ORG_ID, VERCEL_PROJECT_ID from secrets; pass NEXT_PUBLIC_* as needed.
+  - Post: set deployment status and comment with URLs.
+- Concurrency: cancel previous preview deploys per PR.
+
+## 7. Configure deploy-backend.yml with migrations [pending]
+### Dependencies: 86.1, 86.3, 86.4
+### Description: Create backend deployment workflow to Railway (default) or Fly.io, including Prisma/SQL migrations.
+### Details:
+- Location: .github/workflows/deploy-backend.yml.
+- Triggers: push to main (production), pull_request to main (optional staging), workflow_dispatch.
+- Guard deploy on successful CI checks (needs: lint, typecheck, tests) and target branch.
+- Railway path (preferred if RAILWAY_TOKEN present):
+  - Install CLI: pnpm dlx @railway/cli@latest --version.
+  - Auth: export RAILWAY_TOKEN from secrets.
+  - Deploy: railway deploy --project $RAILWAY_PROJECT_ID --service $RAILWAY_SERVICE_ID --detach.
+  - Run migrations (idempotent): railway run --service $RAILWAY_SERVICE_ID -- pnpm prisma migrate deploy (or psql -f migrations.sql).
+  - Health check: curl service /healthz with retry.
+- Fly.io path (if FLY_API_TOKEN present):
+  - Setup: superfly/flyctl-actions/setup-flyctl@v1.
+  - Deploy: flyctl deploy --remote-only -a $FLY_APP_NAME.
+  - Migrations: flyctl ssh console -C "pnpm prisma migrate deploy" -a $FLY_APP_NAME.
+  - Verify health checks and scale as needed.
+- Env/secrets: inject DATABASE_URL, REDIS_URL from environment or platform secrets.
+- Zero-downtime: ensure rolling deploy or blue/green per platform; fail workflow on unsuccessful health checks.
+
+## 8. Branch protections and rollback verification [pending]
+### Dependencies: 86.6, 86.7
+### Description: Enforce required checks on main and implement/test rollback procedures for frontend and backend.
+### Details:
+- Branch protection for main:
+  - Require PR reviews, linear history, and up-to-date checks.
+  - Required status checks: lint, typecheck, test-unit, test-integration, test-e2e, and optional build if separated.
+  - Apply via repo settings or gh cli: gh api repos/:owner/:repo/branches/main/protection (JSON body with required_status_checks.contexts).
+- Environment protection: require reviewers for production deployments (both workflows target production env).
+- Rollback procedures:
+  - Vercel: vercel ls to find previous production deployment, vercel rollback <deployment> --prod.
+  - Railway: railway releases --project ... --service ...; railway rollback <releaseId>.
+  - Fly: flyctl releases -a $FLY_APP_NAME; flyctl releases revert <version>.
+- Add workflow_dispatch inputs to deploy workflows to trigger rollback steps with a deployment/version ID and validate successful restore via health checks.
+- Test plan: simulate a bad deploy on staging, perform rollback, verify health endpoints and automated alerts.
+

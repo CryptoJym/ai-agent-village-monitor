@@ -1,0 +1,65 @@
+# Task ID: 59
+# Title: AssetManager: Load Sprites and Animations
+# Status: pending
+# Dependencies: 57
+# Priority: medium
+# Description: Create asset loading pipeline for houses, agents, bug bots with animations.
+# Details:
+Preload assets in LoadingScene. Organize atlas/spritesheets for agent animations (idle, walk, work). Generate agent variations by tinting based on agent ID.
+- AssetManager to get textures and define animations
+- Async loading with progress bar
+- House variations mapped by language (JS/TS, Python, Go, etc.)
+
+
+# Test Strategy:
+Verify assets load without errors, animations play. Memory profiling to ensure textures disposed on scene change. Snapshot test of atlas manifests.
+
+# Subtasks:
+## 1. Define atlas manifests and preload lists [pending]
+### Dependencies: None
+### Description: Create asset manifests for agents, bug bots, and houses including paths, atlas/spritesheet configs, and language mappings.
+### Details:
+Prepare JSON manifests for: agents (idle, walk, work), bug bots (idle, move/attack as available), and house variants. Specify asset keys, URLs, types (atlas/spritesheet/image), frame naming, and groups (core, agents, houses). Include language-to-house mapping for JS/TS, Python, Go, and fallbacks. Establish naming conventions (e.g., agent_idle, agent_walk, bugbot_idle, house_js). Acceptance: manifests validate, keys are unique, and files resolve.
+
+## 2. Implement LoadingScene with async preloading and progress UI [pending]
+### Dependencies: 59.1
+### Description: Build a LoadingScene that preloads from manifests, displays progress, handles errors, and transitions on completion.
+### Details:
+Wire the scene to consume the manifest groups and invoke the loader. Display a progress bar and percentage. Provide retry on failure and graceful skip for noncritical assets. Ensure idempotent loading and that the scene emits a completion event to start the next scene. Include accessibility-friendly colors and status text.
+
+## 3. AssetManager API and loader integration [pending]
+### Dependencies: 59.1
+### Description: Create a central AssetManager to load manifests, fetch textures, and expose animation/lookup utilities.
+### Details:
+Implement methods: load(manifests, onProgress), getTexture(key), getFrames(key/prefix), getAnimationConfig(key), registerAnimation(config), getHouseTexture(lang), getTintForAgentId(id), unload(group), disposeAll(). Maintain registries for assets and animations, with TypeScript types. Emit progress events to the LoadingScene. Cache lookups and guard against missing keys with safe fallbacks.
+
+## 4. Define animations for agents and bug bots (idle/walk/work) [pending]
+### Dependencies: 59.1, 59.3
+### Description: Register idle/walk/work animations for agents and required animations for bug bots using atlas frame data.
+### Details:
+Create animation configs with keys (e.g., agent_idle, agent_walk, agent_work, bugbot_idle, bugbot_move), frame sequences, fps, and loop flags. Support directional variants if frames exist (e.g., walk_n/e/s/w). Auto-generate sequences from frame naming patterns. Register via AssetManager. Verify playback in a simple internal demo routine.
+
+## 5. Agent tint variations by deterministic ID hashing [pending]
+### Dependencies: 59.3, 59.4
+### Description: Generate consistent tint colors from agent IDs and apply across all agent animations/sprites.
+### Details:
+Hash agent ID to hue; use fixed saturation/value for readability. Convert HSV→RGB; clamp to avoid low-contrast colors. Cache per-agent tint in AssetManager.getTintForAgentId(id). Provide utility to apply tint to sprites/containers. Add safeguards for missing/empty IDs by using a default tint.
+
+## 6. House variants by language mapping and retrieval [pending]
+### Dependencies: 59.1, 59.3
+### Description: Implement language-to-house texture mapping with normalization and fallbacks.
+### Details:
+Normalize language codes (e.g., js/ts → js_ts; c++ → cpp). Ensure mapping covers JS/TS, Python, Go; optionally include others when assets exist. Expose AssetManager.getHouseTexture(lang) with fallback to a generic house. Validate presence of mapped keys at load time and log warnings for missing variants.
+
+## 7. Disposal/unload and memory management strategy [pending]
+### Dependencies: 59.3, 59.2, 59.4
+### Description: Add unloading of textures/atlases/animations on scene changes with profiling hooks.
+### Details:
+Introduce loader groups and reference counting in AssetManager. Provide unload(group) to release textures, animations, and frame caches when no longer referenced. Tie into scene lifecycle to dispose transient assets and the LoadingScene UI. Add optional memory logging (before/after) to verify GPU texture count and memory drop.
+
+## 8. Tests and snapshots for manifests and AssetManager [pending]
+### Dependencies: 59.1, 59.3, 59.4, 59.5, 59.6, 59.7
+### Description: Create unit and snapshot tests for manifests, animations, tints, house mapping, progress, and unload behavior.
+### Details:
+Snapshot manifest JSON and validate schema/keys. Mock loader to test progress events and ordering. Verify animations registered with expected frame counts/fps. Assert deterministic tints for given IDs and acceptable contrast. Test language mapping normalization and fallbacks. Simulate unload to ensure assets are removed and references cleared.
+

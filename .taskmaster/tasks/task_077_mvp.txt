@@ -1,0 +1,97 @@
+# Task ID: 77
+# Title: Settings and Preferences
+# Status: pending
+# Dependencies: 42
+# Priority: medium
+# Description: Add user settings: performance options, keybindings, theme toggles saved server-side.
+# Details:
+UI page with toggles: LOD level, max FPS cap, keybindings (T to talk), colorblind mode. Persist in users table (JSONB preferences). Apply at runtime to scene managers.
+
+# Test Strategy:
+Saving settings updates DB and reflects immediately. Reload persists changes. Defaults sensible for first-time users. Keybinding remap works across sessions.
+
+# Subtasks:
+## 1. Define preferences schema and models [pending]
+### Dependencies: None
+### Description: Design the JSON structure for user preferences and corresponding server/client models and validation rules.
+### Details:
+Specify keys and defaults:
+- performance.lod: one of low|medium|high (default: medium)
+- performance.maxFps: integer (30|60|120|144|240) or null for uncapped (default: 60)
+- input.keybindings.talk: string key (default: "T")
+- theme.mode: one of light|dark|system (default: system)
+- accessibility.colorblindMode: boolean (default: false)
+Deliverables:
+- JSON Schema for server-side validation
+- Type/interface definitions for clients
+- Deep-merge semantics and allowed ranges/enums documented
+- Forward-compatible versioning field (e.g., schemaVersion: 1)
+
+## 2. Database migration for users.preferences (JSONB) and defaults [pending]
+### Dependencies: 77.1
+### Description: Add preferences JSONB column to users table, populate sensible defaults, and update ORM models.
+### Details:
+Tasks:
+- Migration: ALTER TABLE users ADD COLUMN preferences JSONB NOT NULL DEFAULT '<defaults from schema>'
+- Backfill existing rows explicitly with generated defaults (idempotent)
+- Optional GIN index on preferences if querying by preference keys is planned
+- Update ORM/entity definitions and repository mappers
+- Rollback script to drop column
+- Verify null-safety and default application for new users
+
+## 3. Implement read/write preferences API endpoints [pending]
+### Dependencies: 77.2
+### Description: Expose authenticated endpoints to get and update the current user's preferences with validation.
+### Details:
+Endpoints:
+- GET /api/v1/users/me/preferences -> returns full preferences object
+- PUT /api/v1/users/me/preferences -> validates against schema, deep-merges updates, persists JSONB
+Requirements:
+- Auth: only current user; rate-limit writes
+- Validation: JSON Schema with clear 400 errors
+- Concurrency: optimistic locking via updated_at or ETag
+- Response: return canonicalized preferences after save
+- Audit: log changes for debugging
+
+## 4. Runtime application of preferences [pending]
+### Dependencies: 77.1, 77.3
+### Description: Load preferences on session start and apply changes immediately to scene managers and UI without reload.
+### Details:
+Implement a PreferencesManager on the client that:
+- Fetches preferences via GET on login/app init
+- Observes local changes and applies instantly:
+  - LODManager.setLevel(performance.lod)
+  - Renderer/PerformanceManager.setMaxFps(performance.maxFps)
+  - InputManager.rebind('talk', input.keybindings.talk)
+  - ThemeManager.setMode(theme.mode) and ThemeManager.enableColorblind(accessibility.colorblindMode)
+- Listens for PUT responses to reconcile server state
+- Persists to server on change with debounced writes
+- Handles fallback to defaults if fields missing
+
+## 5. Settings UI page with live controls [pending]
+### Dependencies: 77.3, 77.4
+### Description: Build the Settings page with controls for performance, keybindings, and theme, wired to API and runtime application.
+### Details:
+UI elements:
+- LOD selector (low/medium/high)
+- Max FPS selector (30/60/120/144/240/Unlimited)
+- Keybinding capture for Talk action (with conflict detection and display)
+- Theme mode toggle (light/dark/system)
+- Colorblind mode toggle
+Behavior:
+- Load initial values from GET endpoint
+- On change, update PreferencesManager for immediate effect and persist via PUT (debounced)
+- Show validation errors and provide Reset to Defaults and Revert (unsaved) actions
+- Accessibility: keyboard-navigable, ARIA labels
+
+## 6. Tests: persistence, defaults, and immediate effect [pending]
+### Dependencies: 77.2, 77.3, 77.4, 77.5
+### Description: Add unit, integration, and E2E tests covering schema validation, DB persistence, defaults, and live application.
+### Details:
+Test coverage:
+- Migration: preferences column exists; defaults set for existing/new users
+- API: GET returns full prefs; PUT validates, deep-merges, and persists
+- Client: PreferencesManager applies LOD/FPS/keybind/theme immediately on change and on load
+- UI E2E: changing settings updates DB and has immediate in-app effect; persists across reload
+- Edge cases: invalid payloads rejected; uncapped FPS handling; keybinding capture and persistence
+

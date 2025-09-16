@@ -1,0 +1,61 @@
+# Task ID: 98
+# Title: Backup and Disaster Recovery Procedures
+# Status: pending
+# Dependencies: 43, 44
+# Priority: medium
+# Description: Set up automated backups for Postgres and Redis snapshots and document recovery.
+# Details:
+Configure daily Postgres backups with 7–14 day retention. Redis RDB/AOF settings for persistence (if needed). Document restore runbook. Test restore to staging.
+
+# Test Strategy:
+Perform a backup restore drill to a staging DB. Validate data integrity. Measure RTO/RPO against expectations.
+
+# Subtasks:
+## 1. Define RTO/RPO and backup strategy [pending]
+### Dependencies: None
+### Description: Establish recovery objectives and scope for Postgres and Redis to drive frequency, retention, and tooling.
+### Details:
+Document RTO (time to recover) and RPO (acceptable data loss) targets per system. Decide if Redis is cache-only (no persistence) or requires durable persistence. Choose backup types: for Postgres, PITR-capable physical backups (WAL archiving) vs logical dumps; for Redis, RDB snapshots and/or AOF with fsync policy. Set target schedules: Postgres daily full/base with continuous WAL, retention 7–14 days; Redis snapshots/AOF aligned to RPO. Note maintenance windows, compliance constraints, and regions.
+
+## 2. Provision encrypted backup storage and access [pending]
+### Dependencies: 98.1
+### Description: Create secure, encrypted storage for backups with lifecycle and replication, and minimal-access IAM.
+### Details:
+Create an object storage bucket (e.g., S3/Cloud Storage) dedicated to backups. Enable SSE-KMS with a customer-managed key; restrict IAM to backup/restore roles only. Configure lifecycle rules to expire backups per retention and optionally transition to cold storage. Enable versioning and cross-region replication if required. Set network policies (VPC egress/Private Service Connect). Store credentials/secrets in a secure vault.
+
+## 3. Implement automated Postgres backups with retention [pending]
+### Dependencies: 98.1, 98.2
+### Description: Set up daily automated backups with PITR/WAL archiving to the encrypted storage with 7–14 day retention.
+### Details:
+If managed (RDS/Cloud SQL): enable automated backups, PITR, retention 7–14 days, and cross-region snapshots as needed. If self-managed: configure pgBackRest or WAL-G for base backups and continuous WAL push to the bucket; schedule via CronJob/systemd; encrypt in transit; store creds in secrets. Tag backups with timestamps, verify retention pruning, and run a periodic backup verification (list/validate restore metadata).
+
+## 4. Configure Redis persistence (RDB/AOF) policy [pending]
+### Dependencies: 98.1, 98.2
+### Description: Apply Redis persistence settings aligned to RPO and store snapshots/AOF securely.
+### Details:
+If Redis is cache-only, document rationale and disable persistence. If durable: configure redis.conf for RDB (e.g., save 900 1; save 300 10; save 60 10000) and/or AOF (appendonly yes; appendfsync everysec; auto-aof-rewrite). For managed Redis, enable snapshots per schedule. Implement a job to ship RDB/AOF files to the encrypted bucket and prune per retention. Test that persistence does not breach latency/IO limits.
+
+## 5. Set up monitoring and alerts for backup health [pending]
+### Dependencies: 98.3, 98.4
+### Description: Alert on failed jobs, stale backups, WAL/persistence lag, and storage/encryption issues.
+### Details:
+Emit metrics/logs from backup jobs/tools (exit status, duration, last successful backup time, WAL lag). Create alerts for: job failure, backup age > RPO, WAL shipping lag, Redis snapshot/AOF lag, storage capacity/errors, KMS failures. Route alerts to on-call (Slack/Email/Pager) with runbook links. Add dashboards showing backup freshness and drill readiness. Fire test alerts to validate routing.
+
+## 6. Author restore runbook (Postgres and Redis) [pending]
+### Dependencies: 98.3, 98.4
+### Description: Write step-by-step procedures to restore Postgres and Redis, including PITR and verification.
+### Details:
+Include prerequisites, roles/permissions, selecting restore point, and environment isolation. Postgres: steps for managed snapshot restore or self-managed PITR (base backup fetch, restore_command, recovery.signal), migration handling, and data validation queries. Redis: restoring from RDB/AOF, AOF rewrite, and consistency checks. Cover rollback, cutover, DNS/connection updates, and post-restore smoke tests. Link to monitoring and escalation.
+
+## 7. Conduct staging restore drill and measure RTO/RPO [pending]
+### Dependencies: 98.6
+### Description: Execute the runbook in staging, validate data integrity, and measure actual RTO/RPO.
+### Details:
+Restore latest Postgres and Redis backups to staging using the runbook. Time end-to-end restore (RTO) and compute data recency (RPO). Run integrity checks: row counts, checksums, key counts, representative queries, and application smoke tests. Record findings, gaps, and issues; create remediation actions if targets are missed.
+
+## 8. Finalize DR documentation and sign-off [pending]
+### Dependencies: 98.5, 98.7
+### Description: Publish comprehensive DR plan, diagrams, and contacts; schedule periodic drills and obtain approval.
+### Details:
+Consolidate policies, storage/encryption details, backup schedules, alert thresholds, and the restore runbook. Add architecture diagrams and roles/on-call contacts. Publish in the docs repository/wiki; version control it. Include drill cadence (e.g., quarterly), ownership, and acceptance/sign-off from stakeholders. Update README with links.
+

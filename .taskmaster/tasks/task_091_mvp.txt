@@ -1,0 +1,55 @@
+# Task ID: 91
+# Title: Error States and Offline UI
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Display clear error messages and offline indicators in both UI and game scene.
+# Details:
+Global error boundary for React. Toasts for API/WS errors. In-scene overlays for WS disconnected state with retry. Distinct visuals for agent error state (red ring).
+
+# Test Strategy:
+Simulate server down and observe error overlays. Offline mode shows banner and retries. Agent error displays correctly when backend emits error states.
+
+# Subtasks:
+## 1. React Global Error Boundary [pending]
+### Dependencies: None
+### Description: Add a top-level React error boundary that catches render/runtime errors and shows a friendly fallback with recovery.
+### Details:
+Implement <AppErrorBoundary> wrapping the root app. Capture errors in componentDidCatch/getDerivedStateFromError and log to monitoring if available. Fallback UI includes concise message, optional error reference ID, and actions: Reload app and Copy details. Reset boundary on route/navigation changes and when user retries. Ensure unhandled promise rejections are surfaced to the boundary where possible. Provide unit tests for error capture, reset behavior, and fallback rendering. Accessibility: role=alert on fallback, focus management to the fallback container.
+
+## 2. Global Toast System for API/WS Errors [pending]
+### Dependencies: None
+### Description: Create a centralized toast/notification system for transient API and WebSocket error messages.
+### Details:
+Implement a ToastProvider with queueing, variants (info/success/warn/error), deduping by message+source, and auto-dismiss durations. Expose hooks (useToast, showError/showSuccess). Add API client interceptors to surface network/HTTP errors as toasts with human-readable copy and retry CTA when appropriate. Hook WS client transient errors (e.g., auth failure, message parse) to toasts without spamming (rate-limit). ARIA: role=status/alert, keyboard-dismiss, focus-visible outlines. Theme-aware styling and max concurrent visible toasts.
+
+## 3. WebSocket Disconnect Overlay with Retry [pending]
+### Dependencies: None
+### Description: Show an in-scene overlay when the WebSocket disconnects and provide manual and automatic retry.
+### Details:
+Listen to WS client state (connected, reconnecting, disconnected, failed). On disconnected/failed, render a HUD overlay in the game scene that dims the scene and shows message, connection status, and buttons: Retry now and Go to settings (if auth/config issue). Implement exponential backoff auto-retry with jitter, show next retry countdown, and cancel when user retries. Disable scene interactions while overlay is up, but keep camera controls optional. Surface fatal auth/version mismatches distinctly. Instrument events for reconnect attempts/success/failure.
+
+## 4. Agent Error Visuals (Red Ring) [pending]
+### Dependencies: None
+### Description: Render distinct visuals for agents in error state, including a red ring and optional tooltip/details.
+### Details:
+Define agent state mapping from backend (ok, busy, error). When error, draw a red ring/glow around the agent sprite; consider pulsing animation at 1–1.5s cadence. Add hover/focus tooltip with brief error reason and suggested action if available. Ensure layering does not conflict with other indicators (e.g., activity from GitHub events). Clear visuals immediately when state resolves. Expose a programmatic method to force an agent into error for testing. Performance: batch draw if many agents error simultaneously.
+
+## 5. Global Offline Banner [pending]
+### Dependencies: None
+### Description: Display a persistent banner when the app is offline or connectivity is degraded.
+### Details:
+Implement a top-of-app banner that appears when navigator.onLine is false or when network health degrades (optional: probe strategy) and when WS is down but app remains usable. Copy indicates offline state and that actions will retry when back online. Include a subtle spinner when retrying and a Dismiss for session option that reappears on state changes. Integrate color semantics for warning vs danger. Listen to window online/offline events and central connection store. Coordinate with WS overlay to avoid double-blocking; banner persists while overlay may block scene only.
+
+## 6. Failure Mode Simulations and Dev Tools [pending]
+### Dependencies: 91.1, 91.2, 91.3, 91.4, 91.5
+### Description: Add developer tools to simulate API failures, WS drops, agent errors, and offline mode.
+### Details:
+Create a dev-only panel/keyboard shortcuts to: toggle offline (mock navigator.onLine and abort fetch), force WS close and block reconnect, inject API 500/timeout responses, emit agent error events for specific IDs, and trigger unhandled errors to test the boundary. Provide canned error messages and randomized jitter to test toasts dedup/rate-limit. Include reset to normal button. Document usage for QA. Ensure tools are gated behind NODE_ENV !== 'production' or a feature flag.
+
+## 7. UX Timing, Copy, and Accessibility Polish [pending]
+### Dependencies: 91.1, 91.2, 91.3, 91.4, 91.5, 91.6
+### Description: Refine durations, animations, and user-facing copy for error/offline experiences; ensure accessibility.
+### Details:
+Standardize toast durations (e.g., success 3–4s, warnings 6s, errors require manual dismiss if critical), WS overlay transition timing, and agent ring pulse rate. Unify copy tone and action labels per style guide; add i18n keys. Verify focus management and ARIA roles for fallback, toasts, overlay, and banner; ensure screen reader announcements are concise. Validate color contrast for red ring and banners in light/dark themes. Run through failure simulations and adjust to reduce flicker and message spam.
+

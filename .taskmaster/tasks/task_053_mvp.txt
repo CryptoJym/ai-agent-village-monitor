@@ -1,0 +1,60 @@
+# Task ID: 53
+# Title: Work Stream Events API
+# Status: pending
+# Dependencies: 51
+# Priority: medium
+# Description: Expose endpoint to fetch historical work stream events per agent session and server-sent streaming.
+# Details:
+Endpoints:
+- GET /api/agents/:id/stream?session={sid} returns paginated events (DESC by timestamp)
+- Optional SSE endpoint for long polling fallback
+Serialize {event_type, content, metadata, timestamp}.
+Add index on work_stream_events(session_id,timestamp).
+
+
+# Test Strategy:
+Unit test serialization. Integration test fetching events after commands. SSE/HTTP polling fallback returns incremental items. Performance test for pagination with 10k events.
+
+# Subtasks:
+## 1. Define Event DTO and JSON Serialization [pending]
+### Dependencies: None
+### Description: Create a canonical event DTO and serializers for REST/SSE payloads.
+### Details:
+Model fields: event_type (string), content (object or string), metadata (object, optional), timestamp (RFC3339 string). Ensure deterministic field order in JSON and omit nulls. Use UTC timestamps with millisecond precision. Introduce an internal event_id (not exposed in payload) for stable pagination tie-breaks. Implement mappers from DB row -> DTO. Add unit tests covering serialization, unknown event_type handling, large metadata/content, and timestamp timezone normalization.
+
+## 2. Create DB Index for Session Timestamp Ordering [pending]
+### Dependencies: None
+### Description: Add composite index to accelerate queries by session and timestamp DESC.
+### Details:
+Add migration to create index on work_stream_events(session_id, timestamp DESC, id DESC) for deterministic ordering and fast pagination. Validate no duplicate existing indexes; drop/rename if necessary. For Postgres, create concurrently if table is large. Consider covering needed columns via INCLUDE (event_type, content, metadata) where supported. Provide down migration to drop index. Verify via EXPLAIN that the index is used on representative queries.
+
+## 3. Implement Authorization Checks per Agent and Session [pending]
+### Dependencies: None
+### Description: Enforce access control ensuring caller can read the specified agent's session events.
+### Details:
+Validate authentication (401 on missing/invalid). Confirm session belongs to agent :id and that the principal has read scope for that agent (403 on unauthorized, 404 on non-existent or cross-agent session). Apply input validation on :id and session query param. Add rate limiting and audit log entry with agent_id, session_id, caller_id. Implement as reusable middleware/service used by both REST and SSE endpoints.
+
+## 4. Build Paginated REST Endpoint [pending]
+### Dependencies: 53.1, 53.2, 53.3
+### Description: Implement GET /api/agents/:id/stream?session={sid} returning historical events in DESC timestamp order.
+### Details:
+Route: GET /api/agents/:id/stream?session={sid}&limit={n}&cursor={c}. Default limit=50, max=500. Use cursor-based pagination encoded as base64 of {timestamp, event_id}; return fields: items: EventDTO[], next_cursor, has_more. Sort by (timestamp DESC, id DESC). Use index for query. Validate params and return 400 on invalid. Status codes: 200, 400, 401, 403, 404, 429, 500. Ensure response payload serializes EventDTO as defined. Add E2E/integration tests reading events after writes and asserting order and page boundaries.
+
+## 5. Implement SSE Endpoint with Long-Poll Fallback [pending]
+### Dependencies: 53.1, 53.2, 53.3, 53.4
+### Description: Provide streaming endpoint for incremental events with SSE and an HTTP long-poll fallback.
+### Details:
+Route: GET /api/agents/:id/stream/sse?session={sid}&since={cursor}. Use Content-Type: text/event-stream, send heartbeat comments every 15s, support Last-Event-ID header to resume. On connect, send events newer than cursor (or last-event-id), then poll for new ones. Implement backoff and server idle timeout. Long-poll fallback: GET /api/agents/:id/stream/poll?session={sid}&since={cursor}&timeout_ms=30000 returns events array and next_cursor, waiting up to timeout for new data. Share query/service logic with REST pagination and enforce auth middleware. Include tests for reconnect/resume semantics and incremental delivery without duplicates.
+
+## 6. Performance and Timing Tests [pending]
+### Dependencies: 53.2, 53.4, 53.5
+### Description: Benchmark REST and SSE endpoints with large event volumes and concurrent clients.
+### Details:
+Seed 10k events per session and measure P50/P95 latencies for first and subsequent pages (limit=100) and SSE catch-up bursts. Targets: first page <200ms P95, subsequent pages <150ms P95 under single-client; sustain 50 rps across 10 concurrent clients with <500ms P95. Verify zero N+1 queries, index usage via EXPLAIN, and memory footprint under backpressure. Record CPU/heap and GC stats. Produce report with regressions thresholds.
+
+## 7. Pagination Correctness Tests with Large Datasets [pending]
+### Dependencies: 53.2, 53.4
+### Description: Validate ordering and completeness across pages under inserts and identical timestamps.
+### Details:
+Generate 10k+ events with some identical timestamps. Verify: strictly DESC by timestamp with id tie-breaker; no gaps/duplicates when traversing all pages via next_cursor; stable retrieval when events are inserted concurrently (newer-only appear on subsequent pages); boundary conditions (empty, single page, last page); invalid cursor handling; large limit caps and defaults. Assert Event DTO shape matches spec and that metadata/content are preserved.
+

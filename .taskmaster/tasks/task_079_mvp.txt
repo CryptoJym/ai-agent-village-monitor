@@ -1,0 +1,67 @@
+# Task ID: 79
+# Title: Monitoring, Logging, and Tracing
+# Status: pending
+# Dependencies: 42, 57
+# Priority: medium
+# Description: Set up Sentry for error tracking, basic OpenTelemetry traces, and health dashboards.
+# Details:
+Integrate Sentry SDK in frontend and backend with release tags. Add pino logger with correlation IDs (request-id). OpenTelemetry SDK to trace key flows (OAuth, sync, MCP commands) exporting to console/OTLP. /metrics endpoint for basic KPIs (optional).
+
+# Test Strategy:
+Force errors to ensure Sentry receives events. Verify logs include request-id and user context. Traces show spans for MCP command execution timeline.
+
+# Subtasks:
+## 1. Integrate Sentry in backend and frontend with releases [pending]
+### Dependencies: None
+### Description: Add Sentry SDK to backend and frontend, configure release/environment tags, source maps, and basic context.
+### Details:
+Backend: Install @sentry/node, initialize in app bootstrap with DSN from env, environment, and release (e.g., service@${VERSION}). Enable request/transaction handlers only for errors (disable Sentry performance if OpenTelemetry handles tracing). Capture unhandled exceptions/rejections. Map request-id and user/session into Sentry scope where available. Frontend: Install @sentry/browser (or @sentry/react if React), init with DSN, environment, and release (frontend@${VERSION}). Upload source maps as part of build pipeline. Ensure tunnel or proxy if needed to avoid ad-blockers. Verify events contain release and environment and are grouped correctly.
+
+## 2. Add pino logger with request-id correlation [pending]
+### Dependencies: None
+### Description: Introduce pino logger (backend) with middleware to generate and propagate request-id for correlation.
+### Details:
+Install pino and pino-http. Create middleware to read incoming x-request-id or generate a UUID v4, attach to req, res headers, and logger child context. Configure log level via env, JSON output, and timestamp. Add serializers to avoid logging huge objects. Ensure request start/end logs include method, path, status, latency, and request-id. Provide CLI/dev pretty printing via pino-pretty. Document how to query logs by request-id.
+
+## 3. Enrich logs with user and session context [pending]
+### Dependencies: 79.2
+### Description: Attach userId, sessionId, and org/tenant identifiers to logs and Sentry scope where available.
+### Details:
+After auth middleware resolves identity, create a per-request child logger with fields user.id, session.id, org.id. Avoid PII like email unless explicitly allowed. Ensure these fields are added to Sentry scope via setUser({ id, segment/org }) and setContext for session. Propagate correlation IDs to background jobs by passing context or including in job payload/metadata. Provide helpers to create context-aware logger in handlers and job processors.
+
+## 4. OpenTelemetry SDK setup and key spans [pending]
+### Dependencies: 79.2
+### Description: Initialize OpenTelemetry for backend and frontend and instrument key flows: OAuth, sync, MCP commands.
+### Details:
+Backend: Install @opentelemetry/sdk-node, auto-instrumentations (http, express, fetch, pg/redis if used). Configure Resource with service.name, service.version, deployment.environment. Create manual spans for OAuth exchange, sync job execution steps, and MCP command handling; add attributes like org.id, user.id (hashed), request-id, command name. Link logs by injecting traceId/spanId into pino log records. Frontend: Set up WebTracerProvider with fetch/xhr instrumentations to propagate W3C tracecontext to backend. Verify context propagation across services.
+
+## 5. Configure OTLP exporters and sampling [pending]
+### Dependencies: 79.4
+### Description: Wire exporters for traces/logs/metrics to console in dev and OTLP in non-dev; tune sampling and batching.
+### Details:
+Backend: Use OTLP/HTTP or gRPC exporter for traces (and logs if enabled). Configure endpoint, headers (e.g., auth), and TLS via env (OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS). Use BatchSpanProcessor with reasonable flush intervals. Set parentbased_traceidratio sampler (e.g., 10% in staging, lower in prod) and always sample for key operations (e.g., errors, OAuth) via span sampling. Dev: add ConsoleSpanExporter toggle. Frontend: use OTLP/HTTP exporter to collector with CORS allowed. Document minimal collector config to receive and forward to backend APM.
+
+## 6. Create sample dashboards for health and tracing [pending]
+### Dependencies: 79.1, 79.2, 79.4, 79.5
+### Description: Provide starter dashboards/queries for errors by release, latency, throughput, and key flow timelines.
+### Details:
+Sentry: Dashboard widgets for error count by release/environment, top issues, new issues in last 24h, and affected users. Tracing/APM (e.g., Grafana/Tempo/Jaeger): Panels for p50/p95/p99 latency by route, error rate, requests per second, and exemplar traces for OAuth, sync, MCP commands with span breakdowns. Logging: Saved queries to filter by request-id, user.id, route, and correlate with traceId. If metrics are available, add RED (rate, errors, duration) and golden signals. Export dashboards as JSON in repo under /observability.
+
+## 7. Implement error injection tests and validation [pending]
+### Dependencies: 79.1, 79.2, 79.3, 79.4, 79.5
+### Description: Add test routes/scripts to intentionally trigger errors and validate Sentry, logs, and traces end-to-end.
+### Details:
+Backend: Temporary route /debug/error that throws; background job error path; MCP command that fails. Frontend: Button to throw unhandled error and rejected promise. Validate Sentry receives events with correct release and environment; verify request-id, user.id present in Sentry event context; confirm trace spans exist and include attributes for OAuth/sync/MCP flows; ensure logs contain request-id, traceId, and user context. Document runbook and cleanup temporary endpoints guarded by env.
+
+## 8. Add privacy and data controls for logs and telemetry [pending]
+### Dependencies: 79.1, 79.2, 79.3, 79.4
+### Description: Implement redaction, filtering, and retention controls to avoid sensitive data leakage in logs/traces/errors.
+### Details:
+Pino: Configure redaction for headers.authorization, headers.cookie, req.body.password/*, oauth tokens, email, and secrets. Limit object depth/length. Sentry: Implement beforeSend and beforeBreadcrumb to strip PII and large payloads; disable sending request bodies; set deny/allow lists for headers. OpenTelemetry: Add span/attribute sanitizer to drop/obfuscate sensitive attributes; cap attribute counts/lengths; disable body capture. Ensure GDPR/CCPA compliance notes and data retention settings; restrict /metrics and debug routes; document data handling policy.
+
+## 9. Expose optional /metrics endpoint for KPIs [pending]
+### Dependencies: None
+### Description: Provide a /metrics endpoint with basic KPIs and protect it appropriately.
+### Details:
+Backend: Use prom-client to expose process and HTTP metrics plus custom counters/gauges (http_requests_total, http_request_duration_seconds histogram, external_api_errors_total, mcp_commands_total, oauth_exchanges_total, sync_runs_total). Add labels for route, method, status, and outcome. Secure the endpoint via auth or network policy and exclude from tracing/logging noise. Document scrape config example for Prometheus and how to visualize in dashboards.
+

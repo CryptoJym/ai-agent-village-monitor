@@ -1,0 +1,179 @@
+# Task ID: 41
+# Title: Initialize Monorepo and Tooling
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Set up a monorepo with separate frontend (React + Phaser) and backend (Node.js/Express) packages with TypeScript and shared config.
+# Details:
+Structure:
+- repo/
+  - packages/frontend (Vite + React 18 + Phaser 3.70+)
+  - packages/server (Node 18+ + Express + TS)
+  - packages/shared (types)
+- Package manager: pnpm workspaces
+- Lint/format: ESLint (typescript-eslint), Prettier
+- Commit hooks: Husky + lint-staged
+- tsconfig base with path aliases (@shared/*)
+- Env management: dotenv + zod schema validation
+Pseudo-commands:
+- pnpm init -w
+- pnpm add -w typescript eslint prettier husky lint-staged
+- Configure .editorconfig, .nvmrc (v18), .gitignore
+- Setup turbo.json for caching (optional)
+- Configure Vite and tsconfig paths.
+
+# Test Strategy:
+Check pnpm install builds all workspaces. Run lint and type-check. Ensure both frontend and backend dev servers start. Verify path aliases resolve. CI job to run pnpm -w build.
+
+# Subtasks:
+## 1. Initialize pnpm workspace and repository scaffolding [done]
+### Dependencies: None
+### Description: Create the monorepo root with pnpm workspaces and basic repo files. Prepare directories for frontend, server, and shared packages. [Updated: 9/14/2025] [Updated: 9/14/2025]
+### Details:
+- Commands: pnpm init -w
+- Create folders: mkdir -p packages/frontend packages/server packages/shared
+- Root package.json: { "private": true, "name": "repo", "workspaces": ["packages/*"], "scripts": {"build": "pnpm -r build", "lint": "pnpm -r lint", "typecheck": "pnpm -r typecheck"} }
+- Add .gitignore (node_modules, dist, .turbo, .env, .env.local)
+- Add .editorconfig (2 spaces, LF, utf-8) and .nvmrc with v18
+- Optional turbo.json with pipeline: build (outputs: dist/**, build/**), lint, typecheck
+- Add README.md describing workspace layout
+- DoD: pnpm -w install completes; workspace scripts exist; repo dotfiles committed; turbo.json present if chosen
+<info added on 2025-09-14T22:03:11.952Z>
+- Add pnpm-workspace.yaml with packages: ["packages/*"]
+- In root package.json, set "packageManager" to "pnpm"
+- DoD addition: pnpm-workspace.yaml exists and packageManager is set in package.json
+</info added on 2025-09-14T22:03:11.952Z>
+<info added on 2025-09-14T22:05:33.906Z>
+Completed: pnpm workspace initialized; pnpm-workspace.yaml added (packages: ["packages/*"]); root package.json updated with "packageManager": "pnpm".
+</info added on 2025-09-14T22:05:33.906Z>
+
+## 2. Configure TypeScript base and path aliases [done]
+### Dependencies: 41.1
+### Description: Install TypeScript at the workspace root and create a shared base tsconfig with @shared/* path alias. Ensure packages can extend from the base. [Updated: 9/14/2025] [Updated: 9/14/2025]
+### Details:
+- Commands: pnpm add -w -D typescript
+- Create tsconfig.base.json with compilerOptions: target ES2022, lib [ES2022, DOM], module NodeNext, moduleResolution NodeNext, strict true, skipLibCheck true, baseUrl ., paths {"@shared/*": ["packages/shared/src/*"]}
+- Create minimal root tsconfig.json extending tsconfig.base.json (no include; packages will own includes)
+- Document that each package adds tsconfig.json extending ../../tsconfig.base.json and sets its own include/outDir
+- DoD: tsc is available; tsconfig.base.json exists with @shared/* alias; packages can extend without errors
+<info added on 2025-09-14T22:03:32.311Z>
+- Added tsconfig.base.json at the repo root with @shared/* alias as specified.
+- Configured packages/frontend, packages/server, and packages/shared tsconfig.json to extend ../../tsconfig.base.json; each sets include: ["src"] and outDir: "dist".
+- Verified pnpm exec tsc is available and that all packages type-check without errors and resolve @shared/* imports.
+</info added on 2025-09-14T22:03:32.311Z>
+<info added on 2025-09-14T22:05:53.362Z>
+Added tsconfig.base.json with @shared/* alias; configured package tsconfigs (frontend, server, shared) to extend the base.
+</info added on 2025-09-14T22:05:53.362Z>
+
+## 3. Set up ESLint and Prettier at the root [done]
+### Dependencies: 41.1, 41.2
+### Description: Install and configure ESLint with typescript-eslint and Prettier. Provide lint and format scripts runnable workspace-wide.
+### Details:
+- Commands: pnpm add -w -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-config-prettier eslint-plugin-import eslint-plugin-react eslint-plugin-react-hooks prettier
+- Root .eslintrc.cjs: parser: @typescript-eslint/parser; plugins: [@typescript-eslint, import, react, react-hooks]; extends: [eslint:recommended, plugin:@typescript-eslint/recommended, plugin:react/recommended, plugin:react-hooks/recommended, prettier]; settings.react.version: detect; ignorePatterns: [dist, build]
+- Root .prettierrc: {"singleQuote": true, "semi": true, "trailingComma": "es5"}; .prettierignore: dist, build, node_modules
+- Update root package.json scripts: "lint": "eslint . --ext .ts,.tsx --max-warnings=0", "lint:fix": "pnpm lint --fix", "format": "prettier --check .", "format:fix": "prettier --write ."
+- DoD: pnpm -w lint runs without configuration errors; pnpm -w format checks files; Prettier and ESLint interoperate (no format conflicts)
+<info added on 2025-09-14T22:03:48.460Z>
+Added node_modules to .eslintrc.cjs ignorePatterns (now: dist, build, node_modules). Confirmed root ESLint + Prettier setup with @typescript-eslint, react, and react-hooks; dist and node_modules are ignored. Verified pnpm -w lint and pnpm -w format run successfully with no conflicts.
+</info added on 2025-09-14T22:03:48.460Z>
+<info added on 2025-09-14T22:06:19.658Z>
+Added root .eslintignore to align with the ESLint/Prettier setup, ignoring: dist, build, node_modules.
+</info added on 2025-09-14T22:06:19.658Z>
+
+## 4. Install Husky and configure lint-staged hooks [done]
+### Dependencies: 41.3
+### Description: Enable pre-commit hooks to format and lint staged files. Ensure developer experience with automatic checks on commit. [Updated: 9/14/2025] [Updated: 9/14/2025]
+### Details:
+- Commands: pnpm add -w -D husky lint-staged; pnpm dlx husky init
+- Root package.json: add "lint-staged": {"*.{ts,tsx,js,jsx,json,css,md}": ["prettier --write", "eslint --fix"]}
+- Update .husky/pre-commit to run: pnpm -w lint-staged
+- Ensure prepare script exists: "prepare": "husky"
+- DoD: Creating a test commit with staged TS/TSX files triggers lint-staged; Prettier and ESLint run and block commit on failures
+<info added on 2025-09-14T22:04:09.851Z>
+- Completed: Installed Husky and lint-staged at the workspace root and initialized Husky.
+- Added pre-commit hook to run pnpm -w lint-staged (runs Prettier + ESLint on staged files).
+- Next: Verify DoD with a test commit and ensure the hook blocks on failures; confirm .husky/pre-commit is executable (chmod +x if needed).
+</info added on 2025-09-14T22:04:09.851Z>
+<info added on 2025-09-14T22:06:45.029Z>
+- Installed Husky + lint-staged; added pre-commit hook to run Prettier and ESLint on staged files.
+</info added on 2025-09-14T22:06:45.029Z>
+
+## 5. Scaffold shared package for types and utilities [done]
+### Dependencies: 41.1, 41.2
+### Description: Create the @repo/shared package with build pipeline and exports. Provide a minimal type module to validate aliasing. [Updated: 9/14/2025]
+### Details:
+- Create packages/shared/package.json: {"name": "@repo/shared", "version": "0.0.0", "private": false, "type": "module", "main": "dist/index.js", "types": "dist/index.d.ts", "exports": {".": {"import": "./dist/index.js", "types": "./dist/index.d.ts"}}, "scripts": {"build": "tsc -p tsconfig.build.json", "typecheck": "tsc -p tsconfig.json --noEmit", "lint": "eslint src --ext .ts"}}
+- Create packages/shared/tsconfig.json extending ../../tsconfig.base.json; include src; compilerOptions: composite true, outDir ./dist, declaration true, emitDeclarationOnly false
+- Create packages/shared/tsconfig.build.json extending ./tsconfig.json; exclude tests
+- Add src/index.ts exporting a simple type/interface and placeholder util
+- DoD: pnpm -F @repo/shared build produces dist with .js and .d.ts; importing @repo/shared from other packages resolves via path alias
+<info added on 2025-09-14T22:04:50.127Z>
+- Update src/index.ts to export the HealthStatus type and the nowIso() utility (returns the current time as an ISO-8601 string).
+- Verify consumers can import { HealthStatus, nowIso } from @repo/shared; type-check and builds succeed.
+</info added on 2025-09-14T22:04:50.127Z>
+<info added on 2025-09-14T22:07:03.890Z>
+Scaffolded the shared package at packages/shared with initial types and utilities; exported HealthStatus and nowIso().
+</info added on 2025-09-14T22:07:03.890Z>
+
+## 6. Scaffold backend server package (Node 18+, Express, TS) [done]
+### Dependencies: 41.2, 41.5
+### Description: Create the @repo/server package with Express, TypeScript config, and build/dev scripts. Wire it to consume @repo/shared.
+### Details:
+- Create packages/server/package.json: {"name": "@repo/server", "private": true, "type": "module", "dependencies": {"express": "^4", "cors": "^2", "@repo/shared": "*"}, "devDependencies": {"@types/express": "^4", "@types/node": "^18", "tsx": "^4"}, "scripts": {"dev": "tsx watch src/index.ts", "build": "tsc -p tsconfig.build.json", "start": "node dist/index.js", "typecheck": "tsc -p tsconfig.json --noEmit", "lint": "eslint src --ext .ts"}}
+- Create packages/server/tsconfig.json extending ../../tsconfig.base.json; include src; compilerOptions: outDir ./dist, rootDir ./src, noEmit false, module NodeNext
+- Create packages/server/tsconfig.build.json extending ./tsconfig.json; set sourceMap false, declaration false
+- Add src/index.ts: basic Express app on PORT (default 3000), GET /health returns ok; import a type from @repo/shared to verify alias
+- DoD: pnpm -F @repo/server dev starts the server and /health returns 200; pnpm -F @repo/server build produces dist
+<info added on 2025-09-14T22:05:15.800Z>
+- Add devDependencies to packages/server/package.json: "ts-node-dev": "^2", "tsup": "^8"
+- Update packages/server/package.json scripts:
+  - "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+  - "build": "tsup src/index.ts --format esm --sourcemap false --target node18 --out-dir dist"
+- Update src/index.ts to include:
+  - GET /healthz -> returns 200 "ok"
+  - GET /readyz -> returns 200 "ok"
+- DoD update: pnpm -F @repo/server dev runs with ts-node-dev and both /healthz and /readyz return 200; pnpm -F @repo/server build uses tsup to produce dist and pnpm -F @repo/server start runs without errors
+</info added on 2025-09-14T22:05:15.800Z>
+<info added on 2025-09-14T22:07:45.389Z>
+- Cleanup: remove the tsx-based dev script and devDependency, and deprecate tsconfig.build.json (tsup handles builds).
+- Add packages/server/package.json script:
+  - "check:health": "node -e \"const p=process.env.PORT||3000;const u=h=>`http://localhost:${p}/${h}`;Promise.all([fetch(u('healthz')),fetch(u('readyz'))]).then(rs=>process.exit(rs.every(r=>r.ok)?0:1)).catch(()=>process.exit(1))\""
+- DoD addition: after starting in dev or prod, pnpm -F @repo/server run check:health exits with code 0.
+</info added on 2025-09-14T22:07:45.389Z>
+
+## 7. Scaffold frontend package (Vite + React 18 + Phaser 3.70+) [done]
+### Dependencies: 41.2, 41.5
+### Description: Create the @repo/frontend package using Vite with React and Phaser. Configure Vite and tsconfig aliases to @shared.
+### Details:
+- Create packages/frontend/package.json: {"name": "@repo/frontend", "private": true, "type": "module", "dependencies": {"react": "^18", "react-dom": "^18", "phaser": ">=3.70.0", "@repo/shared": "*"}, "devDependencies": {"vite": "^5", "@vitejs/plugin-react": "^4", "@types/react": "^18", "@types/react-dom": "^18"}, "scripts": {"dev": "vite", "build": "vite build", "preview": "vite preview", "typecheck": "tsc -p tsconfig.json --noEmit", "lint": "eslint src --ext .ts,.tsx"}}
+- Create packages/frontend/tsconfig.json extending ../../tsconfig.base.json; include src; compilerOptions: jsx react-jsx, outDir ./dist, module NodeNext
+- Add packages/frontend/vite.config.ts: import { defineConfig } from 'vite'; import react from '@vitejs/plugin-react'; import path from 'node:path'; export default defineConfig({ plugins: [react()], resolve: { alias: { '@shared': path.resolve(__dirname, '../shared/src') } } });
+- Add index.html, src/main.tsx (hydrate root), src/App.tsx (render text and simple Phaser placeholder), and import a type from @repo/shared to validate alias
+- DoD: pnpm -F @repo/frontend dev starts and a basic page renders; pnpm -F @repo/frontend build succeeds; shared import compiles
+<info added on 2025-09-14T22:08:17.529Z>
+Scaffold complete for @repo/frontend using Vite + React 18 + Phaser (>=3.70); @shared alias configured in Vite resolve.alias and tsconfig paths; pnpm -F @repo/frontend build verified successful.
+</info added on 2025-09-14T22:08:17.529Z>
+
+## 8. Implement dotenv and zod-based environment validation [done]
+### Dependencies: 41.5, 41.6, 41.7
+### Description: Add zod schemas for environment variables and validate in server and frontend. Centralize shared schema in @repo/shared.
+### Details:
+- Commands: pnpm add -w zod; pnpm add -F @repo/server dotenv
+- Shared: packages/shared/src/env.ts exports schemas: ServerEnv (NODE_ENV, PORT), ClientEnv (VITE_API_URL, VITE_ENV) using zod
+- Server: packages/server/src/env.ts loads dotenv.config(); validates process.env with ServerEnv; export typed env; fail fast with clear errors
+- Frontend: packages/frontend/src/env.ts validates import.meta.env on load with ClientEnv; export typed env; ensure Vite variables start with VITE_
+- Add .env.example at repo root listing required variables for server and frontend; add .env handling notes in README
+- Wire usages: server index.ts imports env from ./env; frontend App.tsx imports env from ./env
+- DoD: Starting server with missing/invalid env prints validation error and exits; frontend build/dev fails loudly when required VITE_* missing
+
+## 9. Add CI workflow for lint, typecheck, and build [done]
+### Dependencies: 41.3, 41.6, 41.7, 41.8
+### Description: Create a GitHub Actions workflow to run install, lint, typecheck, and build across all workspaces. Cache pnpm store (and turbo if used).
+### Details:
+- File: .github/workflows/ci.yml with jobs: setup Node 18, setup pnpm, pnpm -w install, pnpm -w lint, pnpm -w typecheck, pnpm -w build
+- Enable caching: actions/setup-node with pnpm caching; add actions/cache for .turbo if turbo.json exists
+- Ensure CI respects .nvmrc and uses Node v18
+- Optional: matrix for OS/node versions kept minimal (ubuntu-latest, node 18)
+- DoD: On push/PR, CI passes and artifacts build successfully for frontend, server, and shared; caches are hit on subsequent runs
+

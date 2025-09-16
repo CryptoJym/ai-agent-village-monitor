@@ -1,0 +1,83 @@
+# Task ID: 81
+# Title: Backend Unit Tests (Jest)
+# Status: pending
+# Dependencies: 42
+# Priority: medium
+# Description: Create unit tests for services: GitHubService, MCPAgentController, Redis queues, auth.
+# Details:
+Jest + ts-jest setup. Mock external clients (Octokit, MCP). Tests cover happy paths and error handling including retries and backoff. Coverage thresholds: 80% statements.
+
+
+# Test Strategy:
+Run jest with coverage. Ensure mocks assert correct call sequences. Simulate network errors and verify retry/backoff logic.
+
+# Subtasks:
+## 1. Jest + ts-jest baseline setup [pending]
+### Dependencies: None
+### Description: Configure Jest with ts-jest for a TypeScript Node backend and add test scripts.
+### Details:
+- Install dev deps: jest, ts-jest, @types/jest.
+- Create jest.config.ts: preset ts-jest, testEnvironment node, testMatch for .test.ts/.spec.ts, moduleNameMapper for tsconfig paths, setupFilesAfterEnv pointing to test/setup.ts.
+- Add npm scripts: test, test:watch, test:coverage.
+- Create test/setup.ts with afterEach restore/clear mocks and configure modern fake timers.
+
+## 2. Test utilities and mocks for Octokit, MCP, and Redis [pending]
+### Dependencies: 81.1
+### Description: Provide deterministic mocks and helpers to simulate external clients and edge cases.
+### Details:
+- Create __mocks__/octokit with minimal methods used by GitHubService; support sequencing responses, HTTP errors, 304 ETag responses, and rate-limit headers.
+- Create __mocks__/mcp client to simulate connect, state changes, async streaming of messages, and error events.
+- Create Redis/BullMQ stubs: Queue.add, Worker, connection ops, backoff and retry behavior; or ioredis minimal commands used by queues.
+- Add helpers: withFakeTimers, nextTickFlush, makeHttpError(status, headers), and call sequence assertions.
+
+## 3. Unit tests: GitHubService happy paths, retries, and ETag handling [pending]
+### Dependencies: 81.1, 81.2
+### Description: Cover core GitHubService flows including retries with backoff and conditional requests with ETag.
+### Details:
+- Happy paths: verify correct Octokit methods called with expected params and headers; assert parsed results.
+- Retry/backoff: simulate 5xx, 429, and network errors; use fake timers to validate exponential backoff and max retries; assert call counts and jitter if applicable.
+- ETag: send If-None-Match on subsequent calls; simulate 304 Not Modified and ensure cache short-circuit; validate ETag update logic.
+- Error branches: ensure terminal errors bubble with meaningful messages and no extra retries for non-retryable codes.
+
+## 4. Unit tests: MCPAgentController state transitions and streaming [pending]
+### Dependencies: 81.1, 81.2
+### Description: Test controller lifecycle, state management, and streaming message handling including errors.
+### Details:
+- Lifecycle: connect, ready, disconnect; assert state flags and event emissions.
+- Streaming: consume async iterator of messages; verify ordering, backpressure handling, and cancellation.
+- Error handling: simulate transport errors and reconnection with backoff; assert retries and terminal failure behavior.
+- Command routing: ensure outbound commands call MCP client with correct payload and correlate responses.
+
+## 5. Unit tests: Redis queues producers and consumers [pending]
+### Dependencies: 81.1, 81.2
+### Description: Validate queueing logic, retry/backoff, and idempotency for producers and consumers.
+### Details:
+- Producers: add jobs with correct names, payloads, dedupe keys, and options (attempts, backoff strategies, delays).
+- Consumers: process handlers success path; on failures assert retries/backoff, DLQ or failure hooks; ensure ack/nack semantics.
+- Edge cases: malformed payloads, transient Redis errors with retry, and visibility timeouts.
+- Assert metrics/log calls and correct sequencing of operations.
+
+## 6. Unit tests: Auth utilities and JWT flow [pending]
+### Dependencies: 81.1, 81.2
+### Description: Test JWT sign/verify, expiration, and auth helpers/middleware behavior.
+### Details:
+- Sign/verify: issue tokens with claims, verify with JWT_SECRET, reject invalid signature and expired tokens (use fake timers).
+- Middleware/guards: valid token attaches user, missing/invalid returns 401, insufficient scope returns 403.
+- Edge cases: clock skew tolerance, algorithm enforcement, and malformed Authorization headers.
+
+## 7. Coverage configuration and thresholds [pending]
+### Dependencies: 81.1
+### Description: Configure coverage collection and enforce minimum statements coverage.
+### Details:
+- Update jest.config.ts: collectCoverage true in CI, collectCoverageFrom for src/**/*.ts excluding index.ts, types, and generated files.
+- Set coverageThreshold with statements >= 80% (and reasonable defaults for lines/functions/branches if desired).
+- Verify local and CI runs respect thresholds.
+
+## 8. CI integration for unit tests and coverage [pending]
+### Dependencies: 81.1, 81.3, 81.4, 81.5, 81.6, 81.7
+### Description: Add CI workflow to run Jest with coverage, cache dependencies, and fail on threshold breaches.
+### Details:
+- Create GitHub Actions workflow: setup Node, cache package manager, npm ci, npm run test:coverage.
+- Ensure jest exits non-zero on failed tests or coverage below thresholds.
+- Upload junit/coverage artifacts if needed and gate PRs on job success.
+

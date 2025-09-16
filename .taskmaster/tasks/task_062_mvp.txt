@@ -1,0 +1,177 @@
+# Task ID: 62
+# Title: WebSocket Client Integration
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Implement WebSocket client service to join village/agent rooms and handle real-time updates.
+# Details:
+WebSocketService connects with JWT, auto-reconnects, exposes subscribe(api): on('agent_update'), on('work_stream'), on('bug_bot_spawn').
+On village load, emit join_village with village_id.
+Dispatch events to Phaser scene and Dialogue UI via an event bus.
+
+
+# Test Strategy:
+Mock socket server and verify events update game state. Measure message latency and ensure UI updates inside 16ms frame budget. Offline test: simulate disconnect and recover with missed events via REST fetch.
+
+# Subtasks:
+## 1. Socket.io client wrapper (WebSocketService) [done]
+### Dependencies: None
+### Description: Create a typed Socket.io client wrapper exposing connect/disconnect, emit, on/off, and subscribe(api) with namespaced event registration. [Updated: 9/14/2025]
+### Details:
+Implement WebSocketService around socket.io-client v4 with options: baseURL, namespace, transports ['websocket','polling'], reconnection settings, and debug logging. Provide methods: connect(), disconnect(), emit(event, payload), on(event, handler), off(event, handler), and subscribe(api) that returns a scoped registrar for events like 'agent_update', 'work_stream', 'bug_bot_spawn', 'bug_bot_resolved'. Ensure single instance and idempotent connect calls. Expose ready state and connection events ('connect', 'disconnect', 'connect_error').
+<info added on 2025-09-14T22:24:52.100Z>
+Initial implementation added: WebSocketService wrapper around socket.io-client v4 exposing connect() and disconnect() methods. Remaining work for this subtask: implement emit(), on()/off(), subscribe(api) registrar, enforce single instance and idempotent connect, and expose ready state plus connection events. JWT attachment and auto-reconnect will be handled in 62.2.
+</info added on 2025-09-14T22:24:52.100Z>
+<info added on 2025-09-14T22:29:52.468Z>
+Added room-join capability and EventBus integration:
+- joinVillage(villageId) emits 'join_village' and tracks current room membership.
+- Forwards connection lifecycle events ('connect', 'disconnect', 'connect_error') and all server-emitted events to the shared EventBus for UI consumers (Phaser scene, Dialogue UI).
+</info added on 2025-09-14T22:29:52.468Z>
+<info added on 2025-09-14T22:31:47.719Z>
+Delivered WebSocketService wrapper with connect/disconnect, room join (emits join_village), and forwarding of lifecycle/server events to the shared EventBus for UI consumers (Phaser scene, Dialogue UI). Remaining: implement emit(), on()/off(), subscribe(api) registrar, enforce singleton with idempotent connect, and expose ready state.
+</info added on 2025-09-14T22:31:47.719Z>
+
+## 2. JWT attachment and auto-reconnect [done]
+### Dependencies: 62.1
+### Description: Attach JWT to handshake and implement resilient reconnection with token refresh on auth errors. [Updated: 9/14/2025] [Updated: 9/14/2025] [Updated: 9/14/2025]
+### Details:
+Accept a tokenProvider async function to fetch/refresh JWT and set socket.auth = { token }. On connect_error with unauth/401, refresh token and retry with exponential backoff. Configure reconnection strategy (initial delay, max delay, jitter) and emit lifecycle events ('auth_refreshed', 'reconnect_attempt', 'reconnected'). Ensure token is reattached before each reconnect attempt and that reconnect does not duplicate listeners.
+<info added on 2025-09-14T22:25:43.080Z>
+Use the socket.io-client auth callback to supply the JWT on every handshake (initial and each reconnect): auth is an async callback that awaits tokenProvider() and provides { token }. Expose configurable auto-reconnect options to the caller: attempts, delay, delayMax, and jitter, mapped to socket.io’s reconnectionAttempts, reconnectionDelay, reconnectionDelayMax, and randomizationFactor (with sensible defaults). On connect_error with 401/unauthorized, force a token refresh via tokenProvider and let the next retry use the updated token through the auth callback, respecting the backoff settings. Enforce single-flight token refresh and continue to avoid duplicate listener registration. Emit a reconnect_failed lifecycle event when max attempts are exhausted. Define init signature: WebSocketService.init({ tokenProvider, reconnect: { attempts, delay, delayMax, jitter } }).
+</info added on 2025-09-14T22:25:43.080Z>
+<info added on 2025-09-14T22:30:17.491Z>
+Emit a unified 'connection_status' lifecycle event to report connection state transitions:
+- connecting: emitted when init starts the first connection
+- connected: on successful handshake
+- reconnecting: on each reconnect_attempt; payload includes { attempt, maxAttempts, nextDelayMs }
+- disconnected: on socket 'disconnect'; payload includes { reason, code? }
+- reconnect_failed: when max reconnection attempts are exhausted
+
+Payload values reflect the configured attempts and delay (including jitter). Ensure no duplicate emissions across reconnect cycles and expose subscription via WebSocketService.on('connection_status', handler).
+</info added on 2025-09-14T22:30:17.491Z>
+<info added on 2025-09-14T22:33:01.923Z>
+Deprecated legacy lifecycle events 'auth_refreshed', 'reconnect_attempt', and 'reconnected' in favor of the unified 'connection_status' stream; these are no longer emitted to prevent duplication—migrate listeners accordingly.
+
+Reconnect defaults: attempts=Infinity, delay=1000ms, delayMax=5000ms, jitter=0.5. Setting attempts=0 disables auto-reconnect.
+</info added on 2025-09-14T22:33:01.923Z>
+<info added on 2025-09-14T22:35:04.559Z>
+Added JWT via auth callback and auto-reconnect options; emits connection_status on transitions.
+</info added on 2025-09-14T22:35:04.559Z>
+
+## 3. Room join flows: village and agent [done]
+### Dependencies: 62.1, 62.2
+### Description: Implement join_village and join_agent flows, track membership, and rejoin after reconnect. [Updated: 9/14/2025] [Updated: 9/14/2025] [Updated: 9/14/2025]
+### Details:
+Expose methods joinVillage(villageId) and joinAgent(agentId). Emit 'join_village' { village_id } on village load and 'join_agent' { agent_id } when agent context activates. Track current room membership, ensure leaving previous rooms when switching, and re-emit joins after reconnect. Guard against racing joins during reconnect by queueing joins until 'connect' fires. Provide leave methods and no-op if already in the desired room.
+<info added on 2025-09-14T22:26:10.607Z>
+- Implemented joinVillage(villageId) and joinAgent(agentId) to emit 'join_village' { village_id } and 'join_agent' { agent_id } to the server.
+- Wired calls from village load and agent context activation.
+- Verified event names and payloads with a mock socket.
+- Remaining: track current membership, leave previous rooms on switch, queue and re-emit joins on reconnect, and expose idempotent leave methods.
+</info added on 2025-09-14T22:26:10.607Z>
+<info added on 2025-09-14T22:30:38.630Z>
+- Implemented room join flows: 'join_village' and 'join_agent' emit with provided IDs.
+- Added example invocation in the Phaser scene's create() to trigger joins on scene initialization.
+</info added on 2025-09-14T22:30:38.630Z>
+<info added on 2025-09-14T22:33:13.309Z>
+- Room join flows confirmed end-to-end: joinVillage/joinAgent emit 'join_village'/'join_agent' and successfully join server rooms (village:{id}, agent:{id}); verified by receiving room-scoped broadcasts.
+</info added on 2025-09-14T22:33:13.309Z>
+<info added on 2025-09-14T22:35:29.909Z>
+- Room join flows implemented: joinVillage/joinAgent use 'join_village'/'join_agent' to join rooms.
+</info added on 2025-09-14T22:35:29.909Z>
+
+## 4. Event bus dispatch integration [done]
+### Dependencies: 62.1
+### Description: Wire incoming socket events to the app event bus for Phaser scene and Dialogue UI.
+### Details:
+Define an EventBus interface (on, off, emit) and channels/topics for game (Phaser) and Dialogue UI. Map socket events to bus events with type-safe payloads and minimal transformation. Ensure dispatch occurs on the main thread and within a microtask to stay under the 16ms frame budget. Provide a decoupled adapter so UI/game code does not depend on socket.io directly. Include backpressure handling (batching or coalescing bursts).
+<info added on 2025-09-14T22:26:59.460Z>
+- Implemented a mitt-backed EventBus with a typed wrapper exposing on/off/emit and a TopicMap.
+- Added SocketEventAdapter that subscribes to socket.io and forwards to the bus on both namespaces: game.* and ui.*.
+- Wired mappings:
+  - socket:agent_update -> game.agent.update, ui.agent.update (AgentUpdate payload)
+  - socket:work_stream -> game.work.stream, ui.work.stream (WorkStream payload; lines batched)
+  - socket:bug_bot_spawn -> game.bug.spawn, ui.bug.spawn (BugBotSpawn payload)
+  - socket:bug_bot_resolved -> game.bug.resolved, ui.bug.resolved (BugBotResolved payload)
+- Emissions are deferred via queueMicrotask to ensure main-thread microtask dispatch; burst handling coalesces latest-per-topic within the same tick, with work_stream messages aggregated into a single array before emit.
+- Payloads are type-checked with TS guards and minimally normalized; no socket.io types or instances are exposed to consumers.
+</info added on 2025-09-14T22:26:59.460Z>
+<info added on 2025-09-14T22:30:53.122Z>
+- WebSocketService now instantiates the SocketEventAdapter and dispatches agent_update, work_stream (batched), bug_bot_spawn, and bug_bot_resolved onto the EventBus.
+- Phaser scene subscribes on create to game.agent.update, game.work.stream, game.bug.spawn, and game.bug.resolved; handlers update agent state, append work lines, and spawn/resolve bug entities; all listeners are removed on scene shutdown to avoid leaks.
+- Verified end-to-end that events propagate from WebSocketService through the bus to the scene within the microtask frame budget.
+</info added on 2025-09-14T22:30:53.122Z>
+<info added on 2025-09-14T22:33:28.579Z>
+EventBus (mitt) integrated via SocketEventAdapter; WebSocketService now forwards agent_update, work_stream (batched), and bug_bot_spawn/bug_bot_resolved to the bus; MainScene subscribes to game.agent.update, game.work.stream, game.bug.spawn, and game.bug.resolved and unregisters on shutdown.
+</info added on 2025-09-14T22:33:28.579Z>
+<info added on 2025-09-14T22:35:45.220Z>
+EventBus (mitt) integrated; WebSocketService forwards agent_update, work_stream, and bug_bot_* events to the bus; MainScene subscribes.
+</info added on 2025-09-14T22:35:45.220Z>
+
+## 5. Event handlers for agent_update, work_stream, bug_bot_spawn/resolved [done]
+### Dependencies: 62.3, 62.4
+### Description: Implement normalized handlers for key events and route them through the event bus.
+### Details:
+Register handlers via subscribe(api) for: 'agent_update', 'work_stream', 'bug_bot_spawn', 'bug_bot_resolved'. Normalize payloads, verify room scope (village/agent), and forward to EventBus topics consumed by Phaser and Dialogue UI. Implement deduplication using sequence id or sent_at timestamp if provided; ignore out-of-room or stale events. Add minimal logging and error guards to prevent handler crashes from affecting the socket.
+<info added on 2025-09-14T22:31:24.530Z>
+agent_update handler implemented: normalizes payload, verifies village/agent scope, dedupes by sequence_id/sent_at, and publishes to EventBus topic 'agent:update' consumed by the Phaser scene; scene applies Agent.setState(state) and Agent.walkTo(destination when provided). Placeholders added for work_stream and bug_bot_spawn/bug_bot_resolved: validate scope, dedupe, and publish normalized payloads to 'work:stream', 'bug_bot:spawn', and 'bug_bot:resolved' topics; UI handling is TODO (currently log-only).
+</info added on 2025-09-14T22:31:24.530Z>
+<info added on 2025-09-14T22:33:53.889Z>
+- Wired agent_update end-to-end: EventBus topic agent:update drives Phaser scene; Agent.setState(state) always applied; Agent.walkTo(destination) invoked only when destination is present, numeric, and agent not in a locked/cutscene state. Prevents jitter by ignoring redundant destinations identical to current path and debounces rapid consecutive move updates (min 150ms).
+- Dedupe specifics: prefer sequence_id; fallback to sent_at with ±5s clock skew tolerance. In-memory LRU cache key = event_type|scope-id|source-id|sequence_id-or-sent_at, size 512, TTL 5 minutes.
+- Scope validation hardened: drop events where village_id/agent_id mismatch current session; logs include event_type and dropped reason, redacted payload.
+- Placeholder payload shapes published:
+  - work:stream => { id, repo_id, pr_id, text, level, at }
+  - bug_bot:spawn => { id, pr_id, location: { x, y }, severity, at }
+  - bug_bot:resolved => { id, pr_id, resolution, at }
+  UI subscribers for these are TODO; currently log-only with normalized payload preview.
+- Error isolation: per-handler try/catch with safe-guarded parsing; socket remains unaffected on handler failure; emits warn-level logs for malformed payloads.
+- Follow-ups: implement Dialogue/UI consumers for work:stream and bug_bot:*; add visual markers for bug_bot spawn/resolution in Phaser; ensure offline replay alignment in 62.6 using same normalization/dedupe keys.
+</info added on 2025-09-14T22:33:53.889Z>
+<info added on 2025-09-14T22:36:07.069Z>
+- agent_update wired end-to-end: normalized, scope-validated, deduped; publishes agent:update; Phaser applies Agent.setState and conditionally Agent.walkTo with redundant-path guard and 150ms debounce.
+- work_stream and bug_bot_* registered as placeholders: normalized, scope-validated, deduped; publish to work:stream, bug_bot:spawn, bug_bot:resolved; UI consumers pending (log-only).
+</info added on 2025-09-14T22:36:07.069Z>
+
+## 6. Offline handling and REST catch-up [done]
+### Dependencies: 62.2, 62.3, 62.5
+### Description: Detect disconnects, buffer intent, and fetch missed updates via REST to resync state on reconnect.
+### Details:
+On disconnect, mark offline and pause non-critical emits. Track last-seen sequence or timestamp per room. After reconnect and rejoin, call REST endpoints to fetch events since last-seen for village and agent contexts, then replay to EventBus in order, deduplicating against already seen items. Implement exponential backoff and retry with jitter for REST. Surface an 'offline'/'resyncing' status event for UI. Ensure idempotent processing and correct ordering.
+<info added on 2025-09-14T22:34:21.339Z>
+Hook up socket.on('disconnect') to set offline=true, emit status:offline to the UI, pause non-critical emits, and start buffering outgoing intents. On socket.on('connect') (and reconnect), emit status:resyncing, rejoin required rooms, and invoke fetchCatchup(lastSeenByRoom) before resuming normal flow. Introduce fetchCatchup placeholder with signature:
+- async fetchCatchup({ villageId, agentId }, lastSeenByRoom): returns array of normalized events ordered by sequence/timestamp.
+Until implemented, the placeholder no-ops and immediately resolves. Do not flip to status:online or flush buffered emits until fetchCatchup completes successfully; on failure, remain in resyncing and retry per the existing backoff/jitter policy. Guard for missing lastSeen by room (skip fetch for unknown rooms) and token expiry (retry after refresh).
+</info added on 2025-09-14T22:34:21.339Z>
+<info added on 2025-09-14T22:36:37.612Z>
+- Emit a unified EventBus event "connection_status" with payload { state: 'offline' | 'resyncing' | 'online', reason?, attempt?, nextRetryMs? }. This replaces prior status:* UI emits.
+- Wire socket lifecycle:
+  - disconnect/error => connection_status{ state:'offline', reason }, pause non-critical emits, start buffering intents.
+  - connect/reconnect => connection_status{ state:'resyncing' }, rejoin rooms, then run REST catch-up before declaring online.
+- Integrate REST catch-up placeholder on reconnect: fetchCatchup({ villageId, agentId }, lastSeenByRoom) is invoked after rooms are rejoined; currently returns [] but is fully wired into the flow. Do not emit 'online' or flush buffers until it resolves and replay completes; on failure, remain in 'resyncing' and retry with existing backoff/jitter.
+- Add connect_error/reconnect_attempt handlers to enrich connection_status payload with attempt and nextRetryMs for UI.
+- Tests: verify connection_status transitions offline -> resyncing -> online, that fetchCatchup is called with correct params, and that buffered intents are only flushed after online.
+</info added on 2025-09-14T22:36:37.612Z>
+
+## 7. Latency measurement and metrics [done]
+### Dependencies: 62.1
+### Description: Measure round-trip and delivery latency and expose metrics for diagnostics and UI. [Updated: 9/14/2025]
+### Details:
+Implement periodic latency probes (emit 'client_ping' with ts, expect server 'server_pong' or use engine ping). Compute RTT and moving average. If server includes sent_at in events, compute delivery latency (now - sent_at) per message. Expose metrics via WebSocketService (getLatency, on('latency_update')), and optionally dispatch to EventBus. Log spikes and provide thresholds to warn when >200ms on local. Ensure measurement overhead is minimal.
+<info added on 2025-09-14T22:36:55.390Z>
+On socket connect (and on each reconnect), perform a one-shot RTT probe using Socket.io’s ack timeout: emit('ping', { ts: now }) with a configurable timeout (default 1000 ms). If the ack arrives before timeout, compute RTT = now - ts; otherwise mark status='timeout' and set rttMs=null. Immediately publish this result to the EventBus as 'latency' with payload { rttMs, status: 'ok'|'timeout', phase: 'connect', ts }. When status='ok', seed/update the moving average with this RTT.
+</info added on 2025-09-14T22:36:55.390Z>
+
+## 8. Unit tests with mocked Socket.io server [done]
+### Dependencies: 62.1, 62.2, 62.3, 62.4, 62.5, 62.6, 62.7
+### Description: Create comprehensive tests covering auth, room joins, handlers, offline catch-up, and latency.
+### Details:
+Spin up a mocked socket.io server in tests. Cases: valid/invalid JWT on connect; auto-reconnect with token refresh; join_village and join_agent flows and rejoin after reconnect; receive and route agent_update/work_stream/bug_bot_spawn/resolved to EventBus; simulate disconnect and verify REST catch-up replays missed events in order; verify dispatch completes within ~16ms budget for typical bursts; verify latency metrics update and remain under target on local. Use fake timers where appropriate to control backoff and latency probes.
+<info added on 2025-09-14T22:37:20.379Z>
+- Add Vitest unit tests that mock socket.io-client (no real server). Use vi.mock('socket.io-client', () => ({ io: vi.fn(() => mockSocket) })) and a controllable FakeSocket with on/off/emit/connect/disconnect plus emitFromServer(event, ...args) for server->client pushes.
+- Connection test (valid JWT): assert io called with URL and auth { token: <jwt> }. After triggering mockSocket.connect() and firing 'connect', verify the client emits 'join_village' with { village_id } and 'join_agent' with { agent_id } for subscribed agents. Ensure no unexpected emits.
+- Connection test (invalid JWT): fire 'connect_error' with { message: 'unauthorized' } and assert no join_* emits occur and client transitions to disconnected/error state as expected.
+- agent_update dispatch test: subscribe a spy to EventBus (or the service’s public on('agent_update', ...) API). After successful connect, call mockSocket.emitFromServer('agent_update', payload) and assert the payload is routed to EventBus exactly once with correct shape/fields. Verify handler is invoked in the same tick (no unnecessary setTimeout) and without mutation of the original payload.
+- Helpers: build a minimal FakeSocket that tracks emitted events (for assertions) and provides listeners map; include reset between tests (vi.clearAllMocks, restore event listeners).
+</info added on 2025-09-14T22:37:20.379Z>
+

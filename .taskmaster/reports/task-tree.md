@@ -1,0 +1,568 @@
+# Task Master Full Tree
+
+Source: /Users/jamesbrady/ai-agent-village-monitor/.taskmaster/tasks/tasks.json
+
+- 41 — done — medium — Initialize Monorepo and Tooling
+  - 41.1 — done — Initialize pnpm workspace and repository scaffolding
+  - 41.2 — done — Configure TypeScript base and path aliases
+  - 41.3 — done — Set up ESLint and Prettier at the root
+  - 41.4 — done — Install Husky and configure lint-staged hooks
+  - 41.5 — done — Scaffold shared package for types and utilities
+  - 41.6 — done — Scaffold backend server package (Node 18+, Express, TS)
+  - 41.7 — done — Scaffold frontend package (Vite + React 18 + Phaser 3.70+)
+  - 41.8 — done — Implement dotenv and zod-based environment validation
+  - 41.9 — done — Add CI workflow for lint, typecheck, and build
+- 42 — done — medium — Backend Scaffold with Express + TypeScript
+  - 42.1 — done — Project structure and tooling setup
+  - 42.2 — done — Typed configuration loader with env validation
+  - 42.3 — done — Express app and middleware wiring
+  - 42.4 — done — Health and readiness endpoints
+  - 42.5 — done — JSON error and 404 handlers
+  - 42.6 — done — Graceful startup/shutdown and Supertest smoke
+- 43 — done — medium — Database Setup and Migrations (PostgreSQL 15+)
+  - 43.1 — done — Initialize Prisma and configure project
+  - 43.2 — done — Model PRD tables in Prisma schema
+  - 43.3 — done — Decide and implement Postgres types (citext/JSONB)
+  - 43.4 — done — Add indexes and foreign keys with cascade rules
+  - 43.5 — done — Generate and apply initial migration
+  - 43.6 — done — Implement seed script for demo data
+  - 43.7 — done — Local and test database setup scripts
+  - 43.8 — done — Transaction and rollback test
+- 44 — pending — medium — Redis and BullMQ Initialization
+  - 44.1 — pending — Create ioredis client factory (shared Redis connection)
+  - 44.2 — done — Initialize BullMQ queues (agentCommands, githubSync)
+  - 44.3 — done — Implement worker processes for each queue
+  - 44.4 — pending — Configure retry/backoff, timeouts, and failure handling
+  - 44.5 — pending — Add metrics and structured logging for queues/workers
+  - 44.6 — pending — Implement graceful shutdown for server and workers
+  - 44.7 — pending — Local Redis via docker-compose and enqueue/dequeue test
+- 45 — pending — medium — WebSocket Server with Native WS and Socket.io Fallback
+  - 45.1 — pending — Attach Socket.io v4 to Express HTTP server
+  - 45.2 — done — JWT authentication middleware for socket connections
+  - 45.3 — done — Room naming and join/leave handlers
+  - 45.4 — done — Event contracts and emit/broadcast APIs
+  - 45.5 — pending — Heartbeat, ping/timeout, and reconnect-aware handlers
+  - 45.6 — done — Transports and HTTP polling fallback configuration
+  - 45.7 — pending — Centralized error handling and logging
+  - 45.8 — pending — Local load and latency testing
+  - 45.9 — pending — Integration tests with socket.io-client
+- 46 — in-progress — medium — GitHub OAuth 2.0 Flow
+  - 46.1 — done — Configure GitHub OAuth App and environment
+  - 46.2 — done — Implement GET /auth/login redirect with state and PKCE
+  - 46.3 — done — Implement POST /auth/github/callback code exchange
+  - 46.4 — done — Fetch GitHub user and persist user record
+  - 46.5 — pending — Secure token storage (encrypt or hashed reference)
+  - 46.6 — pending — JWT access/refresh issuance and rotation
+  - 46.7 — pending — Implement GET /auth/me and POST /auth/logout
+  - 46.8 — pending — Harden cookies, CORS, CSRF/state, and security headers
+  - 46.9 — pending — Error handling, auditing, and PII/token sanitization
+  - 46.10 — pending — End-to-end flow test in GitHub test org
+- 47 — pending — medium — JWT Auth Middleware and Access Control
+  - 47.1 — pending — JWT verification utility
+  - 47.2 — pending — Request and context typing
+  - 47.3 — pending — Standardized 401/403 JSON error responses
+  - 47.4 — pending — requireAuth middleware for /api/*
+  - 47.5 — pending — Village role resolver from village_access
+  - 47.6 — pending — requireVillageRole authorization helper
+  - 47.7 — pending — WebSocket auth integration
+  - 47.8 — pending — Auth and access control tests
+- 48 — pending — medium — Villages REST Endpoints
+  - 48.1 — pending — Define Zod schemas for Villages API
+  - 48.2 — pending — Implement GET /api/villages (list by access)
+  - 48.3 — pending — Implement POST /api/villages (create from GitHub org)
+  - 48.4 — pending — Implement GET/PUT/DELETE /api/villages/:id with access and ownership checks
+  - 48.5 — pending — Ensure persistence and sanitization of village_config and is_public
+  - 48.6 — pending — Add last_synced update hook/service
+  - 48.7 — pending — Supertest integration tests for Villages CRUD and access
+- 49 — pending — medium — GitHub Organization and Repositories Sync
+  - 49.1 — pending — GitHubService scaffolding (REST + GraphQL)
+  - 49.2 — pending — GraphQL repo query and pagination
+  - 49.3 — pending — REST languages fallback
+  - 49.4 — pending — Sync endpoint and BullMQ job pipeline
+  - 49.5 — pending — Upsert houses with deterministic grid layout
+  - 49.6 — pending — Rate limit handling with ETag/If-None-Match
+  - 49.7 — pending — Retries and exponential backoff on limits
+  - 49.8 — pending — Idempotency and job deduplication
+  - 49.9 — pending — Metrics and structured logging
+  - 49.10 — pending — Nock-based tests: small/large orgs and idempotency
+- 50 — pending — medium — Agents REST Endpoints and Model
+  - 50.1 — pending — DB model and server types for Agent
+  - 50.2 — pending — Authorization helpers and cross-village guardrails foundation
+  - 50.3 — pending — sprite_config, position, current_status validation and normalization
+  - 50.4 — pending — GET /api/villages/:id/agents (list by village with role checks)
+  - 50.5 — pending — POST /api/villages/:id/agents (create with URL/config validation)
+  - 50.6 — pending — PUT and DELETE /api/agents/:id (update/delete endpoints)
+  - 50.7 — pending — Integration tests: CRUD, validation, auth, cross-village
+- 51 — pending — medium — MCP Agent Controller Service
+  - 51.1 — pending — Design MCPAgentController class and lifecycle
+  - 51.2 — pending — Implement connectAgent with reconnect/backoff lifecycle
+  - 51.3 — pending — Implement runTool and runTask APIs with streaming support
+  - 51.4 — pending — Wire event streaming hooks and normalization
+  - 51.5 — pending — Broadcast events and status to WebSocket rooms
+  - 51.6 — pending — Persist work_stream_events in DB via Prisma
+  - 51.7 — pending — Define error handling and state transitions
+  - 51.8 — pending — Implement resource cleanup and shutdown
+  - 51.9 — pending — Add metrics and structured logging
+  - 51.10 — pending — Create mockable interfaces and tests
+- 52 — pending — medium — Agent Session Management and Command Queue
+  - 52.1 — pending — Session and Event Models & Migrations
+  - 52.2 — pending — Implement Start/Stop Session Endpoints
+  - 52.3 — pending — Idempotency Guards and Restart Semantics
+  - 52.4 — pending — BullMQ Command Producer and /command Endpoint
+  - 52.5 — pending — Worker: Execute Commands via MCPAgentController
+  - 52.6 — pending — Retry Strategy and Dead-Letter Queue
+  - 52.7 — pending — WebSocket/SSE Event Emission
+  - 52.8 — pending — Audit Logging for Sessions and Commands
+  - 52.9 — pending — Integration Tests: Start → Command → Stop
+- 53 — pending — medium — Work Stream Events API
+  - 53.1 — pending — Define Event DTO and JSON Serialization
+  - 53.2 — pending — Create DB Index for Session Timestamp Ordering
+  - 53.3 — pending — Implement Authorization Checks per Agent and Session
+  - 53.4 — pending — Build Paginated REST Endpoint
+  - 53.5 — pending — Implement SSE Endpoint with Long-Poll Fallback
+  - 53.6 — pending — Performance and Timing Tests
+  - 53.7 — pending — Pagination Correctness Tests with Large Datasets
+- 54 — pending — medium — Probot App Setup and Webhooks
+  - 54.1 — pending — Initialize Probot app skeleton and webhook route
+  - 54.2 — pending — Webhook secret configuration and signature validation
+  - 54.3 — pending — Backend bridge abstractions (HTTP + WebSocket)
+  - 54.4 — pending — Implement issues.opened and issues.closed handlers
+  - 54.5 — pending — Implement check_run.completed handler for CI failures
+  - 54.6 — pending — Idempotency and event de-duplication
+  - 54.7 — pending — Security hardening and replay protection
+  - 54.8 — pending — Local runner and tooling for manual testing
+  - 54.9 — pending — Probot automated test suite
+- 55 — pending — medium — Bug Bot Persistence and Lifecycle
+  - 55.1 — pending — Finalize bug_bots DB schema and migration
+  - 55.2 — pending — Implement core services for Bug Bot lifecycle
+  - 55.3 — pending — WebSocket emissions for spawn/update/resolved
+  - 55.4 — pending — REST endpoints for list/assign/status
+  - 55.5 — pending — Validation and authorization for endpoints
+  - 55.6 — pending — Webhook integration for repository issues/events
+  - 55.7 — pending — Repository consistency checks and reconciliation
+  - 55.8 — pending — Lifecycle integration tests and WS verification
+  - 55.9 — pending — Error handling, retries, and observability
+- 56 — pending — medium — GitHub Actions Trigger Endpoint
+  - 56.1 — pending — Implement POST /api/github/dispatch endpoint with Zod validation
+  - 56.2 — pending — Permission check for repository access (installation or OAuth)
+  - 56.3 — pending — Octokit repository_dispatch call implementation
+  - 56.4 — pending — WebSocket confirmation event emission
+  - 56.5 — pending — Error mapping and 403 handling
+  - 56.6 — pending — Nock-based tests for endpoint and flows
+- 57 — done — medium — Frontend Project Initialization (Vite + React + Phaser)
+  - 57.1 — done — Scaffold Vite React TypeScript project
+  - 57.2 — done — Configure path aliases (@, @shared)
+  - 57.3 — done — Set up minimal CSS Modules and global styles
+  - 57.4 — done — Routing setup (React Router)
+  - 57.5 — done — Phaser integration via GameProvider
+  - 57.6 — done — API client with fetch and zod validation
+  - 57.7 — done — WebSocketService singleton (Socket.IO client stub)
+  - 57.8 — done — Unit tests: Phaser mount and WebSocketService mock
+- 58 — pending — medium — VillageScene: Tilemap and Camera Controls
+  - 58.1 — pending — Isometric grid utilities or plugin integration
+  - 58.2 — pending — Base tilemap render
+  - 58.3 — pending — Camera pan via drag
+  - 58.4 — pending — Zoom with bounds and cursor anchoring
+  - 58.5 — pending — Responsive resize handling
+  - 58.6 — pending — Double-click fast travel to house
+  - 58.7 — pending — Performance tuning and culling
+  - 58.8 — pending — Mobile input support
+  - 58.9 — pending — Performance test harness
+- 59 — pending — medium — AssetManager: Load Sprites and Animations
+  - 59.1 — pending — Define atlas manifests and preload lists
+  - 59.2 — pending — Implement LoadingScene with async preloading and progress UI
+  - 59.3 — pending — AssetManager API and loader integration
+  - 59.4 — pending — Define animations for agents and bug bots (idle/walk/work)
+  - 59.5 — pending — Agent tint variations by deterministic ID hashing
+  - 59.6 — pending — House variants by language mapping and retrieval
+  - 59.7 — pending — Disposal/unload and memory management strategy
+  - 59.8 — pending — Tests and snapshots for manifests and AssetManager
+- 60 — pending — medium — House Entity and Repo Visualization
+  - 60.1 — pending — Implement House Container Class
+  - 60.2 — pending — Add Label and Hover Tooltip UI
+  - 60.3 — pending — Map GitHub Repo Stats to Visual States
+  - 60.4 — pending — Implement Activity Indicators (Window Lights & Chimney Smoke)
+  - 60.5 — pending — Apply Language-Based Visuals and Styling
+  - 60.6 — pending — Implement Click-to-Zoom Behavior
+  - 60.7 — pending — Create Mock Data and Event Harness
+  - 60.8 — pending — Write Interaction and Visual Tests
+- 61 — done — medium — Agent Entity with Status and Interactions
+  - 61.1 — done — Agent class and state machine
+  - 61.2 — done — Status ring rendering
+  - 61.3 — done — Animations per state
+  - 61.4 — done — Hover and tooltip behavior
+  - 61.5 — done — Open Dialogue on click
+  - 61.6 — done — Context menu actions (right-click)
+  - 61.7 — done — Drag-to-move visuals
+  - 61.8 — done — WebSocket-driven state updates
+  - 61.9 — done — Interaction tests and QA
+- 62 — done — medium — WebSocket Client Integration
+  - 62.1 — done — Socket.io client wrapper (WebSocketService)
+  - 62.2 — done — JWT attachment and auto-reconnect
+  - 62.3 — done — Room join flows: village and agent
+  - 62.4 — done — Event bus dispatch integration
+  - 62.5 — done — Event handlers for agent_update, work_stream, bug_bot_spawn/resolved
+  - 62.6 — done — Offline handling and REST catch-up
+  - 62.7 — done — Latency measurement and metrics
+  - 62.8 — done — Unit tests with mocked Socket.io server
+- 63 — done — medium — Dialogue UI Panel with Tabs and Streaming
+  - 63.1 — done — Panel Container with Slide Animation and Dismissal
+  - 63.2 — done — Tabbed Navigation: Thread, Control, Info
+  - 63.3 — done — ThreadTab Streaming Message List with Auto-Scroll
+  - 63.4 — done — Input Box with Enter-to-Send
+  - 63.5 — done — REST Command Integration for Task Submission
+  - 63.6 — done — WebSocket Stream Binding to ThreadTab
+  - 63.7 — done — Responsive Layout and Sizing
+  - 63.8 — done — Component and Integration Tests
+- 64 — done — medium — Control Panel Actions: Run Tool, Commit, PR
+  - 64.1 — done — Control Panel UI: Action Buttons and Forms
+  - 64.2 — done — Integrate Run Tool API
+  - 64.3 — done — Commit and PR Flows via Backend
+  - 64.4 — done — Execution States, Confirmations, and Disabled Controls
+  - 64.5 — done — Error Handling and Toast Notifications
+  - 64.6 — done — Optimistic Updates and Result Surfacing
+  - 64.7 — done — Sandbox E2E Flow (Optional)
+  - 64.8 — done — Unit and Integration Tests
+- 65 — done — medium — GitHub Integration Middleware and Client
+  - 65.1 — done — Initialize Octokit REST/GraphQL with throttle & retry
+  - 65.2 — done — Token sourcing and rotation
+  - 65.3 — done — ETag caching and conditional requests
+  - 65.4 — done — Backoff and retry policies
+  - 65.5 — done — Error normalization and mapping
+  - 65.6 — done — Helper methods: repos, languages, dispatch, PRs, issues
+  - 65.7 — done — Rate-limit observability and telemetry
+  - 65.8 — done — Unit tests with nock
+  - 65.9 — done — Minimal scopes and permissions audit
+  - 65.10 — done — Documentation and examples
+- 66 — in-progress — medium — Bug Bot UI: Spawn, Assign, Progress, Celebrate
+  - 66.1 — done — Bot sprite system and severity styles
+  - 66.2 — done — Spawn on WebSocket bug_bot_spawn near target house
+  - 66.3 — done — Drag-and-drop assignment to agent (UI and interactions)
+  - 66.4 — done — Assign API integration (POST /api/bugs/:id/assign)
+  - 66.5 — pending — Progress visualization and fade behavior
+  - 66.6 — done — Resolved celebration animation and cleanup
+  - 66.7 — pending — Performance and batch handling for many bots
+  - 66.8 — pending — Accessibility and UX hints
+  - 66.9 — pending — Tests, simulations, and visual snapshots
+- 67 — pending — medium — World Map Scene and Multi-Org Navigation
+  - 67.1 — pending — WorldMapScene scaffolding and renderer
+  - 67.2 — pending — Village regions from API and layout mapping
+  - 67.3 — pending — Lazy asset loading and chunked world assets
+  - 67.4 — pending — Navigation to VillageScene with instant teleport
+  - 67.5 — pending — Cross-scene state persistence (agents and camera)
+  - 67.6 — pending — Mini-map overlay with current location indicator
+  - 67.7 — pending — Loading indicators and 2s travel-time budget
+  - 67.8 — pending — Back navigation from VillageScene to WorldMapScene
+  - 67.9 — pending — Performance and profiling tests across 10+ orgs
+- 68 — pending — medium — Onboarding Flow and Demo Mode
+  - 68.1 — pending — Build Onboarding Stepper UI and Flow Shell
+  - 68.2 — pending — Integrate GitHub Login
+  - 68.3 — pending — Organization Selection UI and Data
+  - 68.4 — pending — App Install and Scope Grant UX
+  - 68.5 — pending — Create Village API Integration
+  - 68.6 — pending — Repo/Houses Sync Progress and Enter
+  - 68.7 — pending — Demo Mode with Mock Data
+  - 68.8 — pending — Error and Recovery States Across Steps
+  - 68.9 — pending — Analytics and Step Timing Instrumentation
+- 69 — pending — medium — Permissions and Access Control UI
+  - 69.1 — pending — API linkage for village_access and public flag
+  - 69.2 — pending — Settings page: Permissions section UI
+  - 69.3 — pending — Invite by GitHub username flow
+  - 69.4 — pending — Role assignment UI
+  - 69.5 — pending — Public village toggle (is_public)
+  - 69.6 — pending — Badges and role indicators
+  - 69.7 — pending — Gating controls in UI based on role
+  - 69.8 — pending — Tests for role-based visibility and flows
+- 70 — pending — medium — Caching and Rate-Limit Backoff for GitHub
+  - 70.1 — pending — Define Redis Key Schema
+  - 70.2 — pending — Implement Cache Get/Set with TTLs
+  - 70.3 — pending — Implement 403 Rate-Limit Backoff with Jitter
+  - 70.4 — pending — GraphQL Batching Fetchers
+  - 70.5 — pending — REST Fallback Fetchers
+  - 70.6 — pending — Webhook-Based Cache Invalidation
+  - 70.7 — pending — Metrics and Logging for Cache and Backoff
+  - 70.8 — pending — Configuration Toggles and Policies
+  - 70.9 — pending — Simulated Rate-Limit and Caching Tests
+- 71 — pending — medium — Performance Optimization: Rendering and State
+  - 71.1 — pending — Spatial Hashing for View Culling
+  - 71.2 — pending — Sprite Draw Call Batching
+  - 71.3 — pending — Throttle WebSocket/UI Updates to requestAnimationFrame
+  - 71.4 — pending — Zoom-based LOD Tuning
+  - 71.5 — pending — Reduce GC Pressure in Hot Paths
+  - 71.6 — pending — Optional Web Worker Offload for Layout/Heavy Computation
+  - 71.7 — pending — FPS Overlay via PerformanceManager
+  - 71.8 — pending — Profiling Scenarios and Load Test Harness
+  - 71.9 — pending — Performance Regression Guardrails
+- 72 — pending — medium — Service Worker and Offline/Retry Logic
+  - 72.1 — pending — Initialize Workbox-based Service Worker
+  - 72.2 — pending — Define Caching Strategies per Route/Asset
+  - 72.3 — pending — Connectivity Detection and UI Status Indicator
+  - 72.4 — pending — In-app Command Queue with Dedupe and Persistence
+  - 72.5 — pending — Replay and Retry Logic on Reconnect
+  - 72.6 — pending — Service Worker Versioning and Update Flow (skipWaiting)
+  - 72.7 — pending — Edge Cases and Partial Failure Handling
+  - 72.8 — pending — Telemetry and Instrumentation
+  - 72.9 — pending — Offline, Replay, and Update Test Suite
+- 73 — pending — medium — Security Hardening: Validation, Rate Limit, Secrets
+  - 73.1 — pending — Define Zod schemas per endpoint
+  - 73.2 — pending — Input sanitization and unified error shapes
+  - 73.3 — pending — CORS strict origin configuration
+  - 73.4 — pending — Helmet CSP for Phaser/WS + HTTPS enforcement
+  - 73.5 — pending — API rate limiting with Redis store
+  - 73.6 — pending — Secret management policy and environment config
+  - 73.7 — pending — Audit logging for agent commands (who, what, when)
+  - 73.8 — pending — Security pen-test checklist and automated tests
+  - 73.9 — pending — Logging PII scrubbing and redaction
+  - 73.10 — pending — Security hardening docs and runbooks
+- 74 — pending — medium — GitHub Webhook Handler Endpoint (Express Bridge)
+  - 74.1 — pending — Create Express webhook endpoint with raw body capture
+  - 74.2 — pending — Implement HMAC SHA-256 signature validation
+  - 74.3 — pending — Add Redis-based delivery ID deduplication
+  - 74.4 — pending — Integrate Probot bridge or direct event dispatch
+  - 74.5 — pending — Define retry and idempotency strategy
+  - 74.6 — pending — Optimize performance under burst load
+  - 74.7 — pending — End-to-end tests: signed, tampered, dedupe, and burst
+- 75 — pending — medium — GitHub Actions from Dialogue UI
+  - 75.1 — pending — Workflows list API integration and UI dropdown
+  - 75.2 — pending — Trigger workflow dispatch from ControlTab
+  - 75.3 — pending — In-flight disabled states and progress indicators
+  - 75.4 — pending — Status stream subscription and local state model
+  - 75.5 — pending — Map build statuses to visual indicators (chimney smoke)
+  - 75.6 — pending — Last run status badge and tooltip on houses
+  - 75.7 — pending — Robust error handling and resiliency
+  - 75.8 — pending — End-to-end validation on test repository
+- 76 — pending — medium — World Map Mini-Map and Fast Travel
+  - 76.1 — pending — Render Texture Mini-Map Overlay
+  - 76.2 — pending — Viewport Bounds Overlay
+  - 76.3 — pending — Click-to-Teleport Mapping
+  - 76.4 — pending — Camera Teleport/Transition Handler
+  - 76.5 — pending — UI State Persistence (Selected Agent & Dialogue Tab)
+  - 76.6 — pending — Performance Budget and Instrumentation (<2s travel)
+  - 76.7 — pending — Accessibility and Input Alternatives
+  - 76.8 — pending — Testing: Unit, Integration, E2E
+- 77 — pending — medium — Settings and Preferences
+  - 77.1 — pending — Define preferences schema and models
+  - 77.2 — pending — Database migration for users.preferences (JSONB) and defaults
+  - 77.3 — pending — Implement read/write preferences API endpoints
+  - 77.4 — pending — Runtime application of preferences
+  - 77.5 — pending — Settings UI page with live controls
+  - 77.6 — pending — Tests: persistence, defaults, and immediate effect
+- 78 — pending — medium — Keyboard Shortcuts and Accessibility
+  - 78.1 — pending — Implement Shortcut Registry (T/ESC/1-3)
+  - 78.2 — pending — Dialogue Focus Management
+  - 78.3 — pending — Apply ARIA Roles and Labels
+  - 78.4 — pending — Screen Reader Announcements for New Messages
+  - 78.5 — pending — Shortcut Conflict Resolution with Browser Defaults
+  - 78.6 — pending — High-Contrast Mode
+  - 78.7 — pending — Axe Accessibility Audit and Fixes
+  - 78.8 — pending — Keyboard-Only Navigation Tests
+- 79 — pending — medium — Monitoring, Logging, and Tracing
+  - 79.1 — pending — Integrate Sentry in backend and frontend with releases
+  - 79.2 — pending — Add pino logger with request-id correlation
+  - 79.3 — pending — Enrich logs with user and session context
+  - 79.4 — pending — OpenTelemetry SDK setup and key spans
+  - 79.5 — pending — Configure OTLP exporters and sampling
+  - 79.6 — pending — Create sample dashboards for health and tracing
+  - 79.7 — pending — Implement error injection tests and validation
+  - 79.8 — pending — Add privacy and data controls for logs and telemetry
+  - 79.9 — pending — Expose optional /metrics endpoint for KPIs
+- 80 — pending — medium — Documentation and API Reference
+  - 80.1 — pending — Environment Variables and Configuration Guide
+  - 80.2 — pending — Architecture Overview and Diagrams + README
+  - 80.3 — pending — Database Schema Reference
+  - 80.4 — pending — REST API OpenAPI Spec and Swagger-UI
+  - 80.5 — pending — WebSocket Event Contracts
+  - 80.6 — pending — MCP Integration Guide
+  - 80.7 — pending — Getting Started and Local Development
+  - 80.8 — pending — Deployment Guides and Runbooks
+- 81 — pending — medium — Backend Unit Tests (Jest)
+  - 81.1 — pending — Jest + ts-jest baseline setup
+  - 81.2 — pending — Test utilities and mocks for Octokit, MCP, and Redis
+  - 81.3 — pending — Unit tests: GitHubService happy paths, retries, and ETag handling
+  - 81.4 — pending — Unit tests: MCPAgentController state transitions and streaming
+  - 81.5 — pending — Unit tests: Redis queues producers and consumers
+  - 81.6 — pending — Unit tests: Auth utilities and JWT flow
+  - 81.7 — pending — Coverage configuration and thresholds
+  - 81.8 — pending — CI integration for unit tests and coverage
+- 82 — pending — medium — Backend Integration Tests (Supertest + Testcontainers)
+  - 82.1 — pending — Configure Testcontainers for Postgres and Redis
+  - 82.2 — pending — Migration runner for containerized Postgres
+  - 82.3 — pending — Seed data utilities
+  - 82.4 — pending — JWT/auth fixtures
+  - 82.5 — pending — Supertest suites for key REST endpoints
+  - 82.6 — pending — WebSocket test client for side-effects
+  - 82.7 — pending — Isolation and teardown strategy
+  - 82.8 — pending — CI parallelization configuration
+  - 82.9 — pending — Developer docs for running locally
+- 83 — pending — medium — Frontend Unit and Component Tests (Vitest/RTL)
+  - 83.1 — pending — Configure Vitest + React Testing Library with jsdom
+  - 83.2 — pending — Create WebSocketService test mock and helpers
+  - 83.3 — pending — DialogueUI tests: open/close, slide animation triggers, auto-scroll
+  - 83.4 — pending — ControlTab interaction and content tests
+  - 83.5 — pending — Snapshot important UI states
+  - 83.6 — pending — Keyboard shortcuts and ARIA/accessibility assertions
+- 84 — pending — medium — End-to-End Tests (Playwright)
+  - 84.1 — pending — Playwright configuration and auth stub
+  - 84.2 — pending — Test data and seeding
+  - 84.3 — pending — Village render journey
+  - 84.4 — pending — Agent click and dialogue streaming
+  - 84.5 — pending — Webhook-driven bot spawn simulation
+  - 84.6 — pending — Agent assignment flow
+  - 84.7 — pending — World map travel between orgs
+  - 84.8 — pending — Timing assertions and flake controls
+  - 84.9 — pending — CI video and trace artifacts
+- 85 — pending — medium — Load and Soak Testing (k6/Artillery)
+  - 85.1 — pending — Staging environment setup for load/soak
+  - 85.2 — pending — Synthetic dataset and identity generation
+  - 85.3 — pending — Performance thresholds and SLAs
+  - 85.4 — pending — Ramp-up profiles and soak plan
+  - 85.5 — pending — k6 HTTP scenario implementation
+  - 85.6 — pending — Artillery WebSocket broadcast scenarios
+  - 85.7 — pending — Metrics and observability setup
+  - 85.8 — pending — Execute runs and bottleneck analysis
+  - 85.9 — pending — Report and remediation plan
+- 86 — pending — medium — CI/CD Pipelines (GitHub Actions)
+  - 86.1 — pending — Define GitHub Environments and Secrets
+  - 86.2 — pending — Create ci.yml scaffold with pnpm caching
+  - 86.3 — pending — Add lint and type-check jobs to ci.yml
+  - 86.4 — pending — Add unit, integration, and e2e test jobs to ci.yml
+  - 86.5 — pending — Artifact uploads and test reporting
+  - 86.6 — pending — Configure deploy-frontend.yml for Vercel
+  - 86.7 — pending — Configure deploy-backend.yml with migrations
+  - 86.8 — pending — Branch protections and rollback verification
+- 87 — pending — medium — Production Deployment and Environment Configuration
+  - 87.1 — pending — Create Vercel project, custom domain, and HSTS
+  - 87.2 — pending — Provision Postgres 15 and Redis on Railway with backups
+  - 87.3 — pending — Deploy backend on Railway with autoscaling
+  - 87.4 — pending — Set and manage production environment variables
+  - 87.5 — pending — Configure CORS policies and WebSocket origins
+  - 87.6 — pending — Enforce SSL and security headers
+  - 87.7 — pending — Execute production smoke tests (HTTP and WS)
+  - 87.8 — pending — Define scaling and WebSocket stickiness strategy
+  - 87.9 — pending — Perform database backup and restore dry run
+- 88 — pending — medium — Feedback Collection and Help Center
+  - 88.1 — pending — Feedback Modal UI
+  - 88.2 — pending — Feedback Backend Endpoint and Storage/Forwarder
+  - 88.3 — pending — Rate Limiting and Abuse Controls
+  - 88.4 — pending — Help Menu Links and Docs Integration
+  - 88.5 — pending — Accessibility Tests and Fixes
+- 89 — pending — medium — Village State Persistence
+  - 89.1 — pending — Database schema for positions and sprite configs
+  - 89.2 — pending — Autosave throttling and batching logic
+  - 89.3 — pending — REST endpoints for save/load layout
+  - 89.4 — pending — Scene load and application of persisted layout
+  - 89.5 — pending — Reset-to-auto-layout action
+  - 89.6 — pending — Conflict detection and resolution strategy
+  - 89.7 — pending — Tests for persistence, throttling, reset, and conflicts
+- 90 — pending — medium — Auto Layout and Pathfinding Utilities
+  - 90.1 — pending — Isometric layout generator (grid + Poisson-disk)
+  - 90.2 — pending — Overlap avoidance and boundary enforcement
+  - 90.3 — pending — Export initial coordinates and isometric transforms
+  - 90.4 — pending — Navigation grid and obstacle map construction
+  - 90.5 — pending — A* pathfinding utility with obstacle avoidance
+  - 90.6 — pending — Path simplification and smoothing
+  - 90.7 — pending — Agent movement animation along path (Phaser)
+  - 90.8 — pending — Public API for reusable layout and pathfinding
+  - 90.9 — pending — Tests and benchmarks on 100+ nodes/agents
+- 91 — pending — medium — Error States and Offline UI
+  - 91.1 — pending — React Global Error Boundary
+  - 91.2 — pending — Global Toast System for API/WS Errors
+  - 91.3 — pending — WebSocket Disconnect Overlay with Retry
+  - 91.4 — pending — Agent Error Visuals (Red Ring)
+  - 91.5 — pending — Global Offline Banner
+  - 91.6 — pending — Failure Mode Simulations and Dev Tools
+  - 91.7 — pending — UX Timing, Copy, and Accessibility Polish
+- 92 — pending — medium — Public Village Mode
+  - 92.1 — pending — Public route handling
+  - 92.2 — pending — Public GET endpoints without JWT
+  - 92.3 — pending — Server-side mutation blocking
+  - 92.4 — pending — WebSocket anonymous read-only join
+  - 92.5 — pending — UI gating of controls in public mode
+  - 92.6 — pending — Settings toggle for is_public
+  - 92.7 — pending — Cache headers for public content
+  - 92.8 — pending — Incognito tests for public mode
+- 93 — pending — medium — Activity Indicators from GitHub Events
+  - 93.1 — pending — Map GitHub webhook events to activity states
+  - 93.2 — pending — Implement state store with TTL/expiry
+  - 93.3 — pending — Debounce and flicker prevention
+  - 93.4 — pending — Concurrency and layering of indicators
+  - 93.5 — pending — WebSocket broadcast integration
+  - 93.6 — pending — Implement visuals: lights, banner, and smoke
+  - 93.7 — pending — Synthetic event test harness
+  - 93.8 — pending — Visual validation and acceptance tests
+- 94 — pending — medium — Command Palette and Quick Actions
+  - 94.1 — pending — Context Menu Component for Agents
+  - 94.2 — pending — Command Palette UI (Ctrl/Cmd+K)
+  - 94.3 — pending — Search and Index Across Agents/Houses/Actions
+  - 94.4 — pending — Action Execution Wiring and Registry
+  - 94.5 — pending — Keyboard Accessibility and ARIA
+  - 94.6 — pending — Tests for Filtering and Execution
+- 95 — pending — medium — Data Accuracy and Sync Validation
+  - 95.1 — pending — Set up BullMQ repeatable cron for periodic org resync
+  - 95.2 — pending — Implement reconciliation logic for repo archive/delete handling
+  - 95.3 — pending — Detect webhook gaps and enqueue catch-up resyncs
+  - 95.4 — pending — Discrepancy logging and auto-repair
+  - 95.5 — pending — Compute and persist accuracy metrics
+  - 95.6 — pending — Configure retry and backoff policies
+  - 95.7 — pending — Admin report/dashboard for sync health
+  - 95.8 — pending — Test suite with simulated gaps and reconciliation
+  - 95.9 — pending — Alert thresholds and notifications
+- 96 — pending — medium — Analytics and KPI Events
+  - 96.1 — pending — Define Analytics Event Schema and Privacy Filters
+  - 96.2 — pending — Implement Client Analytics Emitter and Instrumentation
+  - 96.3 — pending — Add Opt-Out and Consent Controls
+  - 96.4 — pending — Build Backend Collector API
+  - 96.5 — pending — Implement Aggregation to Redis/Time-Series Store
+  - 96.6 — pending — Expose Internal KPI Endpoints
+  - 96.7 — pending — Prototype Internal Analytics Dashboard
+  - 96.8 — pending — Validate Pipeline with Sample Events and Tests
+- 97 — pending — medium — Internationalization Readiness
+  - 97.1 — pending — i18n library setup
+  - 97.2 — pending — Extract core strings to catalogs
+  - 97.3 — pending — Locale switcher
+  - 97.4 — pending — Date/time formatting utilities
+  - 97.5 — pending — Fallback strategy
+  - 97.6 — pending — Coverage audit and tests
+- 98 — pending — medium — Backup and Disaster Recovery Procedures
+  - 98.1 — pending — Define RTO/RPO and backup strategy
+  - 98.2 — pending — Provision encrypted backup storage and access
+  - 98.3 — pending — Implement automated Postgres backups with retention
+  - 98.4 — pending — Configure Redis persistence (RDB/AOF) policy
+  - 98.5 — pending — Set up monitoring and alerts for backup health
+  - 98.6 — pending — Author restore runbook (Postgres and Redis)
+  - 98.7 — pending — Conduct staging restore drill and measure RTO/RPO
+  - 98.8 — pending — Finalize DR documentation and sign-off
+- 99 — pending — medium — Privacy and Compliance Checklist
+  - 99.1 — pending — Data inventory and classification
+  - 99.2 — pending — Token minimization and encryption
+  - 99.3 — pending — Log retention and PII scrubbing
+  - 99.4 — pending — Account deletion endpoint and verification
+  - 99.5 — pending — DNT and analytics opt-out
+  - 99.6 — pending — Privacy notice and policy updates
+  - 99.7 — pending — Access reviews and least privilege
+  - 99.8 — pending — Audit logging policy and configuration
+  - 99.9 — pending — Incident response for data issues
+  - 99.10 — pending — Compliance checklist and sign-off
+  - 99.11 — pending — Data Inventory and Data Flow Mapping
+  - 99.12 — pending — Token Minimization and Hash/Encrypt Strategy
+  - 99.13 — pending — Account Deletion Endpoint and Verification Workflow
+  - 99.14 — pending — Log Retention Policy and PII Scrubbing
+  - 99.15 — pending — DNT/GPC and Analytics Opt-Out Enforcement
+  - 99.16 — pending — Privacy Notice and Policy Updates
+  - 99.17 — pending — Access Reviews and Least-Privilege Enforcement
+  - 99.18 — pending — Audit Logging Policy and Secure Audit Trail
+  - 99.19 — pending — Incident Response for Data Issues
+  - 99.20 — pending — Compliance Checklist Validation and Sign-off
+- 100 — pending — medium — Launch Runbook and Communications
+  - 100.1 — pending — Launch Checklist and Feature Flags
+  - 100.2 — pending — Rollback Strategy and Data Migration Plan
+  - 100.3 — pending — Demo Script and Assets
+  - 100.4 — pending — Observability Pre-flight Checks
+  - 100.5 — pending — Incident Response and Escalation Plan
+  - 100.6 — pending — Communications Plan (Landing Page, Video, Announcements)
+  - 100.7 — pending — Launch Checklist and Feature Flags
+  - 100.8 — pending — Rollback and Migration Plan
+  - 100.9 — pending — Demo Script and Assets
+  - 100.10 — pending — Observability Pre-flight Checks
+  - 100.11 — pending — Incident Response and Escalation Plan
+  - 100.12 — pending — Communications Plan (Landing Page, Video, Announcements)

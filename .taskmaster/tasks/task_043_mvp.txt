@@ -1,0 +1,194 @@
+# Task ID: 43
+# Title: Database Setup and Migrations (PostgreSQL 15+)
+# Status: done
+# Dependencies: 42
+# Priority: medium
+# Description: Provision PostgreSQL and implement schema via migrations matching PRD tables.
+# Details:
+Use Prisma or Knex; choose Prisma for TS typing.
+- prisma/schema.prisma mapping to PRD SQL (users, villages, houses, agents, agent_sessions, work_stream_events, bug_bots, village_access)
+- Enable citext or use VARCHAR per PRD; use JSONB for config fields
+- Add indexes: github_id unique, github_org_id unique, github_repo_id unique, github_issue_id unique; FKs with ON DELETE CASCADE where appropriate
+- Write seed script to create demo data
+Commands: pnpm add -w prisma @prisma/client; npx prisma init; npx prisma migrate dev -n init
+
+
+# Test Strategy:
+Run migrations in a test DB, verify tables and constraints exist. Prisma generate succeeds. Seed produces sample rows. Add a transaction test (create user, village, house) and rollback.
+
+# Subtasks:
+## 1. Initialize Prisma and configure project [done]
+### Dependencies: None
+### Description: Set up Prisma in the repository, configure environment, and add convenience scripts.
+### Details:
+1) Install and init: pnpm add -w prisma @prisma/client && npx prisma init. 2) Set provider to postgresql in prisma/schema.prisma and set DATABASE_URL in .env (PostgreSQL 15+). 3) Add scripts: prisma:generate, prisma:migrate, db:reset, db:studio. 4) Run npx prisma generate to verify setup. 5) Document commands in README.
+<info added on 2025-09-15T15:01:14.249Z>
+- Prisma schema created at packages/server/prisma/schema.prisma with datasource set to postgresql and generator client configured.
+- Installed prisma and @prisma/client in the server package (packages/server).
+- Added server package scripts: prisma:generate, db:migrate, db:push, db:reset, db:seed.
+- Added packages/server/.env.example with a DATABASE_URL template.
+</info added on 2025-09-15T15:01:14.249Z>
+
+## 2. Model PRD tables in Prisma schema [done]
+### Dependencies: 43.1
+### Description: Create prisma/schema.prisma models for PRD tables with relations and base fields.
+### Details:
+Define models: users, villages, houses, agents, agent_sessions, work_stream_events, bug_bots, village_access. Include primary keys (cuid/uuid), createdAt/updatedAt timestamps, and relations (e.g., villages -> houses, users -> villages via village_access). Add basic fields from PRD (e.g., names, status flags, config fields). Ensure prisma validate passes.
+<info added on 2025-09-15T14:57:23.466Z>
+- Stored GitHub numeric IDs as BigInt (@db.BigInt)
+- Mapped PRD JSON/JSONB config/metadata fields to Prisma Json
+- Added performance indexes:
+  - houses(villageId), village_access(villageId)
+  - agents(currentStatus), bug_bots(currentStatus)
+  - work_stream_events(sessionId, createdAt) composite
+</info added on 2025-09-15T14:57:23.466Z>
+<info added on 2025-09-15T14:58:11.278Z>
+- Completed Prisma schema for PRD models with relations (users, villages, houses, agents, agent_sessions, work_stream_events, bug_bots, village_access).
+- Typed GitHub numeric IDs as BigInt and mapped PRD JSON/JSONB fields to Prisma Json.
+- Added indexes for common queries: villageId (houses, village_access), currentStatus (agents, bug_bots), and composite (sessionId, createdAt) on work_stream_events.
+- Prisma validate passes.
+</info added on 2025-09-15T14:58:11.278Z>
+<info added on 2025-09-15T15:01:58.125Z>
+- Modeled Prisma models: User, Village, House, Agent, AgentSession, WorkStreamEvent, BugBot, VillageAccess.
+- Added unique indexes: User.githubId, Village.githubOrgId, House.githubRepoId, House.githubIssueId, AgentSession.sessionToken.
+- Set relation onDelete behaviors: Village → Houses (Cascade), Village → Agents (Cascade), Agent → AgentSessions (Cascade), AgentSession → WorkStreamEvents (Cascade), House → BugBots (Cascade); House.assignedAgent (foreign key to Agent) uses SetNull on delete.
+</info added on 2025-09-15T15:01:58.125Z>
+<info added on 2025-09-15T15:04:13.192Z>
+- Modeled PRD tables in Prisma: User, Village, House, Agent, AgentSession, WorkStreamEvent, BugBot, VillageAccess.
+- Added unique constraints for GitHub identifiers (githubId/orgId/repoId/issueId) and AgentSession.sessionToken.
+- Implemented relations with referential actions: Village→Houses (Cascade), Village→Agents (Cascade), Agent→AgentSessions (Cascade), AgentSession→WorkStreamEvents (Cascade), House→BugBots (Cascade); House.assignedAgent uses onDelete SetNull.
+</info added on 2025-09-15T15:04:13.192Z>
+<info added on 2025-09-15T15:06:45.038Z>
+- Modeled PRD tables in Prisma (User, Village, House, Agent, AgentSession, WorkStreamEvent, BugBot, VillageAccess); added unique indexes for GitHub identifiers (githubId/orgId/repoId/issueId) and AgentSession.sessionToken; implemented relations with onDelete: Village→Houses/Agents (Cascade), Agent→AgentSessions (Cascade), AgentSession→WorkStreamEvents (Cascade), House→BugBots (Cascade); House.assignedAgent uses SetNull.
+</info added on 2025-09-15T15:06:45.038Z>
+
+## 3. Decide and implement Postgres types (citext/JSONB) [done]
+### Dependencies: 43.2
+### Description: Choose citext vs VARCHAR per PRD fields and use JSONB for config fields; update schema and migrations accordingly.
+### Details:
+Identify fields requiring case-insensitive text (e.g., users.email, usernames, org names) and set String @db.Citext if using citext; otherwise use @db.VarChar with appropriate lengths. Use Json @db.JsonB for config fields (e.g., village_config). Add SQL step to create extension: CREATE EXTENSION IF NOT EXISTS citext; in the migration if citext is used. Document decisions in schema comments.
+<info added on 2025-09-15T14:49:35.041Z>
+- Enabled PostgreSQL citext extension in Prisma and applied @db.Citext to User.username for case-insensitive matching.
+- JSON fields now use Prisma Json (stored as JSONB in Postgres): villageConfig, houseStyle, agentConfig, metadata.
+- Additional type nuances (e.g., enum mappings for statuses) will be finalized alongside index additions in 43.4.
+</info added on 2025-09-15T14:49:35.041Z>
+<info added on 2025-09-15T14:50:10.458Z>
+Enabled PostgreSQL citext extension in Prisma datasource and applied @db.Citext to User.username for case-insensitive matching. JSON fields (villageConfig, houseStyle, agentConfig, metadata) use Prisma Json which maps to JSONB in Postgres. Further type nuances (e.g., enum mappings for statuses) will be added alongside indexes in 43.4.
+</info added on 2025-09-15T14:50:10.458Z>
+<info added on 2025-09-15T14:59:02.505Z>
+- Adopted Prisma BigInt (Postgres BIGINT) for all GitHub identifiers (github_id, github_org_id, github_repo_id, github_issue_id) to accommodate 64-bit IDs; migration updates column types accordingly.
+- Added DateTime updatedAt fields with @updatedAt on mutable models (e.g., User, Village, House, Agent, AgentSession) for automatic modification timestamps; migration adds these columns where absent.
+</info added on 2025-09-15T14:59:02.505Z>
+<info added on 2025-09-15T15:07:32.809Z>
+- MVP type decisions updated:
+  - No citext. All text fields use Prisma String (Postgres TEXT). Remove any @db.Citext mappings and omit CREATE EXTENSION citext from migrations/datasource. Case-insensitive behavior will be handled in application logic for now.
+  - JSON config fields set to Prisma Json (JSONB): villageConfig, houseStyle, agentConfig, metadata, spriteConfig.
+  - Timestamps use DateTime with @default(now()) (replace any @updatedAt usage on updatedAt).
+  - Use Int for all primary keys and GitHub identifiers (github_id, github_org_id, github_repo_id, github_issue_id). Add migration steps to alter existing BIGINT columns to INT.
+- Migration adjustments:
+  - Replace citext columns with TEXT by switching Prisma types to plain String.
+  - Remove citext extension creation from SQL migrations.
+  - ALTER TABLE ... ALTER COLUMN ... TYPE integer USING (<column>)::integer for affected GitHub ID/PK columns.
+</info added on 2025-09-15T15:07:32.809Z>
+<info added on 2025-09-15T15:11:05.944Z>
+- Finalize MVP type mapping in schema.prisma:
+  - Text fields → Prisma String (Postgres TEXT); remove all @db.Citext/@db.VarChar annotations and any citext extension references.
+  - JSONB config fields → Prisma Json on:
+    - Village.villageConfig
+    - Village.spriteConfig
+    - House.houseStyle
+    - Agent.agentConfig
+    - *.metadata (where present)
+  - Timestamps → DateTime with @default(now()) on createdAt and updatedAt (replace any @updatedAt usage).
+  - IDs → Int: all primary keys as Int @id @default(autoincrement()); GitHub IDs (github_id, github_org_id, github_repo_id, github_issue_id) as Int across models.
+- Migration updates:
+  - ALTER any BIGINT PK/GitHub ID columns to integer using USING <col>::integer and update dependent FKs to Int.
+  - Remove prior citext usage and include DROP EXTENSION IF EXISTS citext; if it was previously enabled.
+- Add schema comments noting: no citext for MVP (case-insensitive handling is in application logic); Prisma Json maps to Postgres JSONB.
+</info added on 2025-09-15T15:11:05.944Z>
+
+## 4. Add indexes and foreign keys with cascade rules [done]
+### Dependencies: 43.2, 43.3
+### Description: Define unique indexes and FK constraints with ON DELETE CASCADE (Prisma referentialActions).
+### Details:
+Add @unique for github_id, github_org_id, github_repo_id, github_issue_id where PRD specifies uniqueness. Add @@index for common lookups (owner_id, village_id, agent_id, createdAt). Define relations with referentialActions: { onDelete: Cascade } where child rows should be removed (e.g., village -> houses, agents -> agent_sessions, villages -> work_stream_events). Re-run prisma validate.
+<info added on 2025-09-15T14:59:36.399Z>
+Set referentialActions: { onDelete: SetNull } for optional agent assignment FKs (nullable agentId). Added indexes: @@index([villageId]), @@index([currentStatus]), @@index([agentId, startedAt]), @@index([sessionId, timestamp]).
+</info added on 2025-09-15T14:59:36.399Z>
+<info added on 2025-09-15T14:59:56.191Z>
+Implemented referentialActions: onDelete: Cascade for child relations and onDelete: SetNull for optional agent assignments; added indexes @@index([villageId]), @@index([currentStatus]), @@index([agentId, startedAt]), and @@index([sessionId, timestamp]).
+</info added on 2025-09-15T14:59:56.191Z>
+<info added on 2025-09-15T15:07:54.456Z>
+Added @unique on github_id, github_org_id, github_repo_id, github_issue_id, and sessionToken. Added @@unique([villageId, userId]) on VillageAccess to prevent duplicate access entries. Enforced FK ON DELETE CASCADE for all child relations; assignedAgent FK uses onDelete: SetNull to retain bug records when an agent is deleted.
+</info added on 2025-09-15T15:07:54.456Z>
+<info added on 2025-09-15T15:11:29.131Z>
+Indexes and FKs: Added @unique on github* and sessionToken. Defined composite unique on VillageAccess (villageId,userId). Added FKs with cascade deletes for children; assignedAgent uses onDelete: SetNull to preserve bug records on agent deletion.
+</info added on 2025-09-15T15:11:29.131Z>
+
+## 5. Generate and apply initial migration [done]
+### Dependencies: 43.4
+### Description: Create the initial DB migration and apply it to a local database.
+### Details:
+Run npx prisma migrate dev -n init to generate SQL (ensure extension creation for citext is included). Verify tables, indexes, and constraints via psql or Prisma Studio. Commit migration files. Add instructions for production: use npx prisma migrate deploy; avoid dev reset on shared DBs.
+<info added on 2025-09-15T15:00:34.329Z>
+Initial SQL migration generated and saved to prisma/migrations/*_init/migration.sql; migration_lock.toml created with provider=postgresql.
+</info added on 2025-09-15T15:00:34.329Z>
+<info added on 2025-09-15T15:04:40.059Z>
+Initial SQL migration was generated via Prisma migrate diff; SQL file located at packages/server/prisma/migrations/000_init.sql. Added docker-compose.yml to standardize local dev with Postgres 15 and Redis. Applying the migration is pending a running Postgres instance; once Docker is running, execute: docker compose up -d postgres && pnpm -C packages/server db:migrate && pnpm -C packages/server db:seed.
+</info added on 2025-09-15T15:04:40.059Z>
+<info added on 2025-09-15T15:08:27.543Z>
+Migration files are not created yet because DATABASE_URL is missing. From the server package:
+- Copy env and set DATABASE_URL:
+  cp packages/server/.env.example packages/server/.env
+  (edit packages/server/.env and set DATABASE_URL to your local Postgres connection string)
+- Ensure Postgres is running, then create and apply the initial migration:
+  pnpm -F @ai-agent-village-monitor/server run db:migrate -- --name init
+
+This will generate prisma/migrations/<timestamp>_init and apply it to the local DB; commit the generated files.
+</info added on 2025-09-15T15:08:27.543Z>
+
+## 6. Implement seed script for demo data [done]
+### Dependencies: 43.5
+### Description: Create a Prisma seed to populate realistic demo data across all PRD tables.
+### Details:
+Create prisma/seed.ts to insert: users (2+), villages (1–3 per owner), houses per village, agents per village, agent_sessions, work_stream_events with github_issue_id/github_repo_id where relevant, bug_bots, and village_access (owner and member). Ensure referential integrity and unique constraints using upsert or randomized values. Add package.json prisma.seed to run with tsx or ts-node. Verify with npx prisma db seed.
+<info added on 2025-09-15T15:08:48.696Z>
+Seed script implemented at packages/server/prisma/seed.js using idempotent upserts for demo user, village, house, agent, and bug records, ensuring referential integrity and unique constraints. After configuring the database, run pnpm -F @ai-agent-village-monitor/server run db:seed to execute the seeding.
+</info added on 2025-09-15T15:08:48.696Z>
+
+## 7. Local and test database setup scripts [done]
+### Dependencies: 43.1, 43.5
+### Description: Provide scripts and configs for local Postgres and isolated test DBs.
+### Details:
+Add docker-compose.yml (postgres:15), .env.example with DATABASE_URL and TEST_DATABASE_URL. Scripts: pnpm db:up, db:down, db:migrate, db:reset, db:test:migrate, db:test:reset. Ensure test flow uses npx prisma migrate deploy against TEST_DATABASE_URL. Document how to start DB, apply migrations, and reset databases.
+<info added on 2025-09-15T15:03:33.104Z>
+- Added helper scripts in server/package.json: db:migrate, db:push, db:reset, db:seed. These run against prisma/schema.prisma and require DATABASE_URL to be set in the environment.
+- Initial migration files have been generated under prisma/migrations/.
+- For test workflows, run these scripts with DATABASE_URL set to TEST_DATABASE_URL so migrations deploy to the isolated test database.
+</info added on 2025-09-15T15:03:33.104Z>
+<info added on 2025-09-15T15:05:06.000Z>
+- docker-compose.yml now includes a Redis 7 service alongside Postgres 15 for local development.
+- Added a root .env with DATABASE_URL configured for the local docker services.
+- Introduced a prisma:studio script to launch Prisma Studio against the configured DATABASE_URL.
+- Local database bring-up and reset are now achievable with a single command via the provided package scripts.
+- For CI, consider using Testcontainers to provision ephemeral Postgres/Redis environments later.
+</info added on 2025-09-15T15:05:06.000Z>
+<info added on 2025-09-15T15:06:07.589Z>
+Updated .env.example to include:
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/agent_village?schema=public
+TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/agent_village_test?schema=public
+Use either the Docker Compose Postgres service or a locally installed Postgres 15+ with these URLs.
+</info added on 2025-09-15T15:06:07.589Z>
+<info added on 2025-09-15T15:09:10.765Z>
+Local/test DB setup: Added package.json scripts (db:migrate, db:push, db:reset, db:seed) in server and updated .env.example with DATABASE_URL. Use Docker Compose or a local Postgres 15+ instance; example DSN: postgresql://postgres:postgres@localhost:5432/agent_village?schema=public.
+</info added on 2025-09-15T15:09:10.765Z>
+
+## 8. Transaction and rollback test [done]
+### Dependencies: 43.7, 43.5
+### Description: Write a test to verify transactional behavior and rollback safety.
+### Details:
+Using Jest/Vitest and TEST_DATABASE_URL, implement: (a) $transaction that creates user, village, house, then throws to trigger rollback; assert no rows persisted. (b) Successful transaction commit path. Run in CI after applying migrations. Clean up data between tests.
+<info added on 2025-09-15T15:14:39.945Z>
+Mark the suite pending until a DB is available: wrap it with describe.runIf(Boolean(process.env.TEST_DATABASE_URL)) so it skips when TEST_DATABASE_URL is missing. Ensure CI runs it only after migrations have executed. The rollback spec must assert zero rows remain after the transaction; keep the separate commit-path spec enabled under the same gate.
+</info added on 2025-09-15T15:14:39.945Z>
+

@@ -1,0 +1,68 @@
+# Task ID: 72
+# Title: Service Worker and Offline/Retry Logic
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Add service worker to cache shell and implement offline queuing for commands.
+# Details:
+Use Workbox or custom SW: cache-first for static assets, network-first for API where applicable. In-app queue for agent commands when offline, replay on reconnect. Connection status indicator in UI.
+
+
+# Test Strategy:
+Simulate offline: village still loads shell; commands queue and replay after reconnect. Verify no duplicate commands on replay. SW updates handled correctly (skipWaiting flow).
+
+# Subtasks:
+## 1. Initialize Workbox-based Service Worker [pending]
+### Dependencies: None
+### Description: Set up a Workbox-powered service worker and registration to enable app shell caching.
+### Details:
+Choose Workbox strategy (prefer InjectManifest for flexibility); create workbox config with precache manifest for the app shell; enable navigation preload; define cache names and version; add SW registration in the app entry with basic update hooks; verify install/activate lifecycle and that the shell precaches successfully.
+
+## 2. Define Caching Strategies per Route/Asset [pending]
+### Dependencies: 72.1
+### Description: Implement Workbox routing and plugins to apply cache-first for static assets and network-first for API routes.
+### Details:
+Precache the application shell; add cache-first for JS/CSS/fonts/images with Expiration and CacheableResponse plugins; add network-first for /api/* GET requests with timeout fallback to cache where appropriate; exclude non-idempotent methods (POST/PUT/PATCH/DELETE) from caching; consider stale-while-revalidate for some CDN assets; ensure HTML navigations serve from precache with network update; add CORS handling for opaque responses; verify no caching for WebSocket endpoints.
+
+## 3. Connectivity Detection and UI Status Indicator [pending]
+### Dependencies: None
+### Description: Implement reliable online/offline detection and expose a UI indicator for connection status.
+### Details:
+Create a connectivity service using navigator.onLine, online/offline events, periodic lightweight HTTP health check, and WebSocket status if present; expose a React context/hook (e.g., useConnectivity) that yields states (online, degraded, offline) and last change time; add a non-intrusive banner/icon to indicate status and tooltips with details; ensure debouncing and backoff to avoid flapping; provide programmatic events for other modules.
+
+## 4. In-app Command Queue with Dedupe and Persistence [pending]
+### Dependencies: 72.3
+### Description: Build a persistent queue to store agent commands while offline, with idempotency keys to prevent duplicates.
+### Details:
+Define CommandQueueItem schema (id, idempotencyKey, agentId, commandType, payload, createdAt, attempts, lastError, metadata); persist queue in IndexedDB (via idb/localForage) to survive reloads; implement enqueue with deduplication by idempotencyKey and optional coalescing; set size limits and eviction policy; provide enqueue/dequeue/peek APIs and events; ensure serialization of payload and safe upgrades with versioned DB.
+
+## 5. Replay and Retry Logic on Reconnect [pending]
+### Dependencies: 72.3, 72.4
+### Description: Drain the command queue when connectivity is restored with ordered, idempotent submission and robust retries.
+### Details:
+Subscribe to connectivity service; on online or service-healthy, drain queue; maintain per-agent ordering and configurable concurrency; implement exponential backoff with jitter, timeouts, and max-attempts; treat safe 409/422/duplicate responses as delivered when applicable; update attempts/lastError; pause/retry on degraded conditions; expose progress events and surface failures to UI; ensure replay does not generate duplicates using idempotency keys.
+
+## 6. Service Worker Versioning and Update Flow (skipWaiting) [pending]
+### Dependencies: 72.1, 72.2
+### Description: Implement SW update strategy with skipWaiting/clientsClaim and a safe app refresh flow.
+### Details:
+In SW, call self.skipWaiting() and clientsClaim(); in registration, listen for waiting state and notify app; present unobtrusive update prompt or auto-refresh when idle; ensure queued commands are persisted before refresh and seamlessly resume after reload; broadcast update events via BroadcastChannel or postMessage; clean up old caches during activate; handle multiple tabs consistently.
+
+## 7. Edge Cases and Partial Failure Handling [pending]
+### Dependencies: 72.4, 72.5
+### Description: Harden logic for intermittent connectivity, partial server writes, and race conditions.
+### Details:
+Define handling for partial successes (e.g., server processed but client timed out) using idempotency and reconciliation; implement flap protection (cooldown before replay, cancel inflight on offline); add dead-letter queue after max attempts with user-facing action to retry/ignore; guard against clock skew and duplicate tabs draining; apply per-endpoint rate limits; ensure safe shutdown persisting queue state.
+
+## 8. Telemetry and Instrumentation [pending]
+### Dependencies: 72.3, 72.4, 72.5, 72.6
+### Description: Add structured telemetry for SW lifecycle, connectivity, queue operations, and replay outcomes.
+### Details:
+Emit events: sw_install/activate/update, online/offline transitions, enqueue/dequeue, queue_size, dedupe_hits, replay_attempt/success/failure, backoff metrics; include correlation/request IDs and idempotencyKey; respect privacy and sampling; buffer telemetry offline and flush via sendBeacon/fetch when online; add debug logging toggles and minimal dashboards or logs for validation.
+
+## 9. Offline, Replay, and Update Test Suite [pending]
+### Dependencies: 72.1, 72.2, 72.3, 72.4, 72.5, 72.6, 72.7, 72.8
+### Description: Create unit and E2E tests to validate caching, offline queuing, replay without duplication, and update flow.
+### Details:
+Add unit tests for queue persistence, dedupe, backoff, and edge cases; integration tests for connectivity service; E2E with Playwright/Cypress simulating offline/online to verify shell loads offline, commands queue, and replay once on reconnect; verify no duplicates under flapping; test SW update path (skipWaiting, prompt, reload) without losing queued items; document manual test plan.
+

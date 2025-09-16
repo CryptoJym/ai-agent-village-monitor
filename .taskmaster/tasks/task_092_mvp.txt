@@ -1,0 +1,95 @@
+# Task ID: 92
+# Title: Public Village Mode
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Enable read-only public villages accessible without login when is_public is true.
+# Details:
+Public route /village/:id?public=1. API allows GET for public villages without JWT, but blocks mutations. WS join supports anonymous read-only token or unauthenticated namespace for public rooms.
+
+# Test Strategy:
+Toggle village public and access from incognito. Ensure no mutation endpoints are allowed. Verify WS subscribe works read-only and no agent commands permitted.
+
+# Subtasks:
+## 1. Public route handling [pending]
+### Dependencies: 92.2, 92.4
+### Description: Implement the public village route /village/:id?public=1 with unauthenticated access when the village is public, and deny otherwise.
+### Details:
+- Add SPA/SSR route /village/:id that recognizes query param public=1.
+- On load, call the public GET endpoint to verify is_public and fetch initial data.
+- If not public, show 403 page or redirect to login; show 404 if village not found.
+- Build shareable URL including ?public=1.
+- Provide a read-only mode flag in route state for downstream UI gating.
+- Handle error states and loading skeletons.
+
+## 2. Public GET endpoints without JWT [pending]
+### Dependencies: None
+### Description: Expose read-only REST endpoints that permit GET without JWT when the target village is public.
+### Details:
+- Introduce public guard middleware that allows GET when village.is_public is true and rejects otherwise.
+- Support fetching minimal village data and scene state (e.g., GET /api/villages/:id?public=1 and related read-only resources).
+- Redact sensitive fields (owner_id, internal notes, tokens).
+- Return 403 for private villages, 404 if not found.
+- Apply rate limiting for unauthenticated access.
+- Log access for observability.
+
+## 3. Server-side mutation blocking [pending]
+### Dependencies: 92.2
+### Description: Block all mutations for unauthenticated users and ensure public-mode requests cannot mutate state.
+### Details:
+- Enforce auth on all POST/PUT/PATCH/DELETE for villages and nested resources; return 401/403 as appropriate.
+- Ensure presence of public=1 never relaxes auth checks.
+- Harden any action endpoints (agent commands, layout changes) to reject when unauthenticated or when connection is readOnly.
+- Add centralized error codes/messages for clarity.
+- Add unit tests for negative cases (unauthenticated mutation attempts).
+
+## 4. WebSocket anonymous read-only join [pending]
+### Dependencies: 92.2, 92.3
+### Description: Allow anonymous, read-only WebSocket connections to public villages with strict command filtering.
+### Details:
+- Add WS endpoint (e.g., /ws/village/:id?public=1) that verifies village.is_public.
+- Issue an ephemeral anonymous session with readOnly=true; subscribe to room broadcasts.
+- Broadcast server-side state updates to anonymous clients; drop all incoming mutation/command messages from readOnly connections.
+- Protect namespaces/rooms to prevent cross-room leakage.
+- Add basic heartbeat/timeout handling.
+
+## 5. UI gating of controls in public mode [pending]
+### Dependencies: 92.1, 92.4
+### Description: Disable or hide all mutating UI controls when viewing a village in public mode.
+### Details:
+- Derive canEdit from route public=1 and/or WS/session readOnly flag.
+- Disable drag-and-drop, hide add/remove buttons, block context menus and keyboard shortcuts that mutate.
+- Show a non-intrusive read-only banner with a link to open editable mode (/village/:id without public=1) for authorized users.
+- Prevent accidental mutations via defensive checks in action handlers.
+- Provide a copy-link-to-public-view button.
+
+## 6. Settings toggle for is_public [pending]
+### Dependencies: 92.2
+### Description: Add an owner-only settings toggle to enable/disable public mode and surface the share link.
+### Details:
+- In village settings, add an is_public switch with confirmation and explanatory text.
+- Persist via PUT /api/villages/:id (requires auth and ownership) and update UI state on success.
+- On enable, display the public URL (?public=1) with copy-to-clipboard.
+- On disable, ensure public endpoints return 403 and WS public joins are refused.
+- Optional: add audit log entry for toggle changes.
+
+## 7. Cache headers for public content [pending]
+### Dependencies: 92.2
+### Description: Serve cache-friendly responses for public GET endpoints using Cache-Control and ETag.
+### Details:
+- For public GET responses, set Cache-Control: public, max-age=60, stale-while-revalidate=300 (tune as needed) and compute ETag from updated_at/state hash.
+- Handle If-None-Match to return 304 when appropriate.
+- Invalidate or vary ETag on any mutation by the owner.
+- Ensure no sensitive headers or private data are cached.
+- Document CDN/proxy considerations.
+
+## 8. Incognito tests for public mode [pending]
+### Dependencies: 92.1, 92.2, 92.3, 92.4, 92.5, 92.6, 92.7
+### Description: Add E2E and API tests validating public read-only behavior in an incognito/no-auth context.
+### Details:
+- E2E: Open /village/:id?public=1 without login, confirm data renders, banner shows, and controls are disabled.
+- API: GET succeeds for public village, same GET returns 403 when is_public=false, mutations return 401/403 unauthenticated.
+- WS: Anonymous join receives updates, cannot send commands (server ignores/denies).
+- Cache: Responses include Cache-Control and ETag; verify 304 on re-request.
+- Toggle: Enabling exposes public view; disabling causes 403 on public route thereafter.
+

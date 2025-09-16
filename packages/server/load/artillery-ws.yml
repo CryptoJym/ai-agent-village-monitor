@@ -1,0 +1,32 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 20
+    - duration: 60
+      arrivalRate: 100
+  engines:
+    socketio: {}
+  processor: |
+    function auth(context, events, done) {
+      // Attach token if provided
+      const token = process.env.TOKEN || '';
+      context.vars.auth = token ? { token } : {};
+      return done();
+    }
+scenarios:
+  - name: socket.io join and ping
+    engine: socketio
+    flow:
+      - function: auth
+      - think: 0.1
+      - emit:
+          channel: join_village
+          data:
+            villageId: "demo"
+      - loop:
+          - emit:
+              channel: ping
+          - think: 0.2
+        count: 10
+

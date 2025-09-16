@@ -1,0 +1,194 @@
+# Task ID: 61
+# Title: Agent Entity with Status and Interactions
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Create agent sprites with color-coded status rings, animations, hover/click behavior.
+# Details:
+Agent class with states: idle, working, debugging, error.
+- Status ring color per PRD palette
+- Idle bobbing, walking path between houses, working gesture
+- Hover: show name/status; Click: open Dialogue panel
+- Right-click: quick action menu (start/stop, run tool)
+- Drag moves agent (visual only)
+
+
+# Test Strategy:
+Simulate status changes via WS events and verify visual updates. Click opens Dialogue <300ms. Dragging updates position visually without backend changes.
+
+# Subtasks:
+## 1. Agent class and state machine [done]
+### Dependencies: None
+### Description: Implement Agent entity with core properties and state transitions.
+### Details:
+Create an Agent class (e.g., extends Phaser.GameObjects.Container) encapsulating sprite, name, and interaction hooks. Implement a finite state machine with states: idle, working, debugging, error. Expose methods: setState(next, meta?), start(), stop(), runTool(toolId?), setName(), setPath(pathProvider?). Emit events on transitions (stateChanged), clicks, hovers, drag start/move/end. Include config for movement speed, idle bob amplitude, and update loop integration. Provide guards to prevent invalid transitions and a queue for transient actions (e.g., runTool).
+<info added on 2025-09-14T22:13:09.697Z>
+Implemented Agent class extending Phaser.GameObjects.Container with a finite state machine (idle, working, debugging, error). setState(next, meta?) now applies corresponding visual changes and triggers state-specific animations.
+</info added on 2025-09-14T22:13:09.697Z>
+<info added on 2025-09-14T22:15:16.729Z>
+Agent class implemented as a Phaser.GameObjects.Container with FSM (idle, working, debugging, error); setState updates visual state and triggers associated animations.
+</info added on 2025-09-14T22:15:16.729Z>
+
+## 2. Status ring rendering [done]
+### Dependencies: 61.1
+### Description: Draw and update a color-coded ring around the agent based on state.
+### Details:
+Implement a ring using Phaser.Graphics or a dedicated sprite. Map states to PRD palette colors: idle, working, debugging, error. Configure radius, thickness, alpha, and glow/shadow to ensure readability on all backgrounds. Subscribe to Agent stateChanged to update ring color and optional pulse for error. Ensure proper z-order relative to agent sprite and tooltip, and efficient redraws (cache when possible).
+<info added on 2025-09-14T22:13:21.763Z>
+Added status ring with color mapping per state: idle=green, working=blue, debugging=amber, error=red.
+</info added on 2025-09-14T22:13:21.763Z>
+<info added on 2025-09-14T22:15:40.870Z>
+Added status ring with color mapping per state (idle=green, working=blue, debugging=amber, error=red).
+</info added on 2025-09-14T22:15:40.870Z>
+
+## 3. Animations per state [done]
+### Dependencies: 61.1
+### Description: Define and trigger animations for idle, working, debugging, error, and walking.
+### Details:
+Idle: subtle bobbing via tween with randomized phase and amplitude within bounds. Working: looping gesture (e.g., typing/hammer) with optional particle or tool icon. Debugging: thinking/magnifier gesture with slow pulse. Error: shake/wiggle and brief red flash sync with ring pulse. Walking: step-cycle animation when agent is moving between points (use path provider if available; otherwise linear tween). Hook animations to state machine enter/exit, ensuring only one loop runs at a time and transitions are smooth. Provide performance-safe tween handles and cleanup.
+<info added on 2025-09-14T22:13:53.467Z>
+- Implement tween helpers with handles: idleTween, workPulseTween, debugRingPulseTween, errorShakeTween, walkTween. Ensure only one looped tween runs at a time; kill and clear handles on state exit.
+- Idle bobbing tween (startIdleBobbing): y offset +/- 2–6 px, duration 1.8–2.6 s, ease Sine.inOut, yoyo true, repeat -1, startAt randomized phase. Reset y to base on stop.
+- Working pulse (startWorkingPulse): subtle body scale pulse 0.98–1.02 on both axes; duration 550–750 ms, ease Sine.inOut, yoyo true, repeat -1. Optional: slight ring alpha pulse 0.9–1.0 if ringRef available.
+- Debugging ring pulse (startDebugRingPulse): ringRef scale 1.0–1.10 and alpha 0.75–1.0; duration 1000–1300 ms, ease Sine.inOut, yoyo true, repeat -1. Keep body scale at 1 to differentiate from working.
+- Error shake (playErrorShake): interrupt other loops, then tween jitter on x: +/- 4–8 px, 90–120 ms per segment, repeat 4–6, ease Sine.inOut; concurrently flash ringRef tint to error color and alpha to 1.0 in sync with subtask 61.2 ring pulse. On complete, resume previous or idle loop based on state.
+- walkTo(target, opts): transition to walking state; if pathProvider exists, get path from current to target, else linear tween to {x,y}. Config: speed px/s or duration; default speed 120 px/s; ease Linear; update step-cycle animation by tween progress. Options: onArrive callback, autoReturnToIdle (default true). On complete: if autoReturnToIdle and no queued state, setState('idle') to re-enable idle bobbing.
+- Guard re-entrancy: if a new state is entered, stop and remove walkTween and any loop tweens except the one for the new state. Reset transforms (scale=1, rotation=0, tint=base, alpha=1, y=base).
+- Public API surface: startIdleBobbing(), startWorkingPulse(), startDebugRingPulse(), playErrorShake(), walkTo(target, opts), cancelWalk(), stopAllAnimations().
+</info added on 2025-09-14T22:13:53.467Z>
+<info added on 2025-09-14T22:16:36.051Z>
+- TypeScript-style API signatures for animation control:
+  - startIdleBobbing(): void
+  - startWorkingPulse(tool?: 'typing' | 'hammer' | 'wrench' | string): void
+  - startDebugRingPulse(): void
+  - playErrorShake(opts?: { intensity?: number; segments?: number }): Promise<void>  // resolves when shake completes
+  - walkTo(target: { x: number; y: number }, opts?: { speed?: number; duration?: number; ease?: any; onArrive?: () => void; autoReturnToIdle?: boolean }): Promise<void>  // resolves on arrival or cancel
+  - cancelWalk(): void
+  - stopAllAnimations(): void
+
+- Behavioral guarantees and edge cases:
+  - Idempotency: calling a looped animation start function for the current state does nothing (no duplicate tweens).
+  - Debounce error shake: minimum 250–300 ms between consecutive shakes; later calls during an active shake queue one replay or are ignored (choose one behavior and document).
+  - Cleanup on destroy/removeFromScene: kill all tweens, clear handles, and reset transforms to base.
+  - Visibility/pause safety: pause/resume tween timelines on scene pause/visibility change to prevent drift; on resume, re-sync to current state.
+  - Prefers-reduced-motion: if enabled, disable positional bobbing/shake and use low-amplitude alpha/scale changes; expose flag reduceMotion to override per instance.
+  - Transform hygiene: bobbing and shake affect position only; working pulse affects body scale only; debugging pulse affects ring only; no cross-axis bleed or cumulative offsets.
+  - Event emission hooks (optional): emit('animation:start', state), emit('animation:stop', state), emit('walk:start', data), emit('walk:arrive', data), emit('error:shake').
+
+- walkTo specifics:
+  - Duration is derived from speed when both provided; duration wins only if explicitly set; otherwise duration = distance / speed.
+  - Coalesce duplicates: if already walking to the same target (within 1–2 px), do not restart the path tween; immediately resolve the returned Promise.
+  - Path provider contract: pathProvider.getPath(from, to) -> Array<{x,y}>; if it returns null/empty, fall back to a single linear tween to target.
+  - Step-cycle sync: compute step phase from tween progress (0..1); ensure consistent cadence regardless of segment count by normalizing per distance.
+  - Arrival ordering: on tween complete, snap to exact target {x,y}, then invoke opts.onArrive (if provided), then resolve Promise, then perform autoReturnToIdle if enabled and no higher-priority state is queued.
+  - cancelWalk behavior: immediately stop movement, reject/resolve the walk Promise with a cancellation reason, clear step-cycle state, and optionally return to idle if no other state is active.
+
+- State transitions and precedence:
+  - Error shake preempts any active loop; after completion, return to the prior state’s loop if that state is still current; otherwise follow the current state machine state.
+  - Entering walking cancels idle/working/debugging loops and disables their transforms; entering idle after walking re-enables idle bobbing only if no other state is pending.
+  - Queued state handling: if a state change occurs during walkTo, arrival should honor the latest state (e.g., working/debugging) rather than auto-returning to idle.
+
+- QA/verification checklist:
+  - Idle: start/stop does not drift y; multiple calls do not spawn duplicate tweens; respects reduced motion.
+  - Working: scale pulses body only; ring remains stable unless optional alpha pulse is enabled; stopping resets scale to 1.
+  - Debugging: ring pulses scale/alpha; body remains at scale 1; stopping restores ring to base scale/alpha.
+  - Error: position shakes within bounds; ring flashes in sync; no lingering transforms; cannot be spammed faster than debounce.
+  - walkTo: resolves Promise on arrival; calls onArrive before autoReturnToIdle; cancelWalk halts motion and cleans up; same-target calls coalesce; pathProvider absence gracefully falls back to linear; step-cycle animates consistently over different distances.
+</info added on 2025-09-14T22:16:36.051Z>
+
+## 4. Hover and tooltip behavior [done]
+### Dependencies: 61.1
+### Description: Show name/status tooltip on hover and wire basic pointer events. [Updated: 9/14/2025] [Updated: 9/14/2025]
+### Details:
+Make the Agent interactive with appropriate hit area. On pointerover, show a tooltip near cursor containing agent name and current status; update live if status changes. On pointerout, hide with small delay to avoid flicker. Debounce rapid enter/leave, support multiple agents, and ensure tooltip layering above rings/sprites. Provide accessible targets on mobile (tap-and-hold fallback). Expose click event but do not open Dialogue here.
+<info added on 2025-09-14T22:14:29.046Z>
+- Implement a single shared TooltipManager (UI overlay or DOM element) for all Agents. Content format: "<agentName> — <localizedStatusLabel>" with a small status-color dot.
+- Timing: show after 120 ms; hide after 180 ms; ignore enter/leave flaps <60 ms (debounce).
+- Positioning: track pointer via requestAnimationFrame with a 12 px offset; clamp to viewport bounds and flip side when near edges; account for camera pan/zoom so the tooltip stays aligned.
+- Concurrency: only one tooltip visible at a time; switching hovered agent updates content/position without a hide/show cycle.
+- i18n: localize status via key agent.status.<state>, fallback to raw state if missing.
+- Accessibility: role=tooltip, aria-live=polite; show on keyboard focus of an Agent; Esc hides. Touch: long-press 500 ms to show; tap outside or lift finger to hide; does not trigger drag or Dialogue.
+- Events: emit hover:start, hover:end, tooltip:shown, tooltip:hidden for observability.
+- Edge cases: if the hovered Agent is removed or status becomes undefined, hide gracefully; never block click handlers or capture focus unexpectedly.
+
+Acceptance:
+- Hovering an Agent shows "<name> — <status>" after ~120 ms; moving away hides after ~180 ms without flicker.
+- Tooltip follows the cursor, never overflows the viewport, and stays above Agent visuals.
+- Live status changes update the tooltip text while visible.
+- Only one tooltip is visible even when rapidly moving across multiple Agents.
+- Keyboard focus and touch long-press show the same tooltip content and behavior; i18n keys are used for the status label.
+</info added on 2025-09-14T22:14:29.046Z>
+<info added on 2025-09-14T22:17:39.960Z>
+- Implement TooltipManager as a single Phaser.GameObjects.Container (Phaser-based, not DOM). Contents: a rounded-rectangle background, a small status-color dot, and a Phaser.Text for "<agentName> — <localizedStatusLabel>".
+- Add the container to a UI layer/scene with depth above agents; setScrollFactor(0) so it remains screen-space and unaffected by world pan/zoom. The container is non-interactive (does not capture input or focus).
+- Styling/layout: background fill #000 with ~0.85 alpha, 6 px corner radius; padding 10 px horizontal / 6 px vertical; text color #fff using the app’s UI font; status dot diameter 6 px spaced 6 px before text. Auto-size the background to the measured text + padding. Max width 280 px with word-wrap or ellipsis; minimum width 80 px to avoid jitter with short names.
+- Positioning: place at pointer x/y + 12 px offset; clamp within the camera viewport and flip offset horizontally/vertically when near edges. For keyboard focus (no pointer), anchor near the focused agent’s head by converting world coords to screen via camera.
+- Behavior: reuse the single container across agents; update text and status-dot color on hover change or live status updates without destroying/recreating. Pixel-round positions to avoid jitter at fractional scales. Optional alpha tween (100–150 ms) on show/hide while preserving the existing show/hide delays.
+</info added on 2025-09-14T22:17:39.960Z>
+
+## 5. Open Dialogue on click [done]
+### Dependencies: 61.4
+### Description: Open the Dialogue panel when an agent is clicked. [Updated: 9/14/2025]
+### Details:
+Handle pointerup/click on Agent to open the Dialogue panel with the agent context (id/name/state). Integrate with the existing Dialogue UI via event bus or direct API. Ensure the panel opens within 300ms under normal conditions; pre-warm resources if needed. Prevent click from firing after a drag. Provide telemetry hooks for open time and success/failure. Close any tooltip when opening Dialogue.
+<info added on 2025-09-14T22:14:52.426Z>
+Open the Dialogue as a modal Phaser overlay with a full-screen dimmed interactive backdrop that blocks input to the world. The centered panel must display the agent’s name and current status. Provide two close affordances: a visible close button on the panel and click-away on the backdrop; also support ESC to close for consistency. Ensure the overlay captures all pointer/touch events and restores underlying interactivity on close.
+</info added on 2025-09-14T22:14:52.426Z>
+<info added on 2025-09-14T22:18:41.982Z>
+Implemented click-to-open Phaser modal overlay: on Agent click, display a centered panel showing the agent’s name and current status with a visible Close button; the overlay dims and blocks world input and restores it on close.
+</info added on 2025-09-14T22:18:41.982Z>
+
+## 6. Context menu actions (right-click) [done]
+### Dependencies: 61.1, 61.4
+### Description: Implement right-click quick actions: start/stop, run tool. [Updated: 9/14/2025]
+### Details:
+On right-click, open a context menu near the pointer with actions: Start work (sets working), Stop (sets idle), Run tool (select default or last-used tool). Wire actions to Agent methods and optionally emit command events for backend handling. Use optimistic UI with rollback on failure or await WS confirmation (configurable). Close on outside click or ESC, and position to stay within viewport. Disable or hide actions not valid for current state.
+<info added on 2025-09-14T22:19:14.100Z>
+Update the context menu to include exactly three actions:
+- Start working: sets state to working
+- Start debugging: sets state to debugging
+- Stop (idle): sets state to idle
+
+Remove the "Run tool" action from this menu.
+
+Wire actions to Agent methods (e.g., startWorking, startDebugging, stop) and optionally emit backend command events (e.g., agent.startWorking, agent.startDebugging, agent.stop), following the existing optimistic UI/rollback pattern.
+
+State gating:
+- Hide/disable Start working when already working.
+- Hide/disable Start debugging when already debugging.
+- Hide/disable Stop when idle; enable when in working/debugging/error.
+
+Use i18n keys for labels (e.g., context.startWorking, context.startDebugging, context.stop).
+</info added on 2025-09-14T22:19:14.100Z>
+
+## 7. Drag-to-move visuals [done]
+### Dependencies: 61.1, 61.4
+### Description: Enable dragging the agent to reposition visually only. [Updated: 9/14/2025]
+### Details:
+Make the Agent draggable. On drag start: raise z-index, add subtle scale-up and drop shadow. On drag: follow pointer with smoothing; clamp to world bounds; suspend tooltip/click. On drop: set new visual position; emit positionChanged; do not persist or call backend. Snap optionally to nearest valid surface if provided. Cancel click after drag to prevent unintended Dialogue opens. Restore animations/state visuals after drop.
+<info added on 2025-09-14T22:20:47.827Z>
+Dragmove now updates the Agent container’s x/y continuously in scene coordinates using pointer.worldX/Y with container.setPosition for camera-aware movement. External position updates (e.g., WebSocket-driven) are ignored or queued while dragging to prevent jitter and resume after drop.
+</info added on 2025-09-14T22:20:47.827Z>
+
+## 8. WebSocket-driven state updates [done]
+### Dependencies: 61.1, 61.2, 61.3
+### Description: Subscribe to WS events to drive live agent state and activity.
+### Details:
+Connect to the app's WS/event bus and handle agent-related messages (e.g., agent.status.update, agent.tool.started/completed, agent.error). Map payloads to Agent.setState and metadata (e.g., current tool). Throttle or coalesce rapid updates to avoid animation thrash. Handle unknown agents gracefully and reconnect logic. Ensure ring color and animations update via the stateChanged pipeline. Provide logging and a mockable WS client for tests.
+<info added on 2025-09-14T22:21:39.970Z>
+Implemented WS client at ws://<host>:3000/ws that parses JSON messages and routes:
+- type=agent.status.update { agentId, state, tool? } → Agent.setState(state, { tool })
+- type=agent.position.update { agentId, x, y } → Agent.setPosition(x, y) (suppressed while agent is being dragged)
+
+Coalesce rapid position updates to animation frames (~16ms) and debounce status changes (~100ms) to prevent animation thrash. Auto-reconnect with jittered backoff. When WS is unavailable or fails to connect, enable a randomized timer fallback that emits synthetic state and (x, y) updates for known agents at intervals until a successful reconnect, then disable fallback. Unknown agentIds are handled gracefully with a warn log and the latest message cached briefly until the entity is registered. Logging added under tag AgentWS and a mockable WS client interface is exposed for tests.
+</info added on 2025-09-14T22:21:39.970Z>
+
+## 9. Interaction tests and QA [done]
+### Dependencies: 61.1, 61.2, 61.3, 61.4, 61.5, 61.6, 61.7, 61.8
+### Description: Automated tests for visuals, interactions, and live updates.
+### Details:
+Unit tests: state machine transitions and guards; status-to-color mapping; animation start/stop on state changes. Integration/E2E: hover shows tooltip with correct name/status; click opens Dialogue within 300ms; right-click shows context menu and actions update state; drag moves agent visually and does not issue persistence calls; WS events drive state changes and reflect in ring/animation; z-ordering correct; no memory leaks after create/destroy cycles. Include test hooks and mocks for WS and Dialogue.
+<info added on 2025-09-14T22:22:16.315Z>
+Manual QA completed: hover tooltip shows correct name/status; click opens Dialogue in under 300ms; right-click actions update agent state and visuals; dragging moves agent visually only with no persistence/network calls; state animations and status ring reflect transitions correctly; WebSocket-disabled scenario triggers fallback and UI state updates continue. Production build successful with Vite.
+</info added on 2025-09-14T22:22:16.315Z>
+

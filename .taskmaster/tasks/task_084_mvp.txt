@@ -1,0 +1,96 @@
+# Task ID: 84
+# Title: End-to-End Tests (Playwright)
+# Status: pending
+# Dependencies: 54, 58
+# Priority: medium
+# Description: Automate core journeys: login, village render, agent click -> dialogue streaming, bug bot spawn/assign, world map travel.
+# Details:
+Playwright tests with test users and seeded org. Use mock WS server or test environment. Steps: login via stub, load village <3s, click agent -> dialogue <300ms with stream, create issue webhook -> bot spawn <10s and assign agent, travel between orgs <2s.
+
+# Test Strategy:
+Run in CI headless and record videos. Assertions on timing and UI states. Flake-resistant waits using WS event hooks. Performance budget checks per acceptance criteria.
+
+# Subtasks:
+## 1. Playwright configuration and auth stub [pending]
+### Dependencies: None
+### Description: Initialize Playwright project, base config, headless CI settings, retries, and implement login stub/fixture.
+### Details:
+• Create playwright.config with baseURL, headless true in CI, retries=2-3, fullyParallel=false, reporter=json+html, trace=retain-on-failure, video=retain-on-failure, screenshot=only-on-failure.
+• Add testDir, outputDir, timeout defaults, expect timeouts, and projects for Chromium/WebKit if needed.
+• Implement auth fixture that produces storageState by stubbing login: route /api/auth/me or generate signed session cookie/token; persist to storageState.json; expose loginAsTestUser(userRole?).
+• Support env vars: E2E_BASE_URL, E2E_WS_URL, E2E_USER, E2E_PASS, E2E_WEBHOOK_URL, E2E_ORG_ID.
+• Ensure stable locators via data-testid; set test.use({ storageState }) at project level for authenticated tests.
+• Add CI job scaffolding (node version, install browsers).
+
+## 2. Test data and seeding [pending]
+### Dependencies: 84.1
+### Description: Create deterministic seed script for org, users, and fixtures required by E2E.
+### Details:
+• Implement a seed:e2e script to create: seeded org (ORG_A), secondary org (ORG_B), test users (admin, agent), default village state, at least one agent with predictable name/id, and a webhook secret.
+• Provide cleanup or idempotent upserts keyed by fixed IDs; expose an API/test-only endpoint or CLI to run in CI before tests.
+• Emit seed outputs to a JSON file (org IDs, user creds, webhook URL) consumed by tests/env.
+• Ensure app points to a mock/test WS endpoint when E2E_MODE is set.
+
+## 3. Village render journey [pending]
+### Dependencies: 84.1, 84.2
+### Description: Test login via stub and initial village load under 3s with core UI visible.
+### Details:
+• Using auth fixture, navigate to /org/:orgId/village.
+• Start timer before navigation; wait for village root (data-testid=village-root) and agent list/canvas ready signals.
+• Assert TTFV or ready marker under 3000ms; verify presence of at least one agent entity and HUD elements.
+• Ensure no console errors; capture screenshot on failure.
+
+## 4. Agent click and dialogue streaming [pending]
+### Dependencies: 84.3
+### Description: Validate clicking an agent opens dialogue and first streamed token within 300ms; verify streaming behavior.
+### Details:
+• From village, click an agent card/avatar (data-testid=agent-<id>).
+• Record time; wait for dialogue panel (data-testid=dialogue-panel) to appear.
+• Attach WS/SSE hooks or window event listener exposed in test mode to detect first token event; alternatively, poll UI text length increases.
+• Assert first chunk under 300ms; verify at least N incremental updates over time (not a single full message).
+• Close dialogue and ensure clean state.
+
+## 5. Webhook-driven bot spawn simulation [pending]
+### Dependencies: 84.3
+### Description: Simulate issue creation webhook and assert bug bot appears in village within 10s.
+### Details:
+• Start a lightweight mock webhook server or call a test-only API that enqueues the event using the seeded webhook secret.
+• Post a deterministic issue payload; confirm server 200.
+• In UI, await bot entity (data-testid=bug-bot) or spawn event via WS hook.
+• Assert spawn occurs within 10,000ms; verify bot metadata (issue id/title) rendered.
+
+## 6. Agent assignment flow [pending]
+### Dependencies: 84.5
+### Description: After bot spawn, verify it auto-assigns an agent and UI reflects assignment.
+### Details:
+• From state after webhook, wait for assignment event or UI badge (data-testid=assigned-agent) linking bot to an agent.
+• Assert correct agent identity, and that assignment changes any relevant UI (badge, line linking, sidebar details).
+• Verify no unassigned state beyond a reasonable timeout; capture event order to reduce flake.
+
+## 7. World map travel between orgs [pending]
+### Dependencies: 84.3
+### Description: Navigate to world map and travel from ORG_A to ORG_B, asserting load under 2s.
+### Details:
+• Open world map (data-testid=world-map-open) and select ORG_B (data-testid=org-card-ORG_B).
+• Start timer on travel action; wait for ORG_B village ready marker.
+• Assert under 2000ms; confirm org header/context switched and agents rendered for ORG_B.
+• Optionally travel back to ORG_A to ensure state cleanup and no stale WS connections.
+
+## 8. Timing assertions and flake controls [pending]
+### Dependencies: 84.3, 84.4, 84.5, 84.6, 84.7
+### Description: Centralize performance budgets and add robust waits leveraging WS hooks to minimize flakiness.
+### Details:
+• Implement utility to measure durations (perf.now wrappers) and assert thresholds: village<3s, first-dialogue-token<300ms, bot-spawn<10s, travel<2s.
+• Replace arbitrary waits with expect.poll, toHave* with sensible timeouts, and event-based waits wired to WS/test hooks.
+• Disable animations in test CSS, set reduced motion, and use stable data-testid selectors.
+• Configure per-test timeouts and retries for known-flaky journeys; tag tests and gate on budgets.
+
+## 9. CI video and trace artifacts [pending]
+### Dependencies: 84.1
+### Description: Record and upload videos/traces for failures in CI for all journeys.
+### Details:
+• Set video=retain-on-failure, trace=retain-on-failure, screenshot=only-on-failure in config.
+• In CI (e.g., GitHub Actions), always upload playwright-report, test-results, and traces as artifacts; keep for 7–14 days.
+• Name artifacts with commit SHA and job matrix; ensure PR annotations link to report.
+• Document local reproduction steps with npx playwright show-report and trace viewer.
+

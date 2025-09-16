@@ -1,0 +1,61 @@
+# Task ID: 96
+# Title: Analytics and KPI Events
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Instrument core metrics: daily active villages, session duration, dialogue opens, command executions.
+# Details:
+Client emits analytics events to backend collector (privacy-aware). Server aggregates to Redis or time-series store (basic). Dashboard endpoints for KPIs (internal).
+
+# Test Strategy:
+Verify events fire on key actions. Validate aggregation correctness with sample data. Ensure opt-out setting respected.
+
+# Subtasks:
+## 1. Define Analytics Event Schema and Privacy Filters [pending]
+### Dependencies: None
+### Description: Establish the event types, payload fields, and privacy-preserving rules for client and server.
+### Details:
+Deliverables: (a) event catalog and schemas; (b) privacy policy and filters; (c) KPI mapping specs. Event types: village_active (heartbeat or once/day), session_start, session_end, dialogue_open, command_executed. Common fields: event_name, event_version, ts_utc, client_ts, anon_village_id, session_id (UUIDv4), app_version, platform, payload. Privacy rules: never send PII; hash village_id with rotating server-provided salt; min aggregation thresholds; payload size caps; drop free-form text; enforce allowlist fields. KPI mapping: define formulas for daily active villages (unique anon_village_id per UTC day), session duration (sum of session_end - session_start per session), dialogue opens (count), command executions (count). Provide JSON Schema for validation and sample payloads.
+
+## 2. Implement Client Analytics Emitter and Instrumentation [pending]
+### Dependencies: 96.1, 96.3
+### Description: Add client-side emitter to capture and send analytics events for core interactions.
+### Details:
+Scope: SDK/module to queue, batch, and send events; instrumentation for app/session lifecycle, dialogue opens, command executions. Features: offline queue with backoff, retry and jitter; batch POST to collector; include schema version and app metadata; respect opt-out; drop PII; clock skew handling via server time sync header. Instrumentation: fire session_start on app open/resume, session_end on app background/timeout with duration; record dialogue_open on UI entry; record command_executed on successful command completion. Config flags for sampling and endpoint base URL.
+
+## 3. Add Opt-Out and Consent Controls [pending]
+### Dependencies: 96.1
+### Description: Provide privacy controls and ensure end-to-end honoring of user opt-out.
+### Details:
+Client: settings toggle for analytics; default from config; persist locally; expose isAnalyticsEnabled(); add DNT support; emit no events when disabled except a one-time state change ping (optional, non-identifying). Propagate X-Analytics-Opt-Out header and omit identifiers when opted out. Server: enforce header to drop events and not log request body; provide config to globally disable analytics. Document behavior and test cases.
+
+## 4. Build Backend Collector API [pending]
+### Dependencies: 96.1, 96.3
+### Description: Create server endpoint to receive analytics events, validate, filter, and enqueue/store.
+### Details:
+Endpoint: POST /api/analytics/events (batch). Validate against JSON Schema; reject oversize payloads; sanitize/discard disallowed fields; respect opt-out header; attach server_received_ts. Auth: internal service token or signed client key. Storage: append raw events to Redis Stream (analytics:events) or a durable queue; also store limited recent buffer for debugging (TTL). Idempotency via client batch_id + event_id. Rate limiting and minimal logging with no payload.
+
+## 5. Implement Aggregation to Redis/Time-Series Store [pending]
+### Dependencies: 96.4
+### Description: Consume events and compute KPIs into Redis or a time-series DB for query efficiency.
+### Details:
+Worker: consume from analytics:events. Aggregations (UTC): daily_active_villages = PFADD/SET of anon_village_id per day then store counts; session_duration = sum per session from session_start/end pairs; dialogue_open_count and command_executed_count as daily counters. Storage options: Redis (keys like kpi:dav:2025-09-14, kpi:session_duration:avg:2025-09-14, etc.) or RedisTimeSeries/Timescale with labels. Handle late events/windowing (allow 48h updates). Backfill script for reprocessing. Metrics and alerts for lag and errors.
+
+## 6. Expose Internal KPI Endpoints [pending]
+### Dependencies: 96.5
+### Description: Provide internal API endpoints to retrieve computed KPIs for dashboards and tooling.
+### Details:
+Endpoints (auth required): GET /internal/analytics/kpis/daily-active-villages?start=YYYY-MM-DD&end=YYYY-MM-DD; GET /internal/analytics/kpis/session-duration?metric=avg|p50|p95&start=&end=; GET /internal/analytics/kpis/dialogue-opens?start=&end=; GET /internal/analytics/kpis/command-executions?start=&end=. Response: time series array of {date, value}. Implement caching (e.g., 60s), input validation, and rate limits. Include health check and version.
+
+## 7. Prototype Internal Analytics Dashboard [pending]
+### Dependencies: 96.6
+### Description: Create a simple internal dashboard to visualize KPIs over time.
+### Details:
+Build a minimal page within the admin UI: date range picker; charts for daily active villages, session duration (avg), dialogue opens, command executions; totals and week-over-week deltas. Consume internal KPI endpoints; handle loading/empty/error states; feature flag to restrict to staff. Add basic theming and export CSV.
+
+## 8. Validate Pipeline with Sample Events and Tests [pending]
+### Dependencies: 96.2, 96.4, 96.5, 96.6, 96.7, 96.3, 96.1
+### Description: Seed sample events and verify end-to-end correctness, privacy, and performance.
+### Details:
+Create a synthetic event generator to simulate villages/sessions. Tests: unit (schema validation, privacy filters), integration (client to collector to aggregation to endpoints), opt-out enforcement, idempotency, late events handling, and aggregation correctness against expected counts. Performance: ingest 10k-100k events and ensure acceptable latency and memory. Add dashboards smoke checks and sample data teardown.
+

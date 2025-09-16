@@ -1,0 +1,72 @@
+# Task ID: 89
+# Title: Village State Persistence
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Persist village layout and agent positions/sprite configs to maintain state between sessions.
+# Details:
+Save position_x/y on houses and agents on changes (drag or auto-placement). Autosave throttle. Load positions on scene init. Provide reset layout option.
+
+# Test Strategy:
+Move elements and reload; positions persist. Throttle avoids excessive API calls. Reset returns to auto layout.
+
+# Subtasks:
+## 1. Database schema for positions and sprite configs [pending]
+### Dependencies: None
+### Description: Add persistent fields to store house/agent positions and sprite configurations.
+### Details:
+Create migration(s):
+- houses: position_x FLOAT NULL, position_y FLOAT NULL, sprite_orientation VARCHAR(16) NULL, sprite_variant VARCHAR(32) NULL, sprite_scale FLOAT NULL, last_moved_at TIMESTAMP NULL, last_moved_by UUID NULL.
+- agents: position_x FLOAT NULL, position_y FLOAT NULL, sprite_orientation VARCHAR(16) NULL, sprite_variant VARCHAR(32) NULL, sprite_scale FLOAT NULL, last_moved_at TIMESTAMP NULL, last_moved_by UUID NULL.
+- villages: layout_version INT NOT NULL DEFAULT 0 (increment on successful layout save).
+Add partial indexes on (position_x, position_y) where NOT NULL if needed for queries; update triggers to set updated_at on change. Backfill not required; defaults are NULL meaning auto-layout.
+
+## 2. Autosave throttling and batching logic [pending]
+### Dependencies: 89.1, 89.3
+### Description: Implement client-side throttled autosave for drag/auto-placement updates.
+### Details:
+Implement per-entity change tracker with: throttle window 1000ms, trailing edge commit; debounce 300ms on dragend to flush immediately; flush on visibilitychange (hidden), scene shutdown, and beforeunload. Batch multiple entity updates into a single PUT /layout call. Keep only the last state per entity within a window. On error, exponential backoff retry up to 3 times, then surface non-blocking toast. Ensure resets bypass throttle and save immediately.
+
+## 3. REST endpoints for save/load layout [pending]
+### Dependencies: 89.1
+### Description: Provide secured APIs to retrieve and persist village layout (positions and sprite configs).
+### Details:
+Endpoints:
+- GET /api/villages/:id/layout -> 200 { layout_version, houses:[{id, position_x, position_y, sprite_orientation, sprite_variant, sprite_scale, last_moved_at}], agents:[...] }
+- PUT /api/villages/:id/layout -> accepts body { layout_version, houses:[{id, position_x, position_y, sprite_*}], agents:[...] }. Validates with zod; only allowed fields updated. On success: increments villages.layout_version and returns updated payload.
+Auth: requestor must have access to village. Return 403 otherwise. Input: reject coordinates outside bounds. Rate-limit e.g., 30/min per user per village.
+Concurrency: support If-Match ETag or compare layout_version; on mismatch return 409 { server_layout_version, changed_entities:[...] }.
+Logging: audit who moved what when.
+
+## 4. Scene load and application of persisted layout [pending]
+### Dependencies: 89.2, 89.3
+### Description: Apply saved positions/configs on scene init with sensible fallbacks.
+### Details:
+On scene create: call GET /layout; for each house/agent, if position present, set sprite position and config; otherwise run auto-placement algorithm and mark as dirty for save after initial settle. Hook drag events: on drag move, update in-memory state; on drag end, pass to autosave queue. Ensure camera and tilemap integration from Task 58 are respected. On errors loading layout, proceed with auto-layout and warn user. Maintain an in-memory layout_version for optimistic updates.
+
+## 5. Reset-to-auto-layout action [pending]
+### Dependencies: 89.3, 89.4
+### Description: Provide UI and logic to reset positions to auto-layout and persist the change.
+### Details:
+Add a Reset Layout button with confirmation modal. On confirm: compute auto-layout client-side, update all positions/configs in memory, and immediately PUT /layout (bypass throttle) with full batch. After success, refresh in-memory layout_version. Provide undo within 5s by caching previous layout in memory and re-saving if user clicks Undo. Disable reset if a save is in-flight to avoid conflicts.
+
+## 6. Conflict detection and resolution strategy [pending]
+### Dependencies: 89.2, 89.3
+### Description: Define and implement how concurrent edits are detected and resolved for layout saves.
+### Details:
+Use villages.layout_version for coarse-grained concurrency; compare on PUT. Server computes changed_entities since client_version using updated_at/last_moved_at or a per-entity hash. Resolution: if conflicts involve different entities, allow server to merge and accept; if same entity changed, return 409 with server state and conflicting IDs. Client on 409: fetch latest layout, attempt per-entity merge, re-apply local unsaved moves for non-conflicting entities, prompt user if their move was overridden. Show non-blocking banner with ‘Review changes’ option.
+
+## 7. Tests for persistence, throttling, reset, and conflicts [pending]
+### Dependencies: 89.1, 89.2, 89.3, 89.4, 89.5, 89.6
+### Description: Add API and E2E tests verifying save/load, throttling behavior, reset, and conflict handling.
+### Details:
+API (Jest + Supertest):
+- GET/PUT /layout happy paths; validation errors; auth 403; version mismatch 409 with payload; layout_version increments.
+- DB assertions that positions and sprite fields persist.
+E2E (Cypress/Playwright):
+- Drag house/agent, wait < throttle window, ensure only 1 PUT sent; reload scene -> positions persist.
+- Multiple rapid drags coalesce into batched save.
+- Reset layout restores auto-layout and persists; Undo restores previous state.
+- Simulate two clients: induce conflict on same entity -> 409, client merges non-conflicting changes and prompts user.
+Performance: autosave under throttling does not exceed rate limit.
+

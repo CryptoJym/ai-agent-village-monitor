@@ -1,0 +1,493 @@
+{
+	"meta": {
+		"generatedAt": "2025-09-14T15:00:14.674Z",
+		"tasksAnalyzed": 60,
+		"totalTasks": 60,
+		"analysisCount": 60,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": false
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 41,
+			"taskTitle": "Initialize Monorepo and Tooling",
+			"complexityScore": 6,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Break into 9 subtasks covering: pnpm workspaces setup, TS base config + path aliases, ESLint/Prettier config, Husky + lint-staged hooks, shared package scaffolding, dotenv + zod config validation, Vite config with aliases, Express tsconfig/build scripts, CI smoke (build/lint/typecheck). Provide commands, config files, and DoD per subtask.",
+			"reasoning": "Multi-package scaffolding with shared tooling and strict config spans repo, build, lint, and CI."
+		},
+		{
+			"taskId": 42,
+			"taskTitle": "Backend Scaffold with Express + TypeScript",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create 6 subtasks: project structure, middleware wiring (helmet/cors/compression/json/morgan), typed config loader, health/ready endpoints, error/404 handlers with JSON shape, graceful startup/shutdown + Supertest smoke.",
+			"reasoning": "Foundational server setup with typed config and middleware is straightforward but multi-step."
+		},
+		{
+			"taskId": 43,
+			"taskTitle": "Database Setup and Migrations (PostgreSQL 15+)",
+			"complexityScore": 7,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Define 8 subtasks: Prisma init, schema modeling per PRD, citext/JSONB decisions, indexes/FKs/cascade, migration strategy, seed script for demo, local/test DB scripts, transaction/rollback test.",
+			"reasoning": "Schema mapping with constraints, migrations, and seed data demands careful design and validation."
+		},
+		{
+			"taskId": 44,
+			"taskTitle": "Redis and BullMQ Initialization",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Split into 7 subtasks: ioredis client factory, BullMQ queues (agentCommands, githubSync), worker processes, retry/backoff configs, metrics/logging, graceful shutdown, local docker-compose + enqueue/dequeue test.",
+			"reasoning": "Queue setup plus worker separation and reliability controls add moderate complexity."
+		},
+		{
+			"taskId": 45,
+			"taskTitle": "WebSocket Server with Native WS and Socket.io Fallback",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Plan 9 subtasks: attach Socket.io to HTTP server, JWT auth middleware, room naming & join handlers, event contracts (agent_update/work_stream/bug_bot_*), heartbeat/reconnect, transports config, error handling, load testing locally, integration tests with socket.io-client.",
+			"reasoning": "Auth, rooms, event design, and reconnection make real-time layer fairly intricate."
+		},
+		{
+			"taskId": 46,
+			"taskTitle": "GitHub OAuth 2.0 Flow",
+			"complexityScore": 8,
+			"recommendedSubtasks": 10,
+			"expansionPrompt": "Draft 10 subtasks: OAuth app config, login redirect, code exchange, user fetch + persistence, secure token storage (encrypt/hash), JWT access/refresh + rotation, /auth/me and logout, cookie/security headers, error/PII sanitization, end-to-end org test.",
+			"reasoning": "Security-sensitive auth with token handling, refresh, and PII controls is complex."
+		},
+		{
+			"taskId": 47,
+			"taskTitle": "JWT Auth Middleware and Access Control",
+			"complexityScore": 7,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create 8 subtasks: JWT verify util, request typing, requireAuth middleware, village role resolver from village_access, requireVillageRole helper, consistent 401/403 JSON errors, WS auth integration, tests for expiry/tamper and role gating.",
+			"reasoning": "Cross-cutting HTTP/WS authorization and robust error handling require careful design."
+		},
+		{
+			"taskId": 48,
+			"taskTitle": "Villages REST Endpoints",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Define 7 subtasks: zod request/response schemas, list-by-access endpoint, create village (owner/org), get/update/delete with ownership checks, persistence of config/public flag, last_synced update hook, Supertest CRUD suite.",
+			"reasoning": "CRUD with role checks and validation is moderate complexity."
+		},
+		{
+			"taskId": 49,
+			"taskTitle": "GitHub Organization and Repositories Sync",
+			"complexityScore": 8,
+			"recommendedSubtasks": 10,
+			"expansionPrompt": "Break into 10 subtasks: GitHubService (REST+GraphQL), repo query and pagination, languages fallback, sync endpoint and BullMQ job, upsert houses with layout seed, rate limit/ETag handling, retries/backoff, idempotency, metrics and logs, nock-based tests for small/large orgs.",
+			"reasoning": "External API pagination, rate limits, idempotent upserts, and queueing are non-trivial."
+		},
+		{
+			"taskId": 50,
+			"taskTitle": "Agents REST Endpoints and Model",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Plan 7 subtasks: DB model/types, list by village with role checks, create with validation (URL/config), update/delete endpoints, sprite_config/position handling, cross-village guardrails, integration tests.",
+			"reasoning": "Standard resource endpoints with auth and validation; moderate breadth."
+		},
+		{
+			"taskId": 51,
+			"taskTitle": "MCP Agent Controller Service",
+			"complexityScore": 8,
+			"recommendedSubtasks": 10,
+			"expansionPrompt": "Create 10 subtasks: controller class and lifecycle, connect/reconnect with backoff, runTool/runTask APIs, event streaming hooks, WS broadcasts to rooms, DB persistence of work_stream_events, error/state transitions, resource cleanup, metrics/logging, mockable interface + tests.",
+			"reasoning": "Stateful connections, streaming, persistence, and resilience make this complex."
+		},
+		{
+			"taskId": 52,
+			"taskTitle": "Agent Session Management and Command Queue",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Outline 9 subtasks: session model, start/stop endpoints, idempotency guards, BullMQ command producer, processor worker invoking MCP controller, retries/DLQ, WS error/success events, audit logging, integration tests across start->command->stop.",
+			"reasoning": "Session lifecycle plus reliable queued commands requires careful coordination."
+		},
+		{
+			"taskId": 53,
+			"taskTitle": "Work Stream Events API",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Define 7 subtasks: event DTO and serialization, paginated REST endpoint, SSE long-poll fallback, DB index creation, auth checks per agent/session, performance/timing tests, pagination correctness tests with large datasets.",
+			"reasoning": "Read-heavy API with pagination and optional streaming adds moderate complexity."
+		},
+		{
+			"taskId": 54,
+			"taskTitle": "Probot App Setup and Webhooks",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Create 9 subtasks: Probot app skeleton, webhook secret validation, issues.opened/closed handlers, check_run.completed handler, backend bridge call patterns, dedup/idempotency, security/replay protection, local runner for testing, Probot test suite.",
+			"reasoning": "Webhook security, idempotency, and multi-event handling is fairly involved."
+		},
+		{
+			"taskId": 55,
+			"taskTitle": "Bug Bot Persistence and Lifecycle",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Plan 9 subtasks: DB schema finalize, services (create/remove/assign/update), REST endpoints (list/assign/status), validation and auth, WS emissions for spawn/update/resolved, integration with webhooks, consistency checks with repos, tests for lifecycle, error paths.",
+			"reasoning": "Entity lifecycle across API, DB, and WS with authorization adds breadth."
+		},
+		{
+			"taskId": 56,
+			"taskTitle": "GitHub Actions Trigger Endpoint",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break into 6 subtasks: endpoint + zod validation, permission check against repo access, Octokit call to repository_dispatch, WS confirmation event, error mapping/403 handling, nock-based tests.",
+			"reasoning": "Single external API call with auth checks and simple feedback loop."
+		},
+		{
+			"taskId": 57,
+			"taskTitle": "Frontend Project Initialization (Vite + React + Phaser)",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create 8 subtasks: Vite React TS scaffold, aliases (@, @shared), Phaser integration via GameProvider, routing setup, minimal CSS modules infra, API client with zod parsing, WebSocketService stub, unit tests for mount and WS mock.",
+			"reasoning": "Front-end scaffolding with game loop integration and routing is moderately involved."
+		},
+		{
+			"taskId": 58,
+			"taskTitle": "VillageScene: Tilemap and Camera Controls",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Define 9 subtasks: iso grid utilities or plugin integration, base tilemap render, camera pan/drag, zoom with bounds, resize handling, double-click focus on house, performance tuning (culling), input on mobile, performance test harness.",
+			"reasoning": "Real-time rendering and input handling with performance constraints adds complexity."
+		},
+		{
+			"taskId": 59,
+			"taskTitle": "AssetManager: Load Sprites and Animations",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Plan 8 subtasks: LoadingScene with progress, atlas manifests and preload, animations (idle/walk/work), agent tint variations, house variants by language, AssetManager API, disposal/unload strategy, tests/snapshots for manifests.",
+			"reasoning": "Coordinating asset pipelines and memory management is moderately complex."
+		},
+		{
+			"taskId": 60,
+			"taskTitle": "House Entity and Repo Visualization",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create 8 subtasks: House container class, label/tooltip UI, activity indicators (lights/smoke), language-based visuals, click-to-zoom behavior, data mapping from repo stats, mock data harness, interaction tests.",
+			"reasoning": "Visual component with multiple states and interactions; moderate complexity."
+		},
+		{
+			"taskId": 61,
+			"taskTitle": "Agent Entity with Status and Interactions",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Define 9 subtasks: Agent class and state machine, status ring rendering, animations per state, hover/click tooltips, open Dialogue on click, context menu actions, drag visuals, WS-driven state updates, interaction tests.",
+			"reasoning": "Stateful sprite with rich interactions and live updates increases complexity."
+		},
+		{
+			"taskId": 62,
+			"taskTitle": "WebSocket Client Integration",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Outline 8 subtasks: Socket.io client wrapper, JWT attach + reconnect, room join flows (village/agent), event bus dispatch, handlers for agent_update/work_stream/bug_bot_*, offline handling + REST catch-up, latency measurement, unit tests with mocked server.",
+			"reasoning": "Realtime client with reconnection and event routing is moderately complex."
+		},
+		{
+			"taskId": 63,
+			"taskTitle": "Dialogue UI Panel with Tabs and Streaming",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create 8 subtasks: panel container with slide animation, tabs (Thread/Control/Info), streaming message list with auto-scroll, input box and enter-to-send, REST command integration, WS stream binding, responsive layout, component tests.",
+			"reasoning": "Multi-tab UI with streaming and UX polish requires coordinated state management."
+		},
+		{
+			"taskId": 64,
+			"taskTitle": "Control Panel Actions: Run Tool, Commit, PR",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Plan 8 subtasks: action buttons and forms, run_tool API integration, commit/PR flows (MCP or GitHub API calls via backend), in-flight/disabled states, error toasts, optimistic updates, sandbox E2E option, unit/integration tests.",
+			"reasoning": "Wire-up of several backend actions with UI state and error handling."
+		},
+		{
+			"taskId": 65,
+			"taskTitle": "GitHub Integration Middleware and Client",
+			"complexityScore": 8,
+			"recommendedSubtasks": 10,
+			"expansionPrompt": "Define 10 subtasks: Octokit REST/GraphQL setup with throttling/retry, token sourcing/rotation, ETag caching helpers, helper methods (repos/languages/dispatch/PR/issues), error mapping, backoff/jitter policies, rate-limit observability, unit tests with nock, minimal scopes audit, docs.",
+			"reasoning": "Robust API client with caching, retries, and token management is complex."
+		},
+		{
+			"taskId": 66,
+			"taskTitle": "Bug Bot UI: Spawn, Assign, Progress, Celebrate",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Create 9 subtasks: bot sprite and severity styles, spawn on WS event, drag-and-drop assignment to agent, assign API integration, progress visualization and fade, resolved celebration animation, performance batch handling, accessibility hints, tests and snapshots.",
+			"reasoning": "Complex interactive visuals tied to realtime and API updates."
+		},
+		{
+			"taskId": 67,
+			"taskTitle": "World Map Scene and Multi-Org Navigation",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Plan 9 subtasks: WorldMapScene rendering, village regions from API, lazy asset loading, navigation to VillageScene, state persistence across scenes, mini-map overlay, loading indicators and time budget, back navigation, performance/profile tests.",
+			"reasoning": "Scene orchestration with cross-view state and performance constraints is involved."
+		},
+		{
+			"taskId": 68,
+			"taskTitle": "Onboarding Flow and Demo Mode",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Define 9 subtasks: stepper UI, login integration, org selection, app install/scope grant UX, create village call, repo sync progress, demo mode with mock data, error recovery states, analytics for step timings.",
+			"reasoning": "Multi-step UX coordinating auth, APIs, and fallbacks increases complexity."
+		},
+		{
+			"taskId": 69,
+			"taskTitle": "Permissions and Access Control UI",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create 8 subtasks: settings page, invite by GitHub username flow, role assignment UI, public toggle, badges/role indicators, gating controls in UI, API linkage for village_access, tests for role-based visibility.",
+			"reasoning": "UI and API linkage for roles with stateful gating is moderately complex."
+		},
+		{
+			"taskId": 70,
+			"taskTitle": "Caching and Rate-Limit Backoff for GitHub",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Plan 9 subtasks: Redis key schema, cache set/get with TTLs, webhook invalidation, GraphQL batching paths, REST fallback, 403 backoff with jitter respecting reset, metrics for hit ratio, config toggles, simulated rate-limit tests.",
+			"reasoning": "Coordinating caching strategy with rate-limit policies and invalidation is non-trivial."
+		},
+		{
+			"taskId": 71,
+			"taskTitle": "Performance Optimization: Rendering and State",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Outline 9 subtasks: spatial hashing culling, draw call batching, UI update throttling to rAF, LOD tuning by zoom, GC pressure reduction, optional Web Worker for layout, FPS overlay, profiling scenarios, regression guardrails.",
+			"reasoning": "Real-time performance tuning across rendering and state pipelines is involved."
+		},
+		{
+			"taskId": 72,
+			"taskTitle": "Service Worker and Offline/Retry Logic",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Create 9 subtasks: Workbox setup, caching strategies per route, offline detection and UI indicator, in-app command queue with dedupe, replay on reconnect, versioning/update (skipWaiting), edge cases (partial failures), telemetry, offline tests.",
+			"reasoning": "Offline correctness and replay without duplication adds significant edge cases."
+		},
+		{
+			"taskId": 73,
+			"taskTitle": "Security Hardening: Validation, Rate Limit, Secrets",
+			"complexityScore": 8,
+			"recommendedSubtasks": 10,
+			"expansionPrompt": "Define 10 subtasks: zod schemas per endpoint, express-rate-limit with Redis store, CORS strict origins, Helmet CSP tuned for Phaser/WS, secret management policy, audit logging for agent commands, input sanitation/error shapes, pen-test checklist, logging PII scrub, docs/runbooks.",
+			"reasoning": "Cross-cutting security concerns and policies require rigorous configuration and tests."
+		},
+		{
+			"taskId": 74,
+			"taskTitle": "GitHub Webhook Handler Endpoint (Express Bridge)",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Create 7 subtasks: Express endpoint, signature validation (SHA-256), Probot bridge or direct handlers, delivery ID dedupe via Redis, retry/idempotency strategy, performance under burst, signed/tampered test cases.",
+			"reasoning": "Secure request validation and idempotency with moderate performance needs."
+		},
+		{
+			"taskId": 75,
+			"taskTitle": "GitHub Actions from Dialogue UI",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Plan 8 subtasks: list workflows API/UI dropdown, dispatch action integration, in-flight disabled states, build status mapping to visuals, webhook-driven updates for status, tooltips/badges, error handling, E2E validation on test repo.",
+			"reasoning": "UI wiring to backend and webhook-driven feedback adds moderate scope."
+		},
+		{
+			"taskId": 76,
+			"taskTitle": "World Map Mini-Map and Fast Travel",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Define 8 subtasks: render texture mini-map, viewport bounds overlay, click-to-teleport mapping, camera transition, state persistence (selected agent/tab) via store/URL, performance constraints (<2s), accessibility, tests.",
+			"reasoning": "Coordinating visual mini-map and state persistence is moderately complex."
+		},
+		{
+			"taskId": 77,
+			"taskTitle": "Settings and Preferences",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create 6 subtasks: settings UI, server-side preferences schema (JSONB), read/write endpoints, runtime application (LOD/FPS/keybinds/theme), defaults/migrations, tests for persistence and immediate effect.",
+			"reasoning": "Straightforward CRUD + UI with live application of preferences."
+		},
+		{
+			"taskId": 78,
+			"taskTitle": "Keyboard Shortcuts and Accessibility",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Plan 8 subtasks: shortcut registry (T/ESC/1-3), focus management in Dialogue, ARIA roles/labels, screen reader announcements for new messages, conflict resolution with browser defaults, high-contrast mode, axe audit fixes, tests for keyboard-only navigation.",
+			"reasoning": "Accessibility and keyboard interactions require careful UX and compliance checks."
+		},
+		{
+			"taskId": 79,
+			"taskTitle": "Monitoring, Logging, and Tracing",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Define 9 subtasks: Sentry backend/front integration with releases, pino logger with request-id, log context (user/session), OpenTelemetry setup and key spans, OTLP/export config, sample dashboards, error injection tests, privacy controls for logs, /metrics optional endpoint.",
+			"reasoning": "Cross-service telemetry and error capture with context is fairly involved."
+		},
+		{
+			"taskId": 80,
+			"taskTitle": "Documentation and API Reference",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create 8 subtasks: getting started/local dev, env vars and configs, architecture overview diagrams, DB schema reference, REST OpenAPI spec + swagger-ui, WS event contracts, MCP integration guide, deployment/runbooks.",
+			"reasoning": "Comprehensive docs and spec generation across modules; moderate but broad."
+		},
+		{
+			"taskId": 81,
+			"taskTitle": "Backend Unit Tests (Jest)",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Plan 8 subtasks: Jest + ts-jest setup, mocking Octokit/MCP/Redis, tests for GitHubService (retry/ETag), MCPAgentController state/streaming, queue producers/consumers logic, auth utilities (JWT), coverage thresholds config, CI integration.",
+			"reasoning": "Testing infra and service mocks with coverage goals is moderately complex."
+		},
+		{
+			"taskId": 82,
+			"taskTitle": "Backend Integration Tests (Supertest + Testcontainers)",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Define 9 subtasks: Testcontainers for Postgres/Redis, migration runner, seed data utilities, Supertest suites for key endpoints, WS test client for side-effects, isolation/teardown strategy, CI parallelization config, fixtures for JWT/auth, docs for running locally.",
+			"reasoning": "End-to-end infra with containers and WS adds setup and orchestration complexity."
+		},
+		{
+			"taskId": 83,
+			"taskTitle": "Frontend Unit and Component Tests (Vitest/RTL)",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create 6 subtasks: Vitest + RTL config with jsdom, WebSocketService mock, DialogueUI tests (open/close, auto-scroll), ControlTab interaction tests, snapshot states, keyboard shortcuts/ARIA assertions.",
+			"reasoning": "Standard component testing setup and essential interaction coverage."
+		},
+		{
+			"taskId": 84,
+			"taskTitle": "End-to-End Tests (Playwright)",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Plan 9 subtasks: Playwright config and auth stub, village render journey, agent click -> dialogue stream, webhook-driven bot spawn simulation, assign agent flow, world map travel, timing assertions and flake controls, video artifacts in CI, test data/seeding.",
+			"reasoning": "Multi-step user journeys with realtime and timing budgets increase complexity."
+		},
+		{
+			"taskId": 85,
+			"taskTitle": "Load and Soak Testing (k6/Artillery)",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Define 9 subtasks: k6 HTTP scenarios, Artillery WS broadcast scenarios, dataset generation (100 villages, 1000 users), thresholds (p95, error rates), ramp-up profiles, environment/staging setup, metrics collection, bottleneck analysis, report and remediation plan.",
+			"reasoning": "Coordinated HTTP/WS load testing with metrics and analysis is involved."
+		},
+		{
+			"taskId": 86,
+			"taskTitle": "CI/CD Pipelines (GitHub Actions)",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Create 8 subtasks: ci.yml with pnpm caching, lint/typecheck/unit/integration/e2e jobs, artifact upload (coverage/videos), deploy-frontend.yml (Vercel), deploy-backend.yml (Railway/Fly) with migrations, secrets management, branch protections, rollback verification.",
+			"reasoning": "Multiple pipelines and caches with deploy steps; moderate complexity."
+		},
+		{
+			"taskId": 87,
+			"taskTitle": "Production Deployment and Environment Configuration",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Plan 9 subtasks: Vercel project/domain/HSTS, backend deploy (Railway) with autoscaling, Postgres/Redis provisioning, env var management, CORS/WS origins, SSL and headers, smoke tests, scaling/stickiness strategy, backup/restore dry-run.",
+			"reasoning": "Coordinating infra, security, and scaling across services is involved."
+		},
+		{
+			"taskId": 88,
+			"taskTitle": "Feedback Collection and Help Center",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Create 5 subtasks: feedback modal UI, backend endpoint/storage or Slack/Issue forwarder, rate limiting/abuse control, help menu links/docs integration, accessibility tests.",
+			"reasoning": "Simple form flow with storage/notification and basic hardening."
+		},
+		{
+			"taskId": 89,
+			"taskTitle": "Village State Persistence",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Define 7 subtasks: DB fields for positions/configs, autosave throttling logic, REST endpoints to save/load layout, scene load application, reset-to-auto-layout action, conflict handling, tests for persistence across reloads.",
+			"reasoning": "State save/load with throttling and UI integration is moderately complex."
+		},
+		{
+			"taskId": 90,
+			"taskTitle": "Auto Layout and Pathfinding Utilities",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Plan 9 subtasks: grid/Poisson placement algorithm, overlap avoidance, export initial coordinates, A* pathfinding with obstacles, path smoothing, movement animation along path, performance tuning, API for reuse, tests on 100+ nodes.",
+			"reasoning": "Algorithmic work for layout/pathfinding with performance considerations."
+		},
+		{
+			"taskId": 91,
+			"taskTitle": "Error States and Offline UI",
+			"complexityScore": 6,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Create 7 subtasks: React error boundary, global toast system, WS disconnect overlay and retry, agent error visuals, offline banner, failure mode simulations, UX timing and copy polish.",
+			"reasoning": "Consistent error and offline UX across app and scene; moderate scope."
+		},
+		{
+			"taskId": 92,
+			"taskTitle": "Public Village Mode",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Define 8 subtasks: public route handling, GET endpoints without JWT for public villages, block mutations server-side, WS anonymous read-only join, UI gating of controls, toggle in settings, cache headers for public, incognito tests.",
+			"reasoning": "Dual access modes (public/private) with WS and API gating is moderately complex."
+		},
+		{
+			"taskId": 93,
+			"taskTitle": "Activity Indicators from GitHub Events",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Plan 8 subtasks: map webhook events to activity states, state TTL/expiry, visuals (lights/banner/smoke), debounce/flicker prevention, WS broadcast integration, concurrency of indicators, synthetic event test harness, visual validation.",
+			"reasoning": "Event mapping to layered visuals with expiry and concurrency management."
+		},
+		{
+			"taskId": 94,
+			"taskTitle": "Command Palette and Quick Actions",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create 6 subtasks: context menu component, palette UI (Ctrl+K), search/index across agents/houses/actions, action execution wiring, keyboard accessibility, tests for filtering and execution.",
+			"reasoning": "UI components with command routing; modest complexity."
+		},
+		{
+			"taskId": 95,
+			"taskTitle": "Data Accuracy and Sync Validation",
+			"complexityScore": 7,
+			"recommendedSubtasks": 9,
+			"expansionPrompt": "Define 9 subtasks: BullMQ cron for periodic resync, reconcile logic for repo archive/delete, gap detection on webhook misses, discrepancy logging and repair, accuracy metrics, backoff policies, admin report, test with simulated gaps, alert thresholds.",
+			"reasoning": "Scheduled reconciliation with correctness metrics and repair logic is involved."
+		},
+		{
+			"taskId": 96,
+			"taskTitle": "Analytics and KPI Events",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Plan 8 subtasks: client analytics emitter, backend collector API, event schema/privacy filters, aggregation to Redis/time-series, KPI endpoints, opt-out controls, dashboard prototype, validation with sample events.",
+			"reasoning": "Lightweight analytics pipeline with privacy and aggregation; moderate scope."
+		},
+		{
+			"taskId": 97,
+			"taskTitle": "Internationalization Readiness",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create 6 subtasks: i18n library setup, extract core strings to catalogs, locale switcher, date/time formatting utilities, fallback strategy, coverage audit and tests.",
+			"reasoning": "Preparation and extraction without full localization; modest complexity."
+		},
+		{
+			"taskId": 98,
+			"taskTitle": "Backup and Disaster Recovery Procedures",
+			"complexityScore": 6,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Define 8 subtasks: Postgres automated backups (retention), Redis persistence (RDB/AOF) policy, encryption and storage location, restore runbook, staging restore drill, RTO/RPO definition and measurement, alerts on failures, documentation.",
+			"reasoning": "Procedural plus infra configuration with validation drills; moderate."
+		},
+		{
+			"taskId": 99,
+			"taskTitle": "Privacy and Compliance Checklist",
+			"complexityScore": 8,
+			"recommendedSubtasks": 10,
+			"expansionPrompt": "Plan 10 subtasks: token minimization/encryption, data inventory, account deletion endpoint and verification, log retention and PII scrubbing, privacy notice updates, DNT/opt-out in analytics, access reviews, audit logging policy, incident response for data issues, compliance checklist sign-off.",
+			"reasoning": "Cross-cutting privacy controls, policies, and user rights require rigorous work."
+		},
+		{
+			"taskId": 100,
+			"taskTitle": "Launch Runbook and Communications",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Create 6 subtasks: launch checklist and feature flags, rollback/migration plan, demo script and assets, observability pre-flight checks, incident response/escalation plan, comms plan (landing page, video, announcements).",
+			"reasoning": "Operational planning and assets coordination; modest complexity."
+		}
+	]
+}

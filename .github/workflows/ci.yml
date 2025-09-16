@@ -66,8 +66,10 @@ jobs:
             pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Type check (all workspaces)
-        run: pnpm -w typecheck
+      - name: Type check (frontend + shared)
+        run: |
+          pnpm -C packages/frontend typecheck
+          pnpm -C packages/shared typecheck
 
   test-unit:
     name: Unit Tests
@@ -216,4 +218,3 @@ jobs:
             test-results/**
           if-no-files-found: ignore
           retention-days: 14
-

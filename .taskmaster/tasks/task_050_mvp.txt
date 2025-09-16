@@ -1,0 +1,62 @@
+# Task ID: 50
+# Title: Agents REST Endpoints and Model
+# Status: pending
+# Dependencies: 47
+# Priority: medium
+# Description: Create endpoints to list/add/update/delete agents and manage configuration.
+# Details:
+Routes:
+- GET /api/villages/:id/agents
+- POST /api/villages/:id/agents (name, mcp_server_url, config)
+- PUT /api/agents/:id
+- DELETE /api/agents/:id
+Persist sprite_config, position, current_status.
+Authorization: village role member+ can read; owner required to mutate.
+
+
+# Test Strategy:
+Integration tests for CRUD. Validate required fields and URL format. Check that agents belong to same village and cross-village access is blocked. DB rows updated accordingly.
+
+# Subtasks:
+## 1. DB model and server types for Agent [pending]
+### Dependencies: None
+### Description: Define Agent persistence and types to support CRUD and configuration.
+### Details:
+Add Prisma model Agent with fields: id (PK), village_id (FK -> Village), name (string 1..64), mcp_server_url (string URL), config (JSON), sprite_config (JSON nullable), position (JSON nullable), current_status (enum: idle|working|debugging|error), created_at, updated_at. Constraints: index on village_id; unique (village_id, name). Set defaults: config {}, current_status 'idle', sprite_config NULL, position NULL. Generate migration and regenerate Prisma client. Create corresponding TypeScript types/DTO stubs for read/write payloads.
+
+## 2. Authorization helpers and cross-village guardrails foundation [pending]
+### Dependencies: 50.1
+### Description: Implement role checks and guardrails ensuring village-scoped access and ownership for mutations.
+### Details:
+Implement utilities/middleware: requireVillageMember(villageId) for read; requireVillageOwner(villageId) for mutate. For /api/agents/:id routes, implement resolveAgentVillage(agentId) to map to village_id and assert ownership for mutations. Guardrails: disallow changing village_id; prevent accessing/updating agents from other villages; return 403 on insufficient role, 404 if entity not found in accessible scope. Provide helpers to attach village context to request for downstream handlers.
+
+## 3. sprite_config, position, current_status validation and normalization [pending]
+### Dependencies: 50.1
+### Description: Define schemas and sanitization for visual and status fields persisted on Agent.
+### Details:
+Create validation schemas (e.g., zod/class-validator): sprite_config as object with whitelisted keys (e.g., color, ringColor, skin, hair, hat), max size ~8KB, strip unknown keys; position as object {x: number, y: number} with finite numbers, clamp to reasonable bounds (e.g., -10000..10000), round to 2 decimals; allow null for both. current_status enum: idle|working|debugging|error; default idle; reject unknown values. Provide normalizeSpriteConfig, normalizePosition helpers for reuse in create/update handlers.
+
+## 4. GET /api/villages/:id/agents (list by village with role checks) [pending]
+### Dependencies: 50.1, 50.2
+### Description: Return agents for a village visible to members and above.
+### Details:
+Implement route: GET /api/villages/:id/agents. Flow: validate :id, ensure village exists, requireVillageMember(:id); query agents where village_id=:id; return array with fields {id, village_id, name, mcp_server_url, config, sprite_config, position, current_status, created_at, updated_at}. Pagination optional; if implemented, accept limit/offset. Errors: 404 if village not found; 403 if not member+.
+
+## 5. POST /api/villages/:id/agents (create with URL/config validation) [pending]
+### Dependencies: 50.1, 50.2, 50.3
+### Description: Create agent within a village with strict input validation and defaults.
+### Details:
+Implement route: POST /api/villages/:id/agents with body {name, mcp_server_url, config?, sprite_config?, position?, current_status?}. Require requireVillageOwner(:id). Validation: name 1..64; mcp_server_url absolute http(s) URL length <=2048; config must be JSON object (not array), default {}; sprite_config/position validated via helpers; current_status optional, if provided must be valid enum, else default 'idle'. Enforce unique (village_id,name); on conflict return 409. On success insert row with village_id=:id and return 201 with created entity.
+
+## 6. PUT and DELETE /api/agents/:id (update/delete endpoints) [pending]
+### Dependencies: 50.1, 50.2, 50.3
+### Description: Implement mutation endpoints with owner-only authorization and field validation.
+### Details:
+PUT /api/agents/:id: resolve agent and village via resolveAgentVillage; requireVillageOwner(village_id). Accept updatable fields: name, mcp_server_url, config, sprite_config, position, current_status. Apply same validations as POST; ignore/reject village_id changes; return 200 with updated entity. DELETE /api/agents/:id: requireVillageOwner(village_id) then delete; return 204 on success; 404 if not found; 409 if FK constraints block deletion (surface clear error). Ensure consistent error codes: 400 validation issues, 403 role, 404 not found.
+
+## 7. Integration tests: CRUD, validation, auth, cross-village [pending]
+### Dependencies: 50.1, 50.2, 50.3, 50.4, 50.5, 50.6
+### Description: End-to-end tests covering routes, role enforcement, data persistence, and guardrails.
+### Details:
+Using test DB and HTTP test client, cover: (1) GET lists agents for member; outsider gets 403; (2) POST by owner creates agent; invalid URL/config returns 400; unique (village_id,name) 409; (3) PUT updates name/mcp_server_url/sprite_config/position/current_status; invalid values rejected; attempts to change village_id rejected; (4) DELETE removes row; non-owner 403; non-existent 404; (5) Cross-village: owner of village A cannot mutate agent in village B; (6) DB assertions for persisted sprite_config/position/current_status; (7) Ensure responses exclude unintended fields and conform to schemas.
+

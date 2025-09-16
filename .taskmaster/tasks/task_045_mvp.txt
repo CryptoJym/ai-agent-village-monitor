@@ -1,0 +1,75 @@
+# Task ID: 45
+# Title: WebSocket Server with Native WS and Socket.io Fallback
+# Status: pending
+# Dependencies: 42
+# Priority: medium
+# Description: Implement real-time server with JWT auth, room namespaces for village, repo, agent updates, and fallback to HTTP polling.
+# Details:
+Use Socket.io v4 server atop Express HTTP server.
+- Auth middleware verifies JWT on connection
+- Rooms: village:{id}, repo:{github_repo_id}, agent:{id}
+- Events per PRD: agent_update, work_stream, bug_bot_spawn, bug_bot_resolved
+- Heartbeat/ping and reconnect handlers
+- Fallback: enable transports ['websocket','polling']
+Pseudo:
+io.use((socket,next)=> verifyJWT(socket.handshake.auth.token)?next():next(new Error('unauth')));
+io.on('connection', s=> { s.on('join_village', ({village_id})=> s.join(`village:${village_id}`)); });
+
+# Test Strategy:
+WS integration test using socket.io-client: connect with valid/invalid JWT, join rooms, receive broadcast. Simulate network drop and verify reconnection. Measure latency <200ms on local.
+
+# Subtasks:
+## 1. Attach Socket.io v4 to Express HTTP server [done]
+### Dependencies: None
+### Description: Initialize and attach a Socket.io v4 server to the existing Express HTTP server with basic connection lifecycle hooks.
+### Details:
+Create io = new Server(httpServer, { cors: { origin: ALLOWED_ORIGINS, credentials: true } }). Export io for other modules. Add io.on('connection', socket => { log connect; socket.on('disconnect', reason => log); }). Do not add business logic yet.
+
+## 2. JWT authentication middleware for socket connections [done]
+### Dependencies: 45.1
+### Description: Gate all connections with JWT verification and attach user context to socket.
+### Details:
+Implement io.use(async (socket, next) => { read token from socket.handshake.auth.token or Authorization Bearer header; verify using verifyJWT with secret/public key; on success set socket.data.user = { id, roles, perms }; on failure next(new Error('unauth')); }). Ensure token clock skew tolerance and handle expired tokens with clear error messages. Add minimal unit tests for verifyJWT helper.
+
+## 3. Room naming and join/leave handlers [done]
+### Dependencies: 45.2
+### Description: Define room naming conventions and implement handlers to join and leave rooms for village, repo, and agent.
+### Details:
+Room helpers: roomVillage(id) => 'village:' + id; roomRepo(id) => 'repo:' + id; roomAgent(id) => 'agent:' + id. Handlers: join_village({ village_id }, ack), leave_village({ village_id }, ack); join_repo({ github_repo_id }, ack); join_agent({ id }, ack). Validate payloads; authorize membership if applicable (stub hook). On success, socket.join(room) and ack({ ok: true, room }); on invalid input, ack({ ok: false, error: 'bad_request' }).
+
+## 4. Event contracts and emit/broadcast APIs [done]
+### Dependencies: 45.3
+### Description: Define payload schemas and server emitters for agent_update, work_stream, bug_bot_spawn, bug_bot_resolved.
+### Details:
+Define schemas (zod or JSON Schema) for each event. Example fields: agent_update { agentId, status, metrics, ts }; work_stream { villageId, repoId?, message, ts }; bug_bot_spawn { bugId, repoId, agentId?, details, ts }; bug_bot_resolved { bugId, repoId, resolution, ts }. Implement emitters: emitAgentUpdate(agentId, payload) -> io.to(roomAgent(agentId)).emit('agent_update', payload); emitWorkStream(villageId, payload) -> io.to(roomVillage(villageId)).emit('work_stream', payload); emitBugBotSpawn(repoId, payload) -> io.to(roomRepo(repoId)).emit('bug_bot_spawn', payload); emitBugBotResolved(repoId, payload) -> io.to(roomRepo(repoId)).emit('bug_bot_resolved', payload). Validate payloads before emitting; log rejects.
+
+## 5. Heartbeat, ping/timeout, and reconnect-aware handlers [done]
+### Dependencies: 45.1, 45.4
+### Description: Configure server heartbeat and handle disconnects to support client reconnect.
+### Details:
+Set engine options on Server: pingInterval=25000, pingTimeout=60000 to be tolerant of brief network blips. On connection, start latency monitor: periodically emit 'server_ping' with timestamp; client acks back; compute RTT for logs/metrics. Handle 'disconnect' with reason and clean up per-socket timers. Optionally track lastSeen per user in an in-memory map for observability.
+
+## 6. Transports and HTTP polling fallback configuration [done]
+### Dependencies: 45.1
+### Description: Prefer native WebSocket transport with Socket.io fallback to HTTP polling.
+### Details:
+Initialize Server with transports ['websocket', 'polling'] and allowUpgrades true. Ensure perMessageDeflate enabled for WS; compression enabled for polling. Document CORS and cookie settings if auth cookies are used. Expose a health endpoint to confirm both transports work. Verify server supports EIO4 (no EIO3).
+
+## 7. Centralized error handling and logging [done]
+### Dependencies: 45.2, 45.3, 45.4
+### Description: Provide consistent error responses and secure logging across auth, join, and emit flows.
+### Details:
+Implement helper emitSocketError(socket, code, message, meta?). Standard codes: E_UNAUTH, E_BAD_PAYLOAD, E_FORBIDDEN, E_RATE_LIMIT, E_INTERNAL. Wrap socket.on handlers with try/catch to emit standardized errors and avoid process crashes. Add lightweight per-socket rate limiting for join_* events to prevent abuse (e.g., 10 joins/5s). Ensure logs exclude sensitive token contents and include requestId/socket.id for traceability.
+
+## 8. Local load and latency testing [pending]
+### Dependencies: 45.6, 45.4, 45.5
+### Description: Stress test with many concurrent clients to validate throughput and latency targets.
+### Details:
+Use Artillery with socket.io engine or a custom script with socket.io-client. Scenario: ramp to 1000 clients over 60s; each authenticates, joins village:1 and repo:1; server broadcasts 1 msg/sec to each room. Measure end-to-end latency and ensure p95 < 200ms locally. Capture CPU/memory and event loop lag. Test both transports by forcing clients to polling-only and websocket-only.
+
+## 9. Integration tests with socket.io-client [pending]
+### Dependencies: 45.2, 45.3, 45.4, 45.5, 45.6, 45.7
+### Description: Automated tests for JWT auth, room joins, broadcasts, reconnect behavior, and transport fallback.
+### Details:
+Use Jest and socket.io-client. Tests: (1) connect with valid JWT -> succeeds and receives welcome; invalid JWT -> connect_error with 'unauth'. (2) join_village/join_repo/join_agent -> ack ok; server emits to room -> client receives expected payload. (3) simulate network drop (client.disconnect then auto reconnect) -> rejoin handlers resume and events are received after reconnect. (4) force client transports=['polling'] -> connection and messaging still function. (5) negative tests for bad payloads expect standardized error codes.
+

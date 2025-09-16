@@ -1,0 +1,71 @@
+# Task ID: 67
+# Title: World Map Scene and Multi-Org Navigation
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Add world map view with chunked loading and instant teleport between villages.
+# Details:
+Scene: WorldMapScene shows regions for each accessible org (villages list). Clicking a region loads that village scene with persisted agent states in memory cache or server session.
+- Chunked loading via lazy asset loading
+- Mini-map overlay displaying current location
+- Travel time target <2s
+
+
+# Test Strategy:
+Profile loading between 10+ orgs with mock data. Validate agent states persist (status and positions) across navigation. Measure travel <2s on average.
+
+# Subtasks:
+## 1. WorldMapScene scaffolding and renderer [pending]
+### Dependencies: None
+### Description: Create the WorldMapScene with base rendering, input setup, and scene lifecycle wiring.
+### Details:
+Implement WorldMapScene class (Phaser 3). Initialize camera, input handlers, and a placeholder world map background. Set up an event bus for inter-scene communication and a scene key registry (e.g., 'WorldMapScene'). Provide hooks: boot/create/update/shutdown. Add responsiveness to resize and DPR scaling. Acceptance: Scene can start/stop cleanly, shows a placeholder map, logs lifecycle events.
+
+## 2. Village regions from API and layout mapping [pending]
+### Dependencies: 67.1
+### Description: Fetch accessible villages and render clickable regions/markers on the world map.
+### Details:
+Call GET /api/villages with auth when available; support public mode fallback. Map each village to a deterministic world position using a hash->grid/spiral/hex placement to avoid overlap; cache mapping to keep positions stable. Render labeled interactive regions or markers with hover tooltips (name, owner). Handle empty/failed states with retries and a 'no villages' message. Acceptance: 10+ mocked villages render as non-overlapping interactive regions with consistent positions across reloads.
+
+## 3. Lazy asset loading and chunked world assets [pending]
+### Dependencies: 67.1
+### Description: Implement lazy loading for world map and per-region assets to minimize initial load.
+### Details:
+Define an asset manifest split into base map, region overlays, and icon packs. Use Phaser Loader with packs and time-sliced loading; prefetch nearby region assets on idle. Support cancellation if navigation occurs mid-load. Target initial world load <1 MB; per-region chunk <2 MB. Acceptance: Network panel shows staged requests; navigating during a load cancels pending world asset fetches without errors.
+
+## 4. Navigation to VillageScene with instant teleport [pending]
+### Dependencies: 67.1, 67.2, 67.3
+### Description: Enable clicking a region to transition to VillageScene with parameters and prewarm.
+### Details:
+On region click, record t0, show a loading overlay, prewarm essential VillageScene assets, and call scene.start('VillageScene', { villageId, spawnAt, persistedStateRef }). Guard double-clicks and concurrent navigations. Provide error handling and retry on failure. Update SPA route (e.g., /village/:id). Acceptance: Clicking a region transitions reliably with a visible loading overlay, and no duplicate navigations occur.
+
+## 5. Cross-scene state persistence (agents and camera) [pending]
+### Dependencies: 67.4
+### Description: Persist agent and camera state across WorldMapScene and VillageScene using memory cache and session storage.
+### Details:
+Implement a StateStore singleton keyed by villageId to hold agent snapshots (ids, positions) and camera state (x,y,zoom). Persist to sessionStorage for reload resilience; TTL 15 minutes; invalidate on version bump. On leaving VillageScene, save snapshot; on entering, attempt hydrate before fetching from server. Preserve last WorldMap camera and selected region. Acceptance: Navigate back and forth and observe camera and agent positions restored without extra API calls.
+
+## 6. Mini-map overlay with current location indicator [pending]
+### Dependencies: 67.1, 67.2
+### Description: Add a mini-map overlay to WorldMapScene showing regions and current viewport/location.
+### Details:
+Render a compact overlay (bottom-right) with scaled world extents, region dots, and a viewport rectangle. Highlight last visited/current village. Allow toggle via UI button and hotkey (M). Clicking the mini-map recenters the main camera. Ensure accessibility (contrast, ARIA labels if applicable). Acceptance: Mini-map updates in real-time, is toggleable, and clicking it recenters the world map.
+
+## 7. Loading indicators and 2s travel-time budget [pending]
+### Dependencies: 67.3, 67.4
+### Description: Implement progress UI and measure/enforce travel time target under 2 seconds.
+### Details:
+Create a loading HUD with progress bar/spinner and status text (prefetching, entering, streaming). Instrument travel time (t0 at click to first interactive frame in VillageScene). If estimates exceed 2s, load a minimal playable subset first, stream non-critical assets after. Emit performance events to a logger. Acceptance: Typical navigation completes <2s on average with mocked assets; HUD reflects stages; metrics are logged.
+
+## 8. Back navigation from VillageScene to WorldMapScene [pending]
+### Dependencies: 67.4, 67.5
+### Description: Provide a back flow that restores world map state and caches assets.
+### Details:
+Add a Back to World Map action in VillageScene UI and handle browser back. On back, stop VillageScene, start WorldMapScene, restore camera/selection from StateStore, keep caches warm, and clean up listeners to avoid leaks. Update route (e.g., /world). Acceptance: Using back returns to the same world map view with prior selection and no duplicated event handlers.
+
+## 9. Performance and profiling tests across 10+ orgs [pending]
+### Dependencies: 67.2, 67.3, 67.4, 67.5, 67.7, 67.8
+### Description: Automate profiling to validate rendering, navigation time, and memory with 10+ villages.
+### Details:
+Create mock data for 10–30 villages. Use Playwright or Cypress to script world->village->back cycles and capture metrics: travel time p50/p95 (<2s target), frame times, memory growth, and asset cache hits. Include network throttling profiles. Add CI threshold checks and a profiling report artifact. Acceptance: Tests pass under thresholds; report shows travel time and FPS within targets.
+
