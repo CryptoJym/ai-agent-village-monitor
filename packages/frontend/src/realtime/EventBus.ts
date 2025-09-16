@@ -23,6 +23,24 @@ type Events = {
   connection_status: { status: 'connecting' | 'connected' | 'disconnected' };
   latency: { rttMs: number };
   toast: { type: 'success' | 'error' | 'info'; message: string };
+  // Emitted when the main camera finishes an instant snap or a short pan
+  cameraSettled: { x: number; y: number; zoom: number };
+  house_activity: {
+    type: 'house.activity';
+    houseId?: string | number;
+    repoId?: string | number;
+    indicators: {
+      lights: { active: boolean; minRemainingMs?: number };
+      banner: { active: boolean; prNumber?: number; minRemainingMs?: number };
+      smoke: {
+        active: boolean;
+        status?: 'in_progress' | 'failed' | 'passed';
+        minRemainingMs?: number;
+      };
+    };
+    version: number;
+    ts: number;
+  };
 };
 
 export const eventBus = mitt<Events>();

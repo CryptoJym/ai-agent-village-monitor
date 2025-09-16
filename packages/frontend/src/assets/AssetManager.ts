@@ -52,7 +52,9 @@ export class AssetManager {
           frameRate,
           repeat: -1,
         });
-      } catch {}
+      } catch (e) {
+        void e;
+      }
     };
     // Try to define a few common animations if sheets are present
     ensure('agent_idle', 'agent_sheet', 0, 3, 4);

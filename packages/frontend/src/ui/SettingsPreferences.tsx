@@ -35,7 +35,9 @@ export function SettingsPreferences({ open, onClose }: { open: boolean; onClose:
           (window as any).__MAX_FPS__ = next.maxFps;
         }
         document.documentElement.dataset.theme = next.theme;
-      } catch {}
+      } catch (e) {
+        void e;
+      }
     } catch (e: any) {
       setError(e?.message || 'Failed to save');
     } finally {

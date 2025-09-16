@@ -1,6 +1,6 @@
 # Task ID: 88
 # Title: Feedback Collection and Help Center
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Implement in-app feedback widget and link to docs and support channels.
@@ -11,33 +11,32 @@ Simple modal to submit feedback (category, description, email). Store in DB or f
 Submit feedback and verify storage/notification. Ensure rate limit to prevent spam. Accessibility of modal verified.
 
 # Subtasks:
-## 1. Feedback Modal UI [pending]
+## 1. Feedback Modal UI [done]
 ### Dependencies: None
 ### Description: Build in-app modal to collect feedback with category, description, and optional email, plus NPS prompt after first week.
 ### Details:
 Create a reusable modal component with fields: category (Bug, Feature, Question, Other), description (min 10, max 2000 chars), email (optional, RFC 5322 validation); client-side validation and error states; submit to /api/feedback with loading state, optimistic UI, success and failure toasts; persist draft if modal is closed; add entry points in header Help menu and floating widget; optional NPS (0–10) prompt shown only for users active >7 days, with follow-up text area; basic analytics events for open, submit, success, fail; unit tests for validation and state transitions.
 
-## 2. Feedback Backend Endpoint and Storage/Forwarder [pending]
+## 2. Feedback Backend Endpoint and Storage/Forwarder [done]
 ### Dependencies: None
 ### Description: Implement POST /api/feedback with validation and storage or forwarding to Slack/GitHub Issues.
 ### Details:
 Expose POST /api/feedback; validate body via zod: { category: enum['bug','feature','question','other'], description: string 10..2000, email?: string, nps_score?: 0..10, metadata?: { path, userAgent } }; sanitize and strip HTML; persist to DB table feedback (id, user_id nullable, category, description, email nullable, nps_score nullable, path, user_agent, created_at, ip_hash) or, if configured, forward to Slack via webhook or create a GitHub Issue with templated body; configuration via env flags FEEDBACK_STORE=db|slack|github and secrets; return 201 with id; log failures and return 503 on downstream errors; integration tests for DB insert and Slack/GitHub mock forwarding; add admin observability metric for feedback count.
 
-## 3. Rate Limiting and Abuse Controls [pending]
+## 3. Rate Limiting and Abuse Controls [done]
 ### Dependencies: 88.2
 ### Description: Prevent spam and abuse on feedback endpoint via rate limits and anti-bot measures.
 ### Details:
 Add per-user and per-IP limits (e.g., 5/hour and 20/day) with sliding window; return 429 with Retry-After; implement honeypot field and time-to-submit check; optional CAPTCHA (hCaptcha/reCAPTCHA) behind env flag; profanity filter and URL whitelist for description; strip dangerous content and limit payload size; hash IP (salted) for privacy; blocklist repeated offenders; ensure Slack/GitHub forwarding respects cooldown to avoid flood; tests cover hitting limits, CAPTCHA required, and proper 429/400 responses.
 
-## 4. Help Menu Links and Docs Integration [pending]
+## 4. Help Menu Links and Docs Integration [done]
 ### Dependencies: None
 ### Description: Add Help menu with links to documentation, Discord, and GitHub Discussions, plus a shortcut to open the feedback modal.
 ### Details:
 Implement Help menu entry in header or user menu; links: Docs (docs site base URL), Discord invite, GitHub Discussions; open in new tab with rel=noopener and UTM parameters; include app version and a 'Submit Feedback' action that opens the feedback modal; optional docs search link; track click analytics; configuration via env for external URLs; tests verify links render, target URLs, and that 'Submit Feedback' opens the modal.
 
-## 5. Accessibility Tests and Fixes [pending]
+## 5. Accessibility Tests and Fixes [done]
 ### Dependencies: 88.1, 88.4
 ### Description: Ensure feedback modal and Help menu meet accessibility standards and pass automated checks.
 ### Details:
 Verify modal uses role=dialog with aria-labelledby and aria-describedby; implement focus trap, return focus on close, ESC to dismiss, and full keyboard navigation; ensure labels and inline error messages are associated and announced by screen readers; maintain visible focus outlines and adequate color contrast; Help menu items reachable via keyboard with proper roles; run axe and eslint-plugin-jsx-a11y checks, add Cypress tests for keyboard flows; address any violations found.
-

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('phaser3spectorjs', () => ({}));
 vi.mock('phaser', () => {
   class Base {}
   class Container extends Base {
@@ -14,8 +15,9 @@ vi.mock('phaser', () => {
       this.x = x;
       this.y = y;
     }
-    add(objs: any[]) {
-      this.list.push(...objs);
+    add(...objs: any[]) {
+      const items = objs.length === 1 && Array.isArray(objs[0]) ? objs[0] : objs;
+      this.list.push(...items);
       return this;
     }
     setSize() {
@@ -63,6 +65,7 @@ vi.mock('phaser', () => {
   }
   class Arc extends Base {}
   class Graphics extends Base {}
+  const Device = { CanvasFeatures: { supportInverseAlpha: true } } as any;
   const GameObjects = { Container, Image, Text, Rectangle, Arc, Graphics };
   const Geom = {
     Rectangle: class {
@@ -80,25 +83,75 @@ vi.mock('phaser', () => {
     destroy = vi.fn();
     constructor(_c: any) {}
   }
-  return { default: { GameObjects, Geom, Tweens, Math: MathNS, Input, Scene, Game, AUTO: 0 } };
+  return {
+    default: { GameObjects, Geom, Tweens, Math: MathNS, Input, Scene, Game, AUTO: 0, Device },
+  };
 });
 
 import { House } from '../../src/houses/House';
 
 function makeScene() {
-  const tweens = { add: vi.fn() };
+  const tweens = { add: vi.fn(), killTweensOf: vi.fn() };
   const add = {
-    image: (_x: number, _y: number, key: string) =>
-      new (require('phaser').default.GameObjects.Image as any)(_x, _y, key),
-    text: (_x: number, _y: number, _t: string) =>
-      new (require('phaser').default.GameObjects.Text as any)(),
-    rectangle: (_x: number, _y: number, _w: number, _h: number, _c: number, _a?: number) =>
-      new (require('phaser').default.GameObjects.Rectangle as any)(),
-    circle: (_x: number, _y: number, _r: number, _c: number, _a?: number) =>
-      new (require('phaser').default.GameObjects.Arc as any)(),
-    graphics: () => new (require('phaser').default.GameObjects.Graphics as any)(),
+    image: (_x: number, _y: number, key: string) => ({
+      key,
+      _tint: null as any,
+      setOrigin() {
+        return this;
+      },
+      setDisplaySize() {
+        return this;
+      },
+      setTint(c: any) {
+        this._tint = c;
+        return this;
+      },
+      clearTint() {
+        this._tint = null;
+        return this;
+      },
+    }),
+    text: (_x: number, _y: number, _t: string) => ({
+      setOrigin() {
+        return this;
+      },
+      setText() {
+        return this;
+      },
+      setColor() {
+        return this;
+      },
+    }),
+    rectangle: (_x: number, _y: number, _w: number, _h: number, _c: number, _a?: number) => ({
+      setOrigin() {
+        return this;
+      },
+      setAlpha() {
+        return this;
+      },
+      setFillStyle() {
+        return this;
+      },
+    }),
+    circle: (_x: number, _y: number, _r: number, _c: number, _a?: number) => ({
+      setOrigin() {
+        return this;
+      },
+    }),
+    graphics: () => ({
+      clear() {},
+      lineStyle() {
+        return this as any;
+      },
+      lineBetween() {
+        return this as any;
+      },
+      setAlpha() {
+        return this as any;
+      },
+    }),
     existing: vi.fn(),
-  };
+  } as any;
   return { add, tweens } as any;
 }
 

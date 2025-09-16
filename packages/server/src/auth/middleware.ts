@@ -44,11 +44,18 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 export type VillageRole = 'owner' | 'member' | 'viewer';
 
 export async function getUserVillageRole(
-  userId: string,
-  villageId: string,
+  userId: string | number,
+  villageId: string | number,
 ): Promise<VillageRole | null> {
+  // Honor test seam override when present
+  if (roleResolver) {
+    try {
+      const r = await roleResolver(String(userId), String(villageId));
+      if (r) return r;
+    } catch {}
+  }
   const access = await prisma.villageAccess.findUnique({
-    where: { villageId_userId: { villageId, userId } },
+    where: { villageId_userId: { villageId: String(villageId), userId: String(userId) } },
   });
   if (!access) return null;
   const role = (access.role || '').toLowerCase();
@@ -63,14 +70,15 @@ export function __setRoleResolver(fn: typeof getUserVillageRole | null) {
 }
 
 export function requireVillageRole(
-  getVillageId: (req: Request) => string,
+  getVillageId: (req: Request) => any,
   roles: VillageRole[] = ['owner'],
 ) {
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       if (!req.user) return next(new AuthError());
-      const villageId = getVillageId(req);
-      if (!villageId || typeof villageId !== 'string') {
+      const rawId = getVillageId(req);
+      const villageId = rawId != null ? String(rawId) : '';
+      if (!villageId) {
         return next(new ForbiddenError('Invalid village id'));
       }
       const userId = String(req.user.sub);

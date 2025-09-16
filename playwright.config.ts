@@ -5,14 +5,13 @@ export default defineConfig({
   timeout: 30_000,
   retries: 0,
   use: {
-    baseURL: process.env.PW_BASE_URL || 'http://localhost:5173',
+    baseURL: process.env.PW_BASE_URL || 'http://localhost:4173',
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: process.env.PW_WEB_SERVER || 'pnpm -w dev',
-    url: process.env.PW_BASE_URL || 'http://localhost:5173',
+    command: process.env.PW_WEB_SERVER || 'node scripts/preview-and-wait.mjs',
+    url: process.env.PW_BASE_URL || 'http://localhost:4173',
     reuseExistingServer: true,
     timeout: 120_000,
   },
 });
-

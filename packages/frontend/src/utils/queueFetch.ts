@@ -27,7 +27,7 @@ export async function queueAwarePost(
     });
     if (!res.ok) throw new Error(String(res.status));
     return res;
-  } catch (e) {
+  } catch {
     enqueueCommand(url, body, headers);
     return { queued: true } as const;
   }

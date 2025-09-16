@@ -111,13 +111,25 @@ agentsRouter.get('/agents/:id/stream/sse', requireAuth, async (req, res) => {
   req.on('close', () => clearInterval(timer));
 });
 
-const CreateAgentInput = z.object({
-  name: z.string().min(1),
-  spriteConfig: z.any().optional(),
-  positionX: z.number().optional(),
-  positionY: z.number().optional(),
-  currentStatus: z.string().optional(),
-});
+import { sanitizeString } from '../middleware/sanitize';
+
+const CreateAgentInput = z
+  .object({
+    name: z
+      .string()
+      .min(1)
+      .max(200)
+      .transform((v) => sanitizeString(v, { maxLen: 200 })),
+    spriteConfig: z.any().optional(),
+    positionX: z.number().optional(),
+    positionY: z.number().optional(),
+    currentStatus: z
+      .string()
+      .max(64)
+      .optional()
+      .transform((v) => (v == null ? (v as any) : sanitizeString(v, { maxLen: 64 }))),
+  })
+  .strict();
 
 const UpdateAgentInput = CreateAgentInput.partial();
 

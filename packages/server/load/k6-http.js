@@ -7,7 +7,7 @@ export const options = (function () {
     duration: '30s',
     thresholds: {
       http_req_failed: ['rate<0.01'],
-      http_req_duration: ['p(95)<300'],
+      http_req_duration: ['p(95)<300', 'p(99)<600'],
     },
   };
   const ramp = {
@@ -40,7 +40,11 @@ export default function () {
   // Agent commands (idempotent enqueues)
   const id = `k6-agent-${__VU}`;
   const start = http.post(`${BASE}/api/agents/${id}/start`, null, { headers: h });
-  const cmd = http.post(`${BASE}/api/agents/${id}/command`, JSON.stringify({ command: 'run_tool', args: { tool: 'echo' } }), { headers: { ...h, 'Content-Type': 'application/json' } });
+  const cmd = http.post(
+    `${BASE}/api/agents/${id}/command`,
+    JSON.stringify({ command: 'run_tool', args: { tool: 'echo' } }),
+    { headers: { ...h, 'Content-Type': 'application/json' } },
+  );
   const stop = http.post(`${BASE}/api/agents/${id}/stop`, null, { headers: h });
   check(start, { 'start 202/401': (r) => r.status === 202 || r.status === 401 });
   check(cmd, { 'cmd 202/400/401': (r) => [202, 400, 401].includes(r.status) });
@@ -48,4 +52,3 @@ export default function () {
 
   sleep(1);
 }
-

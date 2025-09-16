@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef } from 'react';
 // Lazy import phaser; in unit tests (jsdom), avoid initializing a real game
 import type PhaserType from 'phaser';
- 
+
 const Phaser: typeof PhaserType | undefined =
   typeof window !== 'undefined' && !(globalThis as any).VITEST ? require('phaser') : undefined;
 
@@ -45,11 +45,11 @@ export function GameProvider({ config, children }: GameProviderProps) {
     gameRef.current = game;
     // Expose for smoke/E2E checks and log engine version once
     try {
-       
       (window as any)._phaserGame = game;
-       
       console.info('[phaser] version', (Phaser as any)?.VERSION ?? 'unknown');
-    } catch {}
+    } catch (e) {
+      void e;
+    }
     return () => {
       game.destroy(true);
       gameRef.current = null;

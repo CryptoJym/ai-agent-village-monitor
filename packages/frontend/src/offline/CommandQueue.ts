@@ -17,7 +17,9 @@ function load(): QueuedCommand[] {
 function save(list: QueuedCommand[]) {
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
-  } catch {}
+  } catch (e) {
+    void e;
+  }
 }
 
 export function enqueueCommand(url: string, body: any, headers?: Record<string, string>) {

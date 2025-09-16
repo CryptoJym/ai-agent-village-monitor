@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Mock Phaser to avoid canvas requirements in jsdom
+vi.mock('phaser3spectorjs', () => ({}));
 vi.mock('phaser', () => {
   class Scene {}
   class Game {

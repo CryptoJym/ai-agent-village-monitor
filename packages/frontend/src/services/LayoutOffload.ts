@@ -12,8 +12,9 @@ export class LayoutOffload {
         type: 'module',
       });
       this.worker = w;
-    } catch {
+    } catch (e) {
       this.worker = null;
+      void e;
     }
   }
 
@@ -39,7 +40,9 @@ export class LayoutOffload {
       setTimeout(() => {
         try {
           worker.removeEventListener('message', onMsg as any);
-        } catch {}
+        } catch (e) {
+          void e;
+        }
         resolve(null);
       }, 8);
     });

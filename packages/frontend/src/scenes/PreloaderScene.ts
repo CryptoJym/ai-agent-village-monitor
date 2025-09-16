@@ -46,7 +46,9 @@ export class PreloaderScene extends Phaser.Scene {
       const { AssetManager } =
         require('../assets/AssetManager') as typeof import('../assets/AssetManager');
       AssetManager.defineAnimations(this);
-    } catch {}
+    } catch (e) {
+      void e;
+    }
     // After preload, move to WorldMap → MainScene flow; WorldMapScene is first
     this.scene.start('WorldMapScene');
   }

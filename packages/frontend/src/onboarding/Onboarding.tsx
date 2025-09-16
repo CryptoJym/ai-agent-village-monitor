@@ -2,8 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Stepper } from './Stepper';
 
-type StepId = 'login' | 'org' | 'install' | 'village' | 'sync' | 'done' | 'demo';
-
 function steps(t: (k: string) => string) {
   return [
     { id: 'login', title: t('onboarding.step.login') },
@@ -35,7 +33,7 @@ export default function Onboarding() {
         window.location.href = '/auth/login';
       },
     };
-  }, []);
+  }, [STEPS.length]);
 
   return (
     <div

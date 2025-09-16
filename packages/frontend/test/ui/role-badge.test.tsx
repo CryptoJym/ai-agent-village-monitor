@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import AppRouter from '../../src/routes/AppRouter';
 
+vi.mock('phaser3spectorjs', () => ({}));
 vi.mock('phaser', () => {
   class Scene {}
   class Game {

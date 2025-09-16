@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { queueAwarePost } from '../utils/queueFetch';
+import { track } from '../analytics/client';
 import { useParams } from 'react-router-dom';
 import { useViewerRole } from '../hooks/useViewerRole';
 import { eventBus } from '../realtime/EventBus';
@@ -56,7 +57,7 @@ export function ThreadTab({ agentId }: { agentId: string }) {
       eventBus.off('connection_status', onStatus);
       eventBus.off('latency', onLatency);
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!listRef.current) return;
@@ -86,7 +87,7 @@ export function ThreadTab({ agentId }: { agentId: string }) {
         )}
       </div>
     );
-  }, [status, latency]);
+  }, [status, latency, t]);
 
   const submit = useCallback(async () => {
     const text = input.trim();
@@ -101,8 +102,12 @@ export function ThreadTab({ agentId }: { agentId: string }) {
         type: 'task',
         text,
       });
-    } catch {}
-  }, [input, agentId]);
+      // track command execution (logical command: task)
+      track({ type: 'command_executed', ts: Date.now(), agentId, command: 'task', villageId });
+    } catch (e) {
+      void e;
+    }
+  }, [input, agentId, villageId]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

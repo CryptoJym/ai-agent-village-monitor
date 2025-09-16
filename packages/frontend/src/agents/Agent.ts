@@ -42,7 +42,7 @@ export class Agent extends Phaser.GameObjects.Container {
     this.on('dragend', () => {
       // Emit a drop event for scene to handle assignment detection
       const { x, y } = this;
-       
+
       const { eventBus } = require('../realtime/EventBus');
       eventBus.emit('agent_drop', { x, y });
     });
@@ -139,12 +139,6 @@ export class Agent extends Phaser.GameObjects.Container {
     if (!points || points.length === 0) return;
     this.scene.tweens.killTweensOf(this);
     const segs = points.map((p) => ({ x: p.x, y: p.y }));
-    const totalDist = segs.reduce(
-      (acc, p, i) =>
-        acc + (i === 0 ? 0 : Phaser.Math.Distance.Between(segs[i - 1].x, segs[i - 1].y, p.x, p.y)),
-      0,
-    );
-    const elapsed = 0;
     const speed = 120; // px/s baseline
     const run = (i: number) => {
       if (i >= segs.length) {

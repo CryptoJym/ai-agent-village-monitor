@@ -8,8 +8,12 @@ import { loadVillageState, saveVillageState } from '../state/sceneState';
 import { isoToScreen, buildIsoGrid } from '../utils/iso';
 import { BugBot } from '../bugs/BugBot';
 import { House } from '../houses/House';
+import { applyRepoStateToHouse, type HouseState } from '../houses/state';
 import { LayoutOffload } from '../services/LayoutOffload';
 import { SpatialHash } from '../utils/spatial';
+import { Minimap } from '../overlays/Minimap';
+import { track } from '../analytics/client';
+import { CameraNavigator } from '../camera/CameraNavigator';
 
 export class MainScene extends Phaser.Scene {
   private agent?: Agent;
@@ -32,8 +36,9 @@ export class MainScene extends Phaser.Scene {
   private spawnBatchEvent?: Phaser.Time.TimerEvent;
   private readonly spawnBatchSize = 10;
 
-  // Optional "houses" registry for targeted spawns
+  // Optional "houses" registry for targeted spawns and visual updates
   private houses: Map<string, { x: number; y: number; radius?: number }> = new Map();
+  private houseObjects: Map<string, House> = new Map();
   private pendingSpawnsByHouse: Map<string, Array<{ id: string } & Record<string, any>>> =
     new Map();
   private pendingFlushEvent?: Phaser.Time.TimerEvent;
@@ -55,6 +60,9 @@ export class MainScene extends Phaser.Scene {
   private roleText?: Phaser.GameObjects.Text;
   private canAssign = false;
   private _cullBuf: string[] = [];
+  private minimap?: Minimap;
+  private camNav?: CameraNavigator;
+  private travelStartAt?: number;
   constructor() {
     super('MainScene');
   }
@@ -83,6 +91,10 @@ export class MainScene extends Phaser.Scene {
         bot.setPulse(false);
       }
     }
+    // Update minimap viewport each frame
+    try {
+      this.minimap?.setViewport(view as any);
+    } catch {}
   }
 
   create(data?: { villageId?: string }) {
@@ -106,7 +118,9 @@ export class MainScene extends Phaser.Scene {
           if (a && typeof a.positionX === 'number' && typeof a.positionY === 'number') {
             this.agent?.setPosition(a.positionX, a.positionY);
           }
-        } catch {}
+        } catch (e) {
+          void e;
+        }
       })
       .catch(() => {});
 
@@ -123,7 +137,9 @@ export class MainScene extends Phaser.Scene {
     // If a villageId was provided (from WorldMapScene), join that room and show breadcrumb
     try {
       this.ws?.joinVillage?.(villageId);
-    } catch {}
+    } catch (e) {
+      void e;
+    }
     const back = this.add
       .text(12, this.scale.height - 20, '← World Map (M)', {
         color: '#93c5fd',
@@ -148,11 +164,46 @@ export class MainScene extends Phaser.Scene {
       .setDepth(1000);
     this.fetchAndShowRole(villageId);
 
+    // Minimap overlay: top-right, toggle with M
+    try {
+      const worldSize = { w: this.scale.width * 2, h: this.scale.height * 2 };
+      this.minimap = new Minimap(this, { width: 180, height: 120, world: worldSize });
+      if (this.agent) this.minimap.setAgentPosition({ x: this.agent.x, y: this.agent.y });
+      // Toggle minimap with N (avoid conflict with World Map 'M')
+      this.input.keyboard?.on('keydown-N', () => this.minimap?.toggle());
+      // Camera navigator
+      this.camNav = new CameraNavigator(this, {
+        world: worldSize,
+        minZoom: this.minZoom,
+        maxZoom: this.maxZoom,
+      });
+      // Click-to-teleport: move agent and ultra-fast pan
+      this.minimap.setOnTeleport(({ x, y }) => {
+        this.beginTravelPerf('minimap');
+        if (this.agent) {
+          this.agent.walkTo(x, y);
+          try {
+            this.minimap?.setAgentPosition({ x, y });
+          } catch {}
+          this.camNav?.panTo(x, y, 160);
+          try {
+            this.minimap?.setViewport(this.cameras.main.worldView as any);
+          } catch {}
+          this.queueSaveLayout(true);
+        }
+      });
+    } catch {}
+
     // Wire event bus → scene
     eventBus.on('agent_update', (p) => {
       if (!this.agent) return;
       if (p.state) this.agent.setAgentState(p.state as AgentState);
-      if (typeof p.x === 'number' && typeof p.y === 'number') this.agent.walkTo(p.x, p.y);
+      if (typeof p.x === 'number' && typeof p.y === 'number') {
+        this.agent.walkTo(p.x, p.y);
+        try {
+          this.minimap?.setAgentPosition({ x: p.x, y: p.y });
+        } catch {}
+      }
     });
 
     eventBus.on('bug_bot_spawn', (p) => this.enqueueSpawn(p));
@@ -183,8 +234,8 @@ export class MainScene extends Phaser.Scene {
       this.celebrate(bot.x, bot.y);
 
       // Fade bot, then remove both sprite and registry within <= 2s
-      const oldX = bot.x,
-        oldY = bot.y;
+      const _oldX = bot.x,
+        _oldY = bot.y;
       bot.fadeOutAndDestroy(900);
       this.time.delayedCall(1200, () => {
         this.bugs.delete(p.id);
@@ -234,6 +285,12 @@ export class MainScene extends Phaser.Scene {
     kb?.on('keydown-H', () => this.toggleHints());
     kb?.on('keydown-G', () => this.toggleGrid());
     kb?.on('keydown-M', () => this.scene.start('WorldMapScene'));
+    // Alt input: Shift+Arrows to pan; F to nearest house
+    kb?.on('keydown-LEFT', (e: KeyboardEvent) => this.handlePanKeys('left', e));
+    kb?.on('keydown-RIGHT', (e: KeyboardEvent) => this.handlePanKeys('right', e));
+    kb?.on('keydown-UP', (e: KeyboardEvent) => this.handlePanKeys('up', e));
+    kb?.on('keydown-DOWN', (e: KeyboardEvent) => this.handlePanKeys('down', e));
+    kb?.on('keydown-F', (e: KeyboardEvent) => this.handleNearestHouseKey(e));
     // Perf harness: press P to spawn a batch of bug bots
     kb?.on('keydown-P', () => {
       const count = 50;
@@ -246,12 +303,33 @@ export class MainScene extends Phaser.Scene {
       }
     });
 
-    // Restore camera if available
+    // Restore camera from in-memory state or URL hash
     if (prior?.camera) {
       this.cameras.main.scrollX = prior.camera.scrollX;
       this.cameras.main.scrollY = prior.camera.scrollY;
       if (typeof prior.camera.zoom === 'number') this.cameras.main.setZoom(prior.camera.zoom);
     }
+    try {
+      const { readUIHash } = require('../state/uiState');
+      const h = readUIHash();
+      if (h?.cam && Number.isFinite(h.cam.x) && Number.isFinite(h.cam.y)) {
+        this.camNav?.teleportOrPanTo(h.cam.x!, h.cam.y!, 0);
+        if (typeof h.cam.z === 'number' && Number.isFinite(h.cam.z))
+          this.cameras.main.setZoom(h.cam.z!);
+      }
+      const onHash = () => {
+        const next = readUIHash();
+        if (next?.cam && Number.isFinite(next.cam.x) && Number.isFinite(next.cam.y)) {
+          this.camNav?.teleportOrPanTo(next.cam.x!, next.cam.y!, 0);
+          if (typeof next.cam.z === 'number' && Number.isFinite(next.cam.z))
+            this.cameras.main.setZoom(next.cam.z!);
+        }
+      };
+      window.addEventListener('hashchange', onHash);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+        window.removeEventListener('hashchange', onHash);
+      });
+    } catch {}
 
     // Ground grid (lightweight isometric-like diamonds)
     this.buildGroundGrid();
@@ -282,31 +360,17 @@ export class MainScene extends Phaser.Scene {
         stars: s.stars,
         issues: s.issues,
       });
-      house.onClickZoom((tx, ty) => this.cameras.main.pan(tx, ty, 250, 'Sine.easeInOut'));
+      house.onClickZoom((tx, ty) => this.panAndZoomTo(tx, ty, 1.15));
       house.setHealth(s.issues);
       this.add.existing(house);
       this.registerHouse(s.id, x, y, 18);
+      this.houseObjects.set(s.id, house);
     }
 
-    // Minimap overlay (top-right)
-    const mapW = 120;
-    const mapH = 70;
-    const mini = this.add.graphics().setScrollFactor(0).setDepth(1000);
-    const dot = this.add.rectangle(0, 0, 4, 4, 0xfde68a, 1).setScrollFactor(0).setDepth(1001);
-    const drawMini = () => {
-      mini.clear();
-      mini.fillStyle(0x0b1220, 0.8);
-      mini.fillRect(this.scale.width - mapW - 12, 12, mapW, mapH);
-      mini.lineStyle(1, 0x334155, 1);
-      mini.strokeRect(this.scale.width - mapW - 12, 12, mapW, mapH);
-      // Map agent position into mini rect (simple normalization to viewport)
-      const ax = Phaser.Math.Clamp(this.agent!.x / this.scale.width, 0, 1);
-      const ay = Phaser.Math.Clamp(this.agent!.y / this.scale.height, 0, 1);
-      dot.x = this.scale.width - mapW - 12 + 2 + ax * (mapW - 4);
-      dot.y = 12 + 2 + ay * (mapH - 4);
-    };
-    drawMini();
-    this.time.addEvent({ delay: 200, loop: true, callback: drawMini });
+    // Start repo mock harness to drive house visuals
+    this.startRepoEventHarness();
+
+    // (Removed legacy mini overlay; replaced by Minimap class above)
 
     // FPS overlay (top-left)
     const fpsText = this.add
@@ -339,6 +403,16 @@ export class MainScene extends Phaser.Scene {
     // Camera controls
     this.enableCameraControls();
 
+    // Listen for house activity updates via WebSocket
+    eventBus.on('house_activity', (msg) => {
+      const key1 = msg.houseId != null ? String(msg.houseId) : undefined;
+      const key2 = msg.repoId != null ? String(msg.repoId) : undefined;
+      let h: House | undefined;
+      if (key1) h = this.houseObjects.get(key1);
+      if (!h && key2) h = this.houseObjects.get(key2);
+      if (h) h.applyActivityIndicators(msg.indicators as any);
+    });
+
     // Optional URL-based profiling mode: /?profileVillage[&profileVillageCount=200]
     try {
       if (typeof window !== 'undefined') {
@@ -349,7 +423,9 @@ export class MainScene extends Phaser.Scene {
           this.profileSpawn(n);
         }
       }
-    } catch {}
+    } catch (e) {
+      void e;
+    }
 
     // Persist state on shutdown
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -363,6 +439,58 @@ export class MainScene extends Phaser.Scene {
       });
       this.queueSaveLayout(true);
     });
+  }
+
+  private panAndZoomTo(tx: number, ty: number, targetZoom = 1.2) {
+    const cam = this.cameras.main;
+    const z = Phaser.Math.Clamp(targetZoom, this.minZoom, this.maxZoom);
+    cam.pan(tx, ty, 280, 'Sine.easeInOut');
+    this.tweens.add({
+      targets: cam,
+      zoom: z,
+      duration: 280,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  // Teleport or ultra-fast pan the main camera to a world position.
+  // Prefer instant snap; allow optional <=200ms ease if motion is enabled.
+  private teleportCameraTo(
+    x: number,
+    y: number,
+    opts?: { animate?: boolean; durationMs?: number },
+  ) {
+    const cam = this.cameras.main;
+    const worldW = this.scale.width * 2;
+    const worldH = this.scale.height * 2;
+    const halfW = (cam.width * 0.5) / cam.zoom;
+    const halfH = (cam.height * 0.5) / cam.zoom;
+    const cx = Phaser.Math.Clamp(x, halfW, Math.max(halfW, worldW - halfW));
+    const cy = Phaser.Math.Clamp(y, halfH, Math.max(halfH, worldH - halfH));
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const animate = !!opts?.animate && !prefersReduced;
+    const dur = Math.min(Math.max(0, opts?.durationMs ?? 160), 200);
+
+    if (animate) {
+      // Emit when the camera finishes panning
+      cam.once('camerapancomplete' as any, () => {
+        try {
+          this.minimap?.setViewport(cam.worldView as any);
+        } catch {}
+        eventBus.emit('cameraSettled', { x: cx, y: cy, zoom: cam.zoom });
+      });
+      cam.pan(cx, cy, dur, 'Sine.easeInOut');
+    } else {
+      cam.centerOn(cx, cy);
+      try {
+        this.minimap?.setViewport(cam.worldView as any);
+      } catch {}
+      eventBus.emit('cameraSettled', { x: cx, y: cy, zoom: cam.zoom });
+    }
   }
 
   private async fetchAndShowRole(villageId: string) {
@@ -442,6 +570,60 @@ export class MainScene extends Phaser.Scene {
   private registerHouse(houseId: string, x: number, y: number, radius?: number) {
     this.houses.set(houseId, { x, y, radius });
     this.flushPendingForHouse(houseId);
+    try {
+      this.minimap?.setHouse(houseId, { x, y });
+    } catch {}
+  }
+
+  private startRepoEventHarness() {
+    const ids = Array.from(this.houseObjects.keys());
+    if (ids.length === 0) return;
+    // Periodic random commit pulses
+    this.time.addEvent({
+      delay: 2600,
+      loop: true,
+      callback: () => {
+        const id = Phaser.Utils.Array.GetRandom(ids);
+        const h = this.houseObjects.get(id);
+        if (!h) return;
+        const st: HouseState = {
+          name: (h as any).name || id,
+          primaryLanguage: (h as any).language,
+          openIssues: Phaser.Math.Between(0, 30),
+          lastCommitAt: Date.now(),
+          buildStatus: 'idle',
+        };
+        applyRepoStateToHouse(h, st, Date.now());
+      },
+    });
+
+    // Periodic random build start/finish
+    this.time.addEvent({
+      delay: 5200,
+      loop: true,
+      callback: () => {
+        const id = Phaser.Utils.Array.GetRandom(ids);
+        const h = this.houseObjects.get(id);
+        if (!h) return;
+        const start: HouseState = {
+          name: (h as any).name || id,
+          primaryLanguage: (h as any).language,
+          openIssues: Phaser.Math.Between(0, 30),
+          buildStatus: 'in_progress',
+        };
+        applyRepoStateToHouse(h, start, Date.now());
+        // Complete later
+        this.time.delayedCall(1600, () => {
+          const finish: HouseState = {
+            name: (h as any).name || id,
+            primaryLanguage: (h as any).language,
+            openIssues: Phaser.Math.Between(0, 30),
+            buildStatus: Phaser.Math.Between(0, 1) === 0 ? 'passed' : 'failed',
+          };
+          applyRepoStateToHouse(h, finish, Date.now());
+        });
+      },
+    });
   }
 
   private flushPendingForHouse(houseId: string) {
@@ -666,6 +848,9 @@ export class MainScene extends Phaser.Scene {
           const x = Phaser.Math.Between(60, this.scale.width - 60);
           const y = Phaser.Math.Between(60, this.scale.height - 60);
           this.agent.walkTo(x, y);
+          try {
+            this.minimap?.setAgentPosition({ x, y });
+          } catch {}
         }
       },
     });
@@ -694,7 +879,9 @@ export class MainScene extends Phaser.Scene {
           agents: [{ id: 'demo-agent', x: this.agent?.x, y: this.agent?.y }],
         }),
       });
-    } catch {}
+    } catch (e) {
+      void e;
+    }
   }
   private async fetchLayout(villageId: string): Promise<any> {
     try {
@@ -731,7 +918,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private enableCameraControls() {
-    const cam = this.cameras.main;
+    const _cam = this.cameras.main;
     if (!cam) return;
     cam.setBounds(0, 0, this.scale.width * 2, this.scale.height * 2);
     let isPanning = false;
@@ -822,7 +1009,7 @@ export class MainScene extends Phaser.Scene {
             ty = snap.y;
           }
         }
-        cam.pan(tx, ty, 250, 'Sine.easeInOut');
+        this.camNav?.panTo(tx, ty, 250);
       }
       this.lastClickAt = now;
     });
@@ -882,6 +1069,65 @@ export class MainScene extends Phaser.Scene {
       else bot.setPulseTimeScale(1.0);
       bot.resumePulse();
     }
+  }
+
+  private handlePanKeys(dir: 'left' | 'right' | 'up' | 'down', e: KeyboardEvent) {
+    if (!e.shiftKey) return;
+    e.preventDefault();
+    const cam = this.cameras.main;
+    const view = cam.worldView;
+    const cx = view.x + view.width * 0.5;
+    const cy = view.y + view.height * 0.5;
+    const step = 200 / cam.zoom;
+    let tx = cx;
+    let ty = cy;
+    if (dir === 'left') tx -= step;
+    if (dir === 'right') tx += step;
+    if (dir === 'up') ty -= step;
+    if (dir === 'down') ty += step;
+    this.beginTravelPerf('keys');
+    this.camNav?.panTo(tx, ty, 200);
+    announce('Panning view');
+  }
+
+  private handleNearestHouseKey(e: KeyboardEvent) {
+    const cam = this.cameras.main;
+    const view = cam.worldView;
+    const cx = view.x + view.width * 0.5;
+    const cy = view.y + view.height * 0.5;
+    const house = this.findNearestHouse(cx, cy, Number.POSITIVE_INFINITY);
+    if (!house) return;
+    e.preventDefault();
+    this.beginTravelPerf('nearest_house');
+    this.camNav?.panTo(house.x, house.y, 250);
+    announce('Traveling to nearest house');
+  }
+
+  private beginTravelPerf(source: string) {
+    this.travelStartAt = performance.now();
+    const cam = this.cameras.main;
+    const onDone = () => {
+      try {
+        const ms = Math.round(performance.now() - (this.travelStartAt || performance.now()));
+        if (ms > 2000) {
+          announce('Travel took longer than two seconds');
+          try {
+            eventBus.emit('toast', { type: 'info', message: `Travel took ${ms}ms` });
+          } catch {}
+        }
+        try {
+          const villageId = (this as any).villageId as string | undefined;
+          track({
+            type: 'command_executed',
+            ts: Date.now(),
+            command: `fast_travel:${ms}ms:${source}`,
+            villageId,
+          });
+        } catch {}
+      } catch {}
+      cam.off('camerapancomplete', onDone);
+    };
+    cam.once('camerapancomplete', onDone);
   }
 
   private ensureFocusVisible() {
@@ -947,7 +1193,7 @@ export class MainScene extends Phaser.Scene {
   // Convert a world coordinate to the center of the nearest iso tile
   private snapWorldToIsoCenter(x: number, y: number): { x: number; y: number } | null {
     if (!this.gridTx) return null;
-    const cam = this.cameras.main;
+    const _cam = this.cameras.main;
     const wx = x;
     const wy = y;
     // Use current grid transform for rounding
@@ -975,7 +1221,7 @@ export class MainScene extends Phaser.Scene {
     if (!this.agent || !this.gridTx) return;
     const { screenToIso, isoToScreen } = require('../utils/iso');
     const { astar, simplifyPath } = require('../utils/pathfinding');
-    const cam = this.cameras.main;
+    const _cam = this.cameras.main;
     // Pick nearest house center
     const target = this.findNearestHouse(this.agent.x, this.agent.y, 1000);
     if (!target) return;

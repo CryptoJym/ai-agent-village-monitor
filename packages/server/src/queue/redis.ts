@@ -7,7 +7,9 @@ export function getRedis(): IORedis | null {
   if (!config.REDIS_URL) return null;
   if (!redisSingleton) {
     redisSingleton = new IORedis(config.REDIS_URL, {
-      maxRetriesPerRequest: 2,
+      // BullMQ requires this to be null for blocking ops like BRPOPLPUSH
+      // https://docs.bullmq.io/guide/connections
+      maxRetriesPerRequest: null,
       enableReadyCheck: true,
       lazyConnect: false,
     });
@@ -31,9 +33,10 @@ export async function closeRedis() {
     try {
       await redisSingleton.quit();
     } catch {
-      try { await redisSingleton.disconnect(); } catch {}
+      try {
+        await redisSingleton.disconnect();
+      } catch {}
     }
     redisSingleton = null;
   }
 }
-

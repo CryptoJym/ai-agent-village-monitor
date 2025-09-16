@@ -67,11 +67,33 @@ Core docs live under `docs/`:
 - MCP Integration: `docs/MCP_INTEGRATION.md`
 - Getting Started: `docs/GETTING_STARTED.md`
 - Deployment: `docs/DEPLOYMENT.md`
+- CI/CD: `docs/operations/ci-cd.md`
+- Changelog: `CHANGELOG.md`
+
+Launch
+
+- Runbook: `docs/launch/runbook.md`
+- Rollback & Migrations: `docs/launch/rollback-migrations.md`
+- Observability Pre-flight: `docs/launch/observability.md`
+- Incident Response: `docs/launch/incident-response.md`
+- Demo Script: `docs/launch/demo.md`
+- Comms Plan: `docs/launch/comms-plan.md`
 
 API Reference:
 
 - OpenAPI JSON: `GET /api/openapi.json`
 - Swagger UI: `GET /api/docs`
+
+## Feedback
+
+- In-app UI: Help → Submit Feedback (or the Feedback button in the header) opens a modal with category, description, optional email, and optional NPS.
+- API: `POST /api/feedback` (authenticated). Body: `{ category: 'bug'|'feature'|'question'|'other', description: string(10..2000), email?: string, nps_score?: 0..10 }`.
+- Storage/forwarding controlled by env:
+  - `FEEDBACK_STORE=redis|slack|github` (default `redis`)
+  - When `slack`: set `FEEDBACK_SLACK_WEBHOOK_URL` to an incoming webhook URL
+  - When `github`: set `GITHUB_TOKEN` and `FEEDBACK_GITHUB_REPO=owner/name`
+  - Optional: `FEEDBACK_IP_SALT` for IP hashing (falls back to `JWT_SECRET`)
+- Rate limits: per-IP 5/hour and 20/day (Redis-backed when configured). Returns `429` with `Retry-After` when exceeded.
 
 ## Load & Latency Testing
 
@@ -148,7 +170,7 @@ TBD
 
 <!-- TASKMASTER_EXPORT_START -->
 
-> 🎯 **Taskmaster Export** - 2025-09-16 02:00:03 UTC
+> 🎯 **Taskmaster Export** - 2025-09-16 02:32:14 UTC
 > 📋 Export: with subtasks • Status filter: none
 > 🔗 Powered by [Task Master](https://task-master.dev?utm_source=github-readme&utm_medium=readme-export&utm_campaign=ai-agent-village-monitor&utm_content=task-export-link)
 
@@ -161,10 +183,10 @@ TBD
 | Deferred          | 0                        |
 | Cancelled         | 0                        |
 | -                 | -                        |
-| Subtask Progress  | ████████████████░░░░ 78% |
-| Completed         | 395                      |
+| Subtask Progress  | ████████████████░░░░ 79% |
+| Completed         | 398                      |
 | In Progress       | 1                        |
-| Pending           | 108                      |
+| Pending           | 105                      |
 
 | ID     | Title                                                                       | Status             | Priority | Dependencies                                                  | Complexity |
 | :----- | :-------------------------------------------------------------------------- | :----------------- | :------- | :------------------------------------------------------------ | :--------- |
@@ -580,7 +602,7 @@ TBD
 | 85     | Load and Soak Testing (k6/Artillery)                                        | ►&nbsp;in-progress | medium   | 45                                                            | N/A        |
 | 85.1   | Staging environment setup for load/soak                                     | ✓&nbsp;done        | -        | None                                                          | N/A        |
 | 85.2   | Synthetic dataset and identity generation                                   | ✓&nbsp;done        | -        | 85.1                                                          | N/A        |
-| 85.3   | Performance thresholds and SLAs                                             | ○&nbsp;pending     | -        | 85.1                                                          | N/A        |
+| 85.3   | Performance thresholds and SLAs                                             | ✓&nbsp;done        | -        | 85.1                                                          | N/A        |
 | 85.4   | Ramp-up profiles and soak plan                                              | ○&nbsp;pending     | -        | 85.1, 85.3                                                    | N/A        |
 | 85.5   | k6 HTTP scenario implementation                                             | ✓&nbsp;done        | -        | 85.1, 85.2, 85.3, 85.4                                        | N/A        |
 | 85.6   | Artillery WebSocket broadcast scenarios                                     | ✓&nbsp;done        | -        | 85.1, 85.2, 85.3, 85.4                                        | N/A        |
@@ -597,8 +619,8 @@ TBD
 | 86.7   | Configure deploy-backend.yml with migrations                                | ○&nbsp;pending     | -        | 86.1, 86.3, 86.4                                              | N/A        |
 | 86.8   | Branch protections and rollback verification                                | ○&nbsp;pending     | -        | 86.6, 86.7                                                    | N/A        |
 | 87     | Production Deployment and Environment Configuration                         | ►&nbsp;in-progress | medium   | None                                                          | N/A        |
-| 87.1   | Create Vercel project, custom domain, and HSTS                              | ○&nbsp;pending     | -        | None                                                          | N/A        |
-| 87.2   | Provision Postgres 15 and Redis on Railway with backups                     | ○&nbsp;pending     | -        | None                                                          | N/A        |
+| 87.1   | Create Vercel project, custom domain, and HSTS                              | ✓&nbsp;done        | -        | None                                                          | N/A        |
+| 87.2   | Provision Postgres 15 and Redis on Railway with backups                     | ✓&nbsp;done        | -        | None                                                          | N/A        |
 | 87.3   | Deploy backend on Railway with autoscaling                                  | ○&nbsp;pending     | -        | 87.2                                                          | N/A        |
 | 87.4   | Set and manage production environment variables                             | ○&nbsp;pending     | -        | 87.1, 87.2, 87.3                                              | N/A        |
 | 87.5   | Configure CORS policies and WebSocket origins                               | ○&nbsp;pending     | -        | 87.1, 87.3, 87.4                                              | N/A        |

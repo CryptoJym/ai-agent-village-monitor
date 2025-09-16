@@ -1,6 +1,6 @@
 # Task ID: 99
 # Title: Privacy and Compliance Checklist
-# Status: pending
+# Status: done
 # Dependencies: 42
 # Priority: medium
 # Description: Review data handling, PII storage, and implement necessary user controls.
@@ -160,4 +160,3 @@ Define severity matrix and RACI; write runbooks for token compromise, PII exposu
 ### Description: Verify controls implemented and obtain final compliance sign-off.
 ### Details:
 Assemble evidence (tests, configs, policies) for each control; run through checklist covering token handling, deletion, logging, DNT/opt-out, access controls, audit logging, and incident response; perform internal audit/security review; remediate findings; capture approvals from legal/security leadership; record versioned sign-off.
-

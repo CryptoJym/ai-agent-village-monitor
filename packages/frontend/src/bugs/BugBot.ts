@@ -52,7 +52,6 @@ export class BugBot extends Phaser.GameObjects.Container {
 
     // Click to request assignment (fallback to drag)
     this.on('pointerdown', () => {
-       
       const { eventBus } = require('../realtime/EventBus');
       eventBus.emit('bug_bot_assign_request', { id: this.id });
     });
@@ -81,7 +80,6 @@ export class BugBot extends Phaser.GameObjects.Container {
       const handler = (ev: KeyboardEvent) => {
         if (!this.isHovered) return;
         if (ev.key === 'Enter' || ev.key === ' ') {
-           
           const { eventBus } = require('../realtime/EventBus');
           eventBus.emit('bug_bot_assign_request', { id: this.id });
         }
@@ -114,7 +112,6 @@ export class BugBot extends Phaser.GameObjects.Container {
     this.sprite.setScale(s);
 
     // Animate progress ring to target
-    const start = this.ringAnimState.p;
     const end = this.progress;
     this.ringAnim?.stop();
     this.ringAnim = this.scene.tweens.add({

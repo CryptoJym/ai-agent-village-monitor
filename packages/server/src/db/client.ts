@@ -8,6 +8,10 @@ const inVitest = !!process.env.VITEST || !!process.env.VITEST_WORKER_ID;
 function makeStub(): any {
   return {
     $queryRawUnsafe: async () => 1,
+    user: {
+      findUnique: async (_args?: any) => ({ preferences: {} }),
+      update: async (_args?: any) => ({ ok: true }),
+    },
     villageAccess: {
       // Default to owner for userId 42 in village 1 to satisfy owner-path unit test;
       // individual tests can vi.spyOn(...).mockResolvedValue(...) to override.
@@ -31,10 +35,11 @@ if (inVitest) {
 } else {
   // Prevent multiple instances in dev with hot-reload
   const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const { PrismaClient: RealPrisma } = require('@prisma/client');
   prismaInstance = globalForPrisma.prisma ?? new RealPrisma();
-  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaInstance as PrismaClient;
+  if (process.env.NODE_ENV !== 'production')
+    globalForPrisma.prisma = prismaInstance as PrismaClient;
 }
 
 export const prisma = prismaInstance as PrismaClient;

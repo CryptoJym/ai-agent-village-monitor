@@ -1,6 +1,6 @@
 # Task ID: 100
 # Title: Launch Runbook and Communications
-# Status: pending
+# Status: done
 # Dependencies: 79, 84, 86
 # Priority: medium
 # Description: Prepare launch checklist, demo scripts, and incident response plan.
@@ -11,37 +11,37 @@ Runbook: feature flags, rollback steps, migration plan, observability checks. Pu
 Tabletop exercise: simulate an incident and follow runbook. Dry-run demo using staging with stable performance. Verify all comms links and assets are correct.
 
 # Subtasks:
-## 1. Launch Checklist and Feature Flags [pending]
+## 1. Launch Checklist and Feature Flags [done]
 ### Dependencies: None
 ### Description: Draft the end-to-end launch checklist and define all feature flags, owners, and rollout gates.
 ### Details:
 Deliverables: launch checklist (pre-flight, go/no-go, cutover, post-launch); feature flag registry with owners, default states by environment, phased rollout plan, kill switches, and cleanup plan; approval matrix and sign-offs; freeze windows; dependencies to observability, rollback, comms; DRI and back-up; links to runbook storage. Include checks for docs/comms readiness and support handoff.
 
-## 2. Rollback Strategy and Data Migration Plan [pending]
+## 2. Rollback Strategy and Data Migration Plan [done]
 ### Dependencies: None
 ### Description: Document rollback options and a forward/backward-compatible migration plan with recovery procedures.
 ### Details:
 Deliverables: decision tree for rollback vs hotfix; feature-flag fallback steps; deployment rollback procedure; DB/schema migration plan with backward compatibility, data backfill, and gated activation; RTO/RPO targets; backup/restore playbook and verification checklist; staging dry-run and timings; scripts and runbooks for roll-forward/roll-back; integrity checks and success criteria.
 
-## 3. Demo Script and Assets [pending]
+## 3. Demo Script and Assets [done]
 ### Dependencies: None
 ### Description: Create the demo narrative, script, and produce assets (video, slides, screenshots).
 ### Details:
 Deliverables: persona-based storyline and key value props; step-by-step script with timings and prompts; stable staging environment with seeded data; performance budgets for recording; screen capture plan, B-roll, thumbnails; captions/transcripts for accessibility; legal/brand review; final video export, source files, slides, and screenshots; dry-run validation; storage links and embed codes.
 
-## 4. Observability Pre-flight Checks [pending]
+## 4. Observability Pre-flight Checks [done]
 ### Dependencies: 100.1
 ### Description: Ensure metrics, logs, traces, dashboards, and alerts are in place and tested pre-launch.
 ### Details:
 Deliverables: SLOs and golden-signal dashboards; alert rules with thresholds and runbook links; feature-flag exposure and adoption metrics; synthetic probes and canary plan; staging and production health checks (readiness/liveness); PII-scrubbed logging verification; paging integration test; error budget policy; links to dashboards/monitors; pre-flight checklist results and sign-off.
 
-## 5. Incident Response and Escalation Plan [pending]
+## 5. Incident Response and Escalation Plan [done]
 ### Dependencies: 100.1, 100.2, 100.4
 ### Description: Define incident playbook, roles, severity levels, escalation paths, and support/on-call rotations.
 ### Details:
 Deliverables: severity matrix and response timelines; roles (incident commander, comms lead, scribe, ops); on-call schedule and escalation tree; paging policies; comms templates (internal, customer, status page); decision branches for rollback/migration; tabletop exercise plan and outcomes; postmortem template; vendor contacts; privacy/security considerations; integration with support escalation and hours coverage.
 
-## 6. Communications Plan (Landing Page, Video, Announcements) [pending]
+## 6. Communications Plan (Landing Page, Video, Announcements) [done]
 ### Dependencies: 100.3, 100.5
 ### Description: Plan and execute landing page updates, publish demo video, and schedule announcements.
 ### Details:
@@ -82,4 +82,3 @@ Define severity levels and triage criteria; establish escalation paths (primary/
 ### Description: Plan and produce public-facing assets and announcement schedule.
 ### Details:
 Update landing page copy, screenshots, feature list, and metadata (SEO/Open Graph); embed the demo video and add clear CTAs; draft announcement posts for blog, social, and customer email with timeline and regional considerations; generate tracking links respecting Do Not Track; obtain legal/brand approvals; verify all links/assets and schedule publication windows; prepare FAQs and support macros for launch day.
-

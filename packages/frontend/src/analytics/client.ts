@@ -3,11 +3,29 @@ import type { AnalyticsEvent, AnalyticsBatch } from '@shared';
 const CONSENT_KEY = 'aavm_analytics_consent_v1';
 const CLIENT_ID_KEY = 'aavm_client_id_v1';
 
+function hasDntGpc(): boolean {
+  try {
+    const nav: any = typeof navigator !== 'undefined' ? navigator : undefined;
+    const win: any = typeof window !== 'undefined' ? window : undefined;
+    const dnt =
+      nav?.doNotTrack === '1' ||
+      nav?.doNotTrack === 'yes' ||
+      win?.doNotTrack === '1' ||
+      nav?.msDoNotTrack === '1';
+    const gpc = !!(nav && 'globalPrivacyControl' in nav && nav.globalPrivacyControl);
+    return !!(dnt || gpc);
+  } catch {
+    return false;
+  }
+}
+
 function getConsent(): boolean {
   try {
     const v = localStorage.getItem(CONSENT_KEY);
     // Opt-in by default until user disables
-    return v === null ? true : v === 'true';
+    const local = v === null ? true : v === 'true';
+    if (hasDntGpc()) return false;
+    return local;
   } catch {
     return true;
   }
@@ -15,7 +33,16 @@ function getConsent(): boolean {
 export function setConsent(v: boolean) {
   try {
     localStorage.setItem(CONSENT_KEY, String(v));
-  } catch {}
+  } catch (e) {
+    void e;
+  }
+}
+export function hasStoredConsent(): boolean {
+  try {
+    return localStorage.getItem(CONSENT_KEY) !== null;
+  } catch {
+    return false;
+  }
 }
 function getClientId(): string {
   try {
@@ -68,6 +95,29 @@ export async function flush() {
   } catch {
     // ignore and retry later; rebuffer
     buffer.unshift(...batch.events);
+  } finally {
+    flushTimer = undefined;
+  }
+}
+
+// Flush immediately using sendBeacon (best-effort during unload/visibility changes)
+export function flushBeacon() {
+  try {
+    if (!getConsent()) {
+      buffer.length = 0;
+      return;
+    }
+    const batch: AnalyticsBatch = {
+      events: buffer.splice(0, buffer.length),
+      clientId: getClientId(),
+      consent: true,
+    };
+    if (batch.events.length === 0) return;
+    const blob = new Blob([JSON.stringify(batch)], { type: 'application/json' });
+    // navigator is safe-checked; sendBeacon returns boolean
+    (navigator as any)?.sendBeacon?.('/api/analytics/collect', blob);
+  } catch {
+    // swallow
   } finally {
     flushTimer = undefined;
   }

@@ -46,13 +46,16 @@ model BugBot {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String?  @unique @db.Citext
-  githubId  BigInt?  @unique
-  name      String?
-  preferences Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  email          String?  @unique @db.Citext
+  githubId       BigInt?  @unique
+  username       String?  @unique
+  name           String?
+  avatarUrl      String?
+  accessTokenHash String?
+  preferences    Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   villages VillageAccess[]
   agents   Agent[]
@@ -65,6 +68,8 @@ model Village {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   config      Json?
+  // Layout concurrency/versioning
+  layoutVersion Int     @default(0)
 
   houses  House[]
   bugBots BugBot[]
@@ -85,8 +90,14 @@ model House {
   // Layout persistence
   positionX    Float?
   positionY    Float?
+  spriteOrientation String?  @db.VarChar(16)
+  spriteVariant     String?  @db.VarChar(32)
+  spriteScale       Float?
+  lastMovedAt       DateTime?
+  lastMovedBy       String?  @db.Uuid
 
   @@index([villageId])
+  @@index([positionX, positionY])
 }
 
 model Agent {
@@ -102,6 +113,11 @@ model Agent {
   positionX Float?
   positionY Float?
   spriteConfig Json?
+  spriteOrientation String?  @db.VarChar(16)
+  spriteVariant     String?  @db.VarChar(32)
+  spriteScale       Float?
+  lastMovedAt       DateTime?
+  lastMovedBy       String?  @db.Uuid
   currentStatus String? @default("idle")
 
   sessions AgentSession[]

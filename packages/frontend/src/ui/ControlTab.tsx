@@ -3,16 +3,13 @@ import { queueAwarePost } from '../utils/queueFetch';
 import { useParams } from 'react-router-dom';
 import { useViewerRole } from '../hooks/useViewerRole';
 import { eventBus } from '../realtime/EventBus';
+import { track } from '../analytics/client';
 import { useToast } from './Toast';
 import { RolePill } from './RolePill';
 
 export function ControlTab({ agentId }: { agentId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
-  const [showActions, setShowActions] = useState(false);
-  const [owner, setOwner] = useState('');
-  const [repo, setRepo] = useState('');
-  const [workflowId, setWorkflowId] = useState('');
-  const [ref, setRef] = useState('main');
+  // Future advanced actions can add repo/workflow inputs
   const { showError, showSuccess } = useToast();
   const params = useParams();
   const villageId = params.id as string | undefined;
@@ -22,7 +19,7 @@ export function ControlTab({ agentId }: { agentId: string }) {
   const post = async (body: any) => {
     setBusy(body?.command ?? 'action');
     try {
-      const res = await queueAwarePost(`/api/agents/${encodeURIComponent(agentId)}/command`, body);
+      await queueAwarePost(`/api/agents/${encodeURIComponent(agentId)}/command`, body);
       // optimistic feedback in thread
       eventBus.emit('work_stream', {
         agentId,
@@ -30,6 +27,9 @@ export function ControlTab({ agentId }: { agentId: string }) {
         ts: Date.now(),
       });
       showSuccess(`${pretty(body?.command)} accepted`);
+      // track command execution on success
+      const cmd = typeof body?.command === 'string' ? body.command : 'action';
+      track({ type: 'command_executed', ts: Date.now(), agentId, command: cmd, villageId });
     } catch {
       eventBus.emit('work_stream', {
         agentId,

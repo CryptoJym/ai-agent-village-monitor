@@ -7,7 +7,9 @@ export function LocaleSwitcher() {
     i18n.changeLanguage(next);
     try {
       localStorage.setItem('lang', next);
-    } catch {}
+    } catch (e) {
+      void e;
+    }
   }
   return (
     <div style={{ position: 'absolute', right: 12, top: 56, display: 'flex', gap: 6 }}>

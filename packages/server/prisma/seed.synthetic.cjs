@@ -31,7 +31,6 @@ async function seedVillage(orgIndex) {
 
   // Houses laid out on a grid
   const cols = Math.ceil(Math.sqrt(REPOS_PER_ORG));
-  const rows = Math.ceil(REPOS_PER_ORG / cols);
   const baseX = 120;
   const baseY = 140;
   const dx = 80;
@@ -105,4 +104,3 @@ main().then(async () => {
   await prisma.$disconnect();
   process.exit(1);
 });
-

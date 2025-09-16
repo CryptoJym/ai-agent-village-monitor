@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { RolePill } from './RolePill';
-import { Village, VillageSchema, type VillageAccessRow } from '../api/schemas';
+import { Village, type VillageAccessRow } from '../api/schemas';
 import {
   getVillage,
   getAccessList,
@@ -11,12 +11,7 @@ import {
   inviteByUsername as apiInviteByUsername,
 } from '../api/villages';
 
-async function fetchJson<T>(url: string, schema: any, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, { credentials: 'include', ...(init || {}) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  return schema.parse(data);
-}
+// (unused helper removed)
 
 export function SettingsPermissions({
   open,
@@ -53,7 +48,9 @@ export function SettingsPermissions({
             const me = await meRes.json();
             if (typeof me?.id === 'number') setViewerId(me.id);
           }
-        } catch {}
+        } catch (e) {
+          void e;
+        }
       } catch (e: any) {
         setError(e?.message || 'Failed to load');
       }

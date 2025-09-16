@@ -18,7 +18,9 @@ function loadQueue(): QueuedRequest[] {
 function saveQueue(q: QueuedRequest[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(q));
-  } catch {}
+  } catch (e) {
+    void e;
+  }
 }
 
 export function enqueue(url: string, init: RequestInit) {

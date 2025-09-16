@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { getTravelStats, subscribe } from '../metrics/perf';
 
 export function PerformanceOverlay() {
   const [fps, setFps] = useState(0);
+  const [travel, setTravel] = useState<{ last?: number; p95?: number; count: number }>({
+    count: 0,
+  });
   const last = useRef<number>(performance.now());
   const acc = useRef(0);
   const frames = useRef(0);
@@ -24,6 +28,14 @@ export function PerformanceOverlay() {
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, []);
+  useEffect(() => {
+    const update = () => {
+      const s = getTravelStats();
+      setTravel({ last: s.last, p95: s.p95, count: s.count });
+    };
+    update();
+    return subscribe(update);
+  }, []);
   return (
     <div
       style={{
@@ -39,7 +51,11 @@ export function PerformanceOverlay() {
         fontSize: 12,
       }}
     >
-      FPS: {fps}
+      <div>FPS: {fps}</div>
+      <div>Travel last: {travel.last ? Math.round(travel.last) : '-'} ms</div>
+      <div>
+        Travel p95: {travel.p95 ? Math.round(travel.p95) : '-'} ms (n={travel.count})
+      </div>
     </div>
   );
 }

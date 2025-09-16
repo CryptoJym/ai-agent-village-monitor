@@ -73,9 +73,11 @@ export function OnboardingStepper({
       });
       // This endpoint may not exist; it's OK if it fails silently
       navigator.sendBeacon?.('/analytics', blob);
-    } catch {}
+    } catch (e) {
+      void e;
+    }
     // Always log to console for dev visibility
-     
+
     console.info('[analytics] onboarding_timings', data);
   }
 
@@ -121,7 +123,9 @@ export function OnboardingStepper({
         setStep('org');
         try {
           if (w && !w.closed) w.close();
-        } catch {}
+        } catch (e) {
+          void e;
+        }
         return;
       }
       // Cancelled by closing popup
@@ -134,7 +138,9 @@ export function OnboardingStepper({
         setError('Login timed out. Please try again.');
         try {
           if (w && !w.closed) w.close();
-        } catch {}
+        } catch (e) {
+          void e;
+        }
         return;
       }
       setTimeout(tick, 700);
@@ -175,7 +181,9 @@ export function OnboardingStepper({
     if (url) {
       try {
         w = window.open(url, 'gh_install', 'width=980,height=840,noopener');
-      } catch {}
+      } catch (e) {
+        void e;
+      }
     }
     const start = Date.now();
     const tick = async () => {
@@ -185,7 +193,9 @@ export function OnboardingStepper({
         setInstallMsg('Installation detected. Continuing…');
         try {
           if (w && !w.closed) w.close();
-        } catch {}
+        } catch (e) {
+          void e;
+        }
         setInstalling(false);
         setStep('create');
         return;
@@ -227,7 +237,9 @@ export function OnboardingStepper({
           method: 'POST',
           credentials: 'include',
         });
-      } catch {}
+      } catch (e) {
+        void e;
+      }
       // Poll status until lastSynced present or timeout
       const start = Date.now();
       const poll = async () => {
@@ -245,7 +257,9 @@ export function OnboardingStepper({
               return;
             }
           }
-        } catch {}
+        } catch (e) {
+          void e;
+        }
         if (Date.now() - start > 60_000) {
           setError('Sync timed out. You can retry or continue to demo.');
           setSyncMsg('');
@@ -472,7 +486,7 @@ export function OnboardingStepper({
                 </span>
               ))}
               <span style={{ color: '#64748b', fontSize: 12 }}>
-                (add 'repo' only if private repos are required)
+                (add &apos;repo&apos; only if private repos are required)
               </span>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
@@ -526,8 +540,8 @@ export function OnboardingStepper({
             )}
             {!getAppInstallUrl() && (
               <p style={{ color: '#94a3b8', fontSize: 12, marginTop: 8 }}>
-                Tip: set VITE_GITHUB_APP_INSTALL_URL or VITE_GITHUB_APP_SLUG to show a direct "Open
-                Installation" button.
+                Tip: set VITE_GITHUB_APP_INSTALL_URL or VITE_GITHUB_APP_SLUG to show a direct
+                &quot;Open Installation&quot; button.
               </p>
             )}
             <p style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>

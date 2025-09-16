@@ -17,16 +17,22 @@ export function requestLogger() {
           duration_ms: ms,
           headers: scrubHeaders(req.headers as any),
         };
-        // eslint-disable-next-line no-console
+         
         console.info(JSON.stringify(payload));
         try {
           // Respect Do Not Track (DNT) and Global Privacy Control (GPC) for analytics metrics
-          const dnt = String((req.headers['dnt'] ?? '')).trim() === '1';
-          const gpc = String((req.headers['sec-gpc'] ?? '')).trim() === '1';
+          const dnt = String(req.headers['dnt'] ?? '').trim() === '1';
+          const gpc =
+            String(req.headers['sec-gpc'] ?? '').trim() === '1' ||
+            String(req.headers['gpc'] ?? '').trim() === '1';
           if (!dnt && !gpc) {
             const { httpInc, observe } = require('../metrics') as typeof import('../metrics');
             httpInc(req.method, (req.route?.path || req.path || '/').toString(), res.statusCode);
-            observe('http_response_ms', ms, { method: req.method, route: (req.route?.path || req.path || '/').toString(), status: String(res.statusCode) });
+            observe('http_response_ms', ms, {
+              method: req.method,
+              route: (req.route?.path || req.path || '/').toString(),
+              status: String(res.statusCode),
+            });
           }
         } catch {}
       } catch {}

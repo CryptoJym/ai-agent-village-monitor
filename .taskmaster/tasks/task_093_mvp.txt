@@ -1,6 +1,6 @@
 # Task ID: 93
 # Title: Activity Indicators from GitHub Events
-# Status: pending
+# Status: done
 # Dependencies: None
 # Priority: medium
 # Description: Update house visuals based on commits, PRs, and CI status in near real-time.
@@ -108,4 +108,3 @@ Emit synthetic webhooks and validate correct indicators appear and clear. Multip
 - Multi-indicator scenarios and rapid event bursts
 - Define acceptance criteria and thresholds for timing tolerances
 - CI integration to run headless visual tests and produce artifacts
-

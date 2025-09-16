@@ -7,6 +7,7 @@
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:strict": "eslint packages/frontend/src packages/server/src packages/shared --ext .ts,.tsx,.js,.jsx --max-warnings=0",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
     "prepare": "husky",
@@ -21,7 +22,12 @@
     "test:integration": "pnpm -C packages/server test:int",
     "test:e2e": "playwright test",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "e2e:preview": "PW_WEB_SERVER='node scripts/preview-and-wait.mjs' PW_BASE_URL='http://localhost:4173' playwright test --reporter=dot",
+    "omnara:auto": "scripts/omnara-auto.sh",
+    "oa": "scripts/omnara-auto.sh",
+    "omnara:hard": "scripts/omnara-hard.sh",
+    "oh": "scripts/omnara-hard.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

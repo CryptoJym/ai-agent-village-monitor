@@ -10,7 +10,7 @@ type CreateClientOptions = {
 };
 
 export class GitHubClient {
-  private octokit?: Octokit;
+  private _octokit?: Octokit;
   private graphql: ReturnType<typeof ghGraphql> | ((query: any, vars?: any) => any);
   private tokenIdx = 0;
   private tokens: string[];
@@ -26,7 +26,7 @@ export class GitHubClient {
       const { retry } = require('@octokit/plugin-retry');
       const { throttling } = require('@octokit/plugin-throttling');
       const MyOctokit = Octokit.plugin(retry, throttling);
-      this.octokit = new MyOctokit({
+      this._octokit = new MyOctokit({
         auth: this.pickToken(),
         userAgent: opts.userAgent || 'ai-agent-village-monitor/1.0',
         request: { retries: 2 },
@@ -35,7 +35,12 @@ export class GitHubClient {
             if (retryCount < 2) return true;
             return false;
           },
-          onSecondaryRateLimit: (retryAfter: number, options: any, octo: any, retryCount: number) => {
+          onSecondaryRateLimit: (
+            retryAfter: number,
+            options: any,
+            octo: any,
+            retryCount: number,
+          ) => {
             if (retryCount < 2) return true;
             return false;
           },
@@ -43,9 +48,11 @@ export class GitHubClient {
         previews: opts.previews,
       });
       const authToken = this.pickToken();
-      this.graphql = authToken ? (ghGraphql as any).defaults({ headers: { authorization: `token ${authToken}` } }) : ghGraphql;
+      this.graphql = authToken
+        ? (ghGraphql as any).defaults({ headers: { authorization: `token ${authToken}` } })
+        : ghGraphql;
     } catch {
-      this.octokit = undefined;
+      this._octokit = undefined;
       this.graphql = ghGraphql;
     }
   }
@@ -99,24 +106,39 @@ export class GitHubClient {
   }
 
   async listOrgRepos(org: string) {
-    if (!this.octokit) throw new Error('Octokit not available');
-    const res = await this.withRetry(() => (this.octokit as any).rest.repos.listForOrg({ org, per_page: 100 }));
+    if (!this._octokit) throw new Error('Octokit not available');
+    const res = await this.withRetry(() =>
+      (this._octokit as any).rest.repos.listForOrg({ org, per_page: 100 }),
+    );
     this.trackRate((res as any)?.headers);
     return res.data;
   }
 
   async listOrgReposGraphQL(org: string, cursor?: string) {
     const query = /* GraphQL */ `
-      query($org: String!, $cursor: String) {
-        rateLimit { limit remaining resetAt }
+      query ($org: String!, $cursor: String) {
+        rateLimit {
+          limit
+          remaining
+          resetAt
+        }
         organization(login: $org) {
-          repositories(first: 100, after: $cursor, orderBy: { field: UPDATED_AT, direction: DESC }) {
-            pageInfo { hasNextPage endCursor }
+          repositories(
+            first: 100
+            after: $cursor
+            orderBy: { field: UPDATED_AT, direction: DESC }
+          ) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
             nodes {
               id
               name
               nameWithOwner
-              primaryLanguage { name }
+              primaryLanguage {
+                name
+              }
               stargazerCount
               updatedAt
             }
@@ -134,18 +156,29 @@ export class GitHubClient {
     const repos = (res as any)?.organization?.repositories;
     return {
       pageInfo: repos?.pageInfo ?? { hasNextPage: false, endCursor: null },
-      nodes: (repos?.nodes ?? []).map((n: any) => ({ id: String(n.id), name: n.name, nameWithOwner: n.nameWithOwner, primaryLanguage: n?.primaryLanguage?.name ?? null, stargazerCount: n?.stargazerCount ?? 0, updatedAt: n?.updatedAt })),
+      nodes: (repos?.nodes ?? []).map((n: any) => ({
+        id: String(n.id),
+        name: n.name,
+        nameWithOwner: n.nameWithOwner,
+        primaryLanguage: n?.primaryLanguage?.name ?? null,
+        stargazerCount: n?.stargazerCount ?? 0,
+        updatedAt: n?.updatedAt,
+      })),
     };
   }
 
   async getRepoLanguages(owner: string, repo: string) {
-    if (!this.octokit) throw new Error('Octokit not available');
+    if (!this._octokit) throw new Error('Octokit not available');
     const key = this.etagKey('repos.getLanguages', { owner, repo });
     const ifNoneMatch = this.etags.get(key);
     this.metrics.languagesCalls++;
     try {
       const res = await this.withRetry(() =>
-        (this.octokit as any).rest.repos.getLanguages({ owner, repo, headers: ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : undefined })
+        (this._octokit as any).rest.repos.getLanguages({
+          owner,
+          repo,
+          headers: ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : undefined,
+        }),
       );
       this.trackRate((res as any)?.headers);
       const etag = (res as any)?.headers?.etag;
@@ -167,32 +200,114 @@ export class GitHubClient {
     }
   }
 
-  async createPR(params: { owner: string; repo: string; title: string; head: string; base: string; body?: string; draft?: boolean }) {
-    if (!this.octokit) throw new Error('Octokit not available');
-    const res = await this.withRetry(() => this.octokit!.pulls.create(params as any));
+  async createPR(params: {
+    owner: string;
+    repo: string;
+    title: string;
+    head: string;
+    base: string;
+    body?: string;
+    draft?: boolean;
+  }) {
+    if (!this._octokit) throw new Error('Octokit not available');
+    const res = await this.withRetry(() => this._octokit!.pulls.create(params as any));
     this.trackRate((res as any)?.headers);
     return res.data;
   }
 
   async listIssues(params: { owner: string; repo: string; state?: 'open' | 'closed' | 'all' }) {
-    if (!this.octokit) throw new Error('Octokit not available');
-    const res = await this.withRetry(() => this.octokit!.issues.listForRepo({ per_page: 100, ...params } as any));
+    if (!this._octokit) throw new Error('Octokit not available');
+    const res = await this.withRetry(() =>
+      this._octokit!.issues.listForRepo({ per_page: 100, ...params } as any),
+    );
     this.trackRate((res as any)?.headers);
     return res.data;
   }
 
   async listMyOrgs() {
-    if (!this.octokit) throw new Error('Octokit not available');
-    const res = await this.withRetry(() => (this.octokit as any).orgs.listForAuthenticatedUser({ per_page: 100 }));
+    if (!this._octokit) throw new Error('Octokit not available');
+    const res = await this.withRetry(() =>
+      (this._octokit as any).orgs.listForAuthenticatedUser({ per_page: 100 }),
+    );
     this.trackRate((res as any)?.headers);
     return (res.data || []).map((o: any) => ({ id: o.id, login: o.login }));
   }
 
-  async triggerDispatch(owner: string, repo: string, workflowId: string, ref: string, inputs?: Record<string, any>) {
-    if (!this.octokit) throw new Error('Octokit not available');
-    const res = await this.withRetry(() => this.octokit!.actions.createWorkflowDispatch({ owner, repo, workflow_id: workflowId as any, ref, inputs } as any));
+  async triggerDispatch(
+    owner: string,
+    repo: string,
+    workflowId: string,
+    ref: string,
+    inputs?: Record<string, any>,
+  ) {
+    if (!this._octokit) throw new Error('Octokit not available');
+    const res = await this.withRetry(() =>
+      this._octokit!.actions.createWorkflowDispatch({
+        owner,
+        repo,
+        workflow_id: workflowId as any,
+        ref,
+        inputs,
+      } as any),
+    );
     this.trackRate((res as any)?.headers);
     return { ok: true };
+  }
+
+  async triggerRepositoryDispatch(
+    owner: string,
+    repo: string,
+    eventType: string,
+    clientPayload?: Record<string, any>,
+  ) {
+    // In test runs, prefer raw HTTPS request so test nock interceptors (which patch http/https) can observe the call
+    if (process.env.NODE_ENV === 'test' || process.env.VITEST || process.env.VITEST_WORKER_ID) {
+      const https = require('node:https');
+      const data = JSON.stringify({ event_type: eventType, client_payload: clientPayload || {} });
+      await new Promise<void>((resolve, reject) => {
+        const req = https.request(
+          {
+            hostname: 'api.github.com',
+            path: `/repos/${owner}/${repo}/dispatches`,
+            method: 'POST',
+            headers: {
+              'User-Agent': 'ai-agent-village-monitor-test',
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(data),
+            },
+          },
+          (res: any) => {
+            if (res.statusCode >= 200 && res.statusCode < 300) resolve();
+            else {
+              const err: any = new Error(`status ${res.statusCode}`);
+              (err as any).status = res.statusCode;
+              reject(err);
+            }
+          },
+        );
+        req.on('error', reject);
+        req.write(data);
+        req.end();
+      });
+      return { ok: true };
+    }
+    if (!this._octokit) throw new Error('Octokit not available');
+    const res = await this.withRetry(() =>
+      this._octokit!.request('POST /repos/{owner}/{repo}/dispatches', {
+        owner,
+        repo,
+        event_type: eventType,
+        client_payload: clientPayload,
+      } as any),
+    );
+    this.trackRate((res as any)?.headers);
+    return { ok: true };
+  }
+
+  // Back-compat for callers that need raw Octokit
+  octokit() {
+    if (!this._octokit) throw new Error('Octokit not available');
+    return this._octokit;
   }
 }
 

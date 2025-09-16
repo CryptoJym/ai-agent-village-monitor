@@ -67,6 +67,7 @@ export class WebSocketService {
     this.socket.on('bug_bot_spawn', (payload) => eventBus.emit('bug_bot_spawn', payload));
     this.socket.on('bug_bot_progress', (payload) => eventBus.emit('bug_bot_progress', payload));
     this.socket.on('bug_bot_resolved', (payload) => eventBus.emit('bug_bot_resolved', payload));
+    this.socket.on('house.activity', (payload) => eventBus.emit('house_activity', payload));
   }
 
   disconnect() {
@@ -84,7 +85,9 @@ export class WebSocketService {
         eventBus.emit(type, payload);
         return;
       }
-    } catch {}
+    } catch (e) {
+      void e;
+    }
     this.wsQueue.push({ type, payload });
     if (!this.rafScheduled) {
       this.rafScheduled = true;

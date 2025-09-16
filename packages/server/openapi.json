@@ -4,21 +4,38 @@
   "servers": [{ "url": "http://localhost:3000" }],
   "paths": {
     "/healthz": { "get": { "summary": "Health", "responses": { "200": { "description": "OK" } } } },
-    "/readyz": { "get": { "summary": "Readiness", "responses": { "200": { "description": "Ready" }, "503": { "description": "Not Ready" } } } },
+    "/readyz": {
+      "get": {
+        "summary": "Readiness",
+        "responses": { "200": { "description": "Ready" }, "503": { "description": "Not Ready" } }
+      }
+    },
     "/api/villages/{villageId}/bugs": {
       "get": {
         "summary": "List bugs for a village",
-        "parameters": [{ "name": "villageId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [
+          { "name": "villageId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
         "responses": { "200": { "description": "OK" } }
       }
     },
     "/api/bugs/{id}/assign": {
       "post": {
         "summary": "Assign bug to agent",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "type": "object", "properties": { "agentId": { "type": "string" } }, "required": ["agentId"] } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "agentId": { "type": "string" } },
+                "required": ["agentId"]
+              }
+            }
+          }
         },
         "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } }
       }
@@ -26,41 +43,204 @@
     "/api/bugs/{id}/status": {
       "put": {
         "summary": "Update bug status",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["open","assigned","in_progress","resolved"] } }, "required": ["status"] } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "assigned", "in_progress", "resolved"]
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
         },
         "responses": { "200": { "description": "OK" }, "404": { "description": "Not found" } }
       }
     },
-    "/api/github/orgs": { "get": { "summary": "List user orgs", "responses": { "200": { "description": "OK" } } } },
+    "/api/github/orgs": {
+      "get": { "summary": "List user orgs", "responses": { "200": { "description": "OK" } } }
+    },
     "/api/github/orgs/{org}/repos": {
       "get": {
         "summary": "List org repos",
-        "parameters": [{ "name": "org", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [
+          { "name": "org", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
         "responses": { "200": { "description": "OK" }, "400": { "description": "Bad Request" } }
+      }
+    },
+    "/api/github/dispatch": {
+      "post": {
+        "summary": "Trigger repository_dispatch on GitHub",
+        "description": "Dispatches a custom event to a repository. Requires authentication and membership (owner|member) in the mapped village.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "repo_id": { "oneOf": [{ "type": "string" }, { "type": "number" }] },
+                      "event_type": { "type": "string" },
+                      "client_payload": { "type": "object", "additionalProperties": true }
+                    },
+                    "required": ["repo_id", "event_type"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "owner": { "type": "string" },
+                      "repo": { "type": "string" },
+                      "event_type": { "type": "string" },
+                      "client_payload": { "type": "object", "additionalProperties": true }
+                    },
+                    "required": ["owner", "repo", "event_type"]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Accepted" },
+          "400": { "description": "Bad Request" },
+          "403": { "description": "Forbidden" },
+          "502": { "description": "Upstream error" }
+        }
       }
     },
     "/api/agents/{id}/command": {
       "post": {
         "summary": "Send agent command",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "oneOf": [
-            { "type": "object", "properties": { "type": { "const": "task" }, "text": { "type": "string" } }, "required": ["type","text"] },
-            { "type": "object", "properties": { "command": { "const": "run_tool" }, "tool": { "type": "string" } }, "required": ["command"] },
-            { "type": "object", "properties": { "command": { "const": "commit" }, "message": { "type": "string" } }, "required": ["command","message"] },
-            { "type": "object", "properties": { "command": { "const": "pull_request" }, "title": { "type": "string" }, "body": { "type": "string" } }, "required": ["command","title"] }
-          ] } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": { "type": { "const": "task" }, "text": { "type": "string" } },
+                    "required": ["type", "text"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "command": { "const": "run_tool" },
+                      "tool": { "type": "string" }
+                    },
+                    "required": ["command"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "command": { "const": "commit" },
+                      "message": { "type": "string" }
+                    },
+                    "required": ["command", "message"]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "command": { "const": "pull_request" },
+                      "title": { "type": "string" },
+                      "body": { "type": "string" }
+                    },
+                    "required": ["command", "title"]
+                  }
+                ]
+              }
+            }
+          }
         },
-        "responses": { "202": { "description": "Accepted" }, "400": { "description": "Bad Request" } }
+        "responses": {
+          "202": { "description": "Accepted" },
+          "400": { "description": "Bad Request" }
+        }
       }
     },
-    "/api/webhooks/github": { "post": { "summary": "GitHub webhook", "responses": { "202": { "description": "Accepted" }, "204": { "description": "Ignored" } } } },
-    "/api/metrics": { "get": { "summary": "JSON metrics", "responses": { "200": { "description": "OK" } } } },
-    "/metrics": { "get": { "summary": "Prometheus metrics", "responses": { "200": { "description": "OK" } } } }
+    "/api/feedback": {
+      "post": {
+        "summary": "Submit feedback",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category": { "type": "string", "enum": ["bug", "feature", "question", "other"] },
+                  "description": { "type": "string", "minLength": 10, "maxLength": 2000 },
+                  "email": { "type": "string", "format": "email" },
+                  "nps_score": { "type": "integer", "minimum": 0, "maximum": 10 },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "path": { "type": "string" },
+                      "userAgent": { "type": "string" },
+                      "ttsMs": { "type": "integer" }
+                    }
+                  }
+                },
+                "required": ["category", "description"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" },
+          "400": { "description": "Invalid" },
+          "429": { "description": "Rate limited" }
+        }
+      }
+    },
+    "/api/account": {
+      "delete": {
+        "summary": "Delete (anonymize) current account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "confirm": { "type": "string" } },
+                "required": ["confirm"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "Scheduled" },
+          "400": { "description": "Confirmation mismatch" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/webhooks/github": {
+      "post": {
+        "summary": "GitHub webhook",
+        "responses": { "202": { "description": "Accepted" }, "204": { "description": "Ignored" } }
+      }
+    },
+    "/api/metrics": {
+      "get": { "summary": "JSON metrics", "responses": { "200": { "description": "OK" } } }
+    },
+    "/metrics": {
+      "get": { "summary": "Prometheus metrics", "responses": { "200": { "description": "OK" } } }
+    }
   }
 }
-

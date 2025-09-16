@@ -1477,7 +1477,7 @@
           "45",
           "49"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1732,7 +1732,7 @@
         "dependencies": [
           "46"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -1751,7 +1751,7 @@
               "56.1"
             ],
             "details": "Implement checkRepoAccess(user, owner, repo). Prefer GitHub App installation token if the repo is installed; else fall back to user's OAuth token (Task 46). Verify access by fetching repo and ensuring at least write/triage permissions suitable for repository_dispatch. On failure, do not leak repo existence; return standardized forbidden error. Cache positive checks briefly.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1763,7 +1763,7 @@
               "56.2"
             ],
             "details": "Using the GitHub client wrapper (Task 65) or @octokit/rest, call POST /repos/{owner}/{repo}/dispatches (repos.createDispatchEvent) with {event_type, client_payload}. Select token: installation token if available, else user's OAuth token. Handle 204 response as success. Add retries/backoff via client wrapper on secondary rate limits. Log audit event (user_id, repo, event_type, correlation_id) without payload secrets.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1774,7 +1774,7 @@
               "56.3"
             ],
             "details": "On successful dispatch (204), emit WS event to the requesting user's channel: {type:\"github.action_triggered\", repo_id, event_type, status:\"action_triggered\", timestamp, correlation_id}. Ensure broadcaster is resilient (non-blocking) and failures do not affect HTTP response.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1786,7 +1786,7 @@
               "56.3"
             ],
             "details": "Map Zod validation errors -> 400 with field details. Missing/invalid auth -> 401. No repo access or GitHub 403/404 -> 403 FORBIDDEN_REPO_ACCESS. GitHub secondary rate limit -> 429 with Retry-After if available. Network/unknown -> 502/500. Standardize error shape {error_code, message, correlation_id}. Sanitize logs to avoid leaking tokens or client_payload secrets.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -1801,7 +1801,7 @@
               "56.5"
             ],
             "details": "Use supertest + nock. Cases: (1) 204 from GitHub -> 202 response and WS event emitted. (2) Permission denied -> 403. (3) Validation failure -> 400. (4) Rate limited -> 429 with retry-after. (5) OAuth vs installation token selection. Assert correct Octokit call body. Include teardown to clean nocks and WS mocks.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -2158,7 +2158,7 @@
           "58",
           "59"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -2166,7 +2166,7 @@
             "description": "Create House as a Phaser.GameObjects.Container with base sprite and name label scaffolding for further visuals.",
             "dependencies": [],
             "details": "- Extend Phaser.GameObjects.Container; constructor accepts scene, x, y, repoId/state.\n- Add children: base house sprite, name text, windows layer (for lights), chimney smoke emitter (initially off), scaffolding overlay (health), interactive hit-zone.\n- Provide setState/update methods to toggle visuals (lights, smoke, scaffolding) and to update label text.\n- Establish depth/layering order and origins; expose size/bounds for camera focus.\n- Predefine expected texture/animation keys (e.g., house-base, window-on, smoke-puff, scaffolding) and fallback handling.\n- setInteractive on container or an invisible rectangle; pointerover/out/click events wired but no behavior yet.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2177,7 +2177,7 @@
               "60.1"
             ],
             "details": "- Name label: bitmap or dynamic text above the house; ellipsis/clamp long names; style from UI theme.\n- Tooltip: on pointerover show panel near cursor with {name, stars, primaryLanguage}; on pointerout hide; follows cursor with screen clamping.\n- Integrate with existing Tooltip system if present; otherwise implement lightweight tooltip component.\n- Ensure correct z-index above game world; pause tooltip updates while camera panning to avoid jitter.\n- Accessibility: small delay before showing; hide on blur; no tooltip during drag.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2188,7 +2188,7 @@
               "60.1"
             ],
             "details": "- Define HouseState interface: {name, stars, primaryLanguage, openIssues, lastCommitAt, buildStatus, activityPulse}.\n- Stars: optional influence on label prominence or subtle glow intensity; keep scale stable to avoid layout shifts.\n- Health: map openIssues to scaffolding overlay severity (none/low/med/high) with configurable thresholds; toggle scaffolding child visibility/alpha.\n- Activity: commits trigger window lights pulse for N seconds; builds in-progress trigger chimney smoke; build success/fail may vary smoke color.\n- Language: pass through primaryLanguage for styling layer (colors/accents) to be applied by visuals task.\n- Provide a pure function applyRepoStateToHouse(house, repoState, now) that updates all visuals idempotently.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2200,7 +2200,7 @@
               "60.3"
             ],
             "details": "- Window lights: tween window sprites/tiles to bright yellow with ease in/out; pulse duration and cooldown configurable; ensure multiple commits extend pulse.\n- Chimney smoke: particle emitter or sprite animation; start on buildStatus=in_progress, stop on complete; optional color tint (neutral/green/red) by result.\n- Performance: batch/tile windows where possible; pool particles to minimize GC.\n- Integrate with House update loop; use timestamps from state to drive transitions deterministically.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2212,7 +2212,7 @@
               "60.3"
             ],
             "details": "- Define a language->style map: roof/door colors, accent banners, optional icon badge; handle unknown languages with a default.\n- Apply styles without changing hit areas; keep contrast with labels and indicators.\n- Allow dynamic restyling if language changes; avoid full re-creation of sprites.\n- Verify compatibility with activity effects and scaffolding overlay.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2223,7 +2223,7 @@
               "60.1"
             ],
             "details": "- On pointerup (ignore drags), tween main camera to house world position; compute target zoom respecting min/max and world bounds.\n- Provide configurable zoom level and duration; ease in/out for smoothness; cancel on new user pan/zoom.\n- Maintain previous camera state to allow back/escape behavior (out of scope to implement here, just expose hooks).\n- Ensure tooltip/labels reposition correctly during camera motion.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2236,7 +2236,7 @@
               "60.5"
             ],
             "details": "- Provide an array of mock repos varying in stars, languages, and openIssues to exercise health and styling.\n- Simulate events: periodic commits per repo, build start/complete with success/failure; dispatch into applyRepoStateToHouse.\n- Add simple debug UI toggles (per-repo commit/build, issue count slider) and a reset button.\n- Seed deterministic timers for reproducible demos; allow pausing the harness.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -2253,7 +2253,7 @@
               "60.7"
             ],
             "details": "- Unit test applyRepoStateToHouse for deterministic outputs given timestamps.\n- E2E tests (e.g., Playwright): hover shows tooltip with correct name/stars/language; click centers and zooms to house within expected time; camera bounds respected.\n- Simulated commit triggers window light pulse; build in-progress triggers smoke; success/failure colors verify.\n- Health: openIssues over threshold shows scaffolding overlay with correct severity.\n- Language styling applied per mock repo; unknown falls back to default.\n- Optional snapshot/pixel tests with tolerances for animations (use paused or stepped time).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -3677,7 +3677,7 @@
               "73.1"
             ],
             "details": "Implement input sanitation (trim strings, length caps, safe lists where appropriate) and optional HTML/XSS filtering for any text fields. Add a global error handler that maps Zod errors and operational errors to a standard envelope: { error: { code, message, details?, requestId } }. Ensure JSON parse failures return 400 with code 'invalid_json'. Hide stack traces in production but log them with requestId. Attach requestId to responses.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3697,7 +3697,7 @@
               "73.3"
             ],
             "details": "Enable helmet with HSTS (e.g., maxAge 180d, includeSubDomains, preload if eligible). Enforce HTTPS: trust proxy and redirect HTTP->HTTPS except health checks. Configure CSP tailored for Phaser and WebSockets: default-src 'self'; script-src 'self' (avoid unsafe-eval; only allow if absolutely required by build); style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss:; worker-src 'self' blob:; frame-ancestors 'none'. Use report-only in staging to tune without breakage. Confirm CSP does not block Phaser assets or WS connections.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3709,7 +3709,7 @@
               "73.2"
             ],
             "details": "Implement rate limits with express-rate-limit and a Redis store (e.g., rate-limit-redis or rate-limiter-flexible). Separate policies: strict for auth endpoints, moderate for general APIs, and bypass for health/admin as appropriate. Identify buckets by JWT subject when authenticated, else by IP. Return standardized 429 responses with Retry-After. Read Redis URL, TLS, and credentials from env. Include headers to help clients back off.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3730,7 +3730,7 @@
               "73.6"
             ],
             "details": "Wrap agent command endpoints with middleware capturing: userId, role, action, target resource IDs, minimal payload hash (avoid raw PII), timestamp, IP, user agent, requestId, and outcome (success/failure). Persist to an append-only table with immutability controls and restricted access. Optionally mirror to a write-only external sink. Provide queries and dashboards for investigations. Include tests verifying presence and integrity of entries.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3808,7 +3808,7 @@
               "74.1"
             ],
             "details": "• Load secret from env (GITHUB_WEBHOOK_SECRET). Optionally support key rotation via comma-separated secrets.\n• Compute HMAC: sha256 of raw body buffer; expected header format: 'sha256=<hex>'\n• Use constant-time compare (crypto.timingSafeEqual). On mismatch return 401; on missing header return 400.\n• Do not log secrets or full payload; include delivery ID in logs for traceability.\n• After validation, parse JSON from raw body and attach to req.body for downstream handling.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3820,7 +3820,7 @@
               "74.2"
             ],
             "details": "• Read X-GitHub-Delivery as the unique key.\n• Use Redis SET with NX and EX (e.g., key 'gh:delivery:<id>', value '1', TTL 48h). If SET returns null (already exists), short-circuit with 200 and a dedupe note.\n• Handle missing delivery ID as 400.\n• Configure Redis via REDIS_URL and implement graceful startup/teardown with health probes.\n• Place this middleware after signature verification and before invoking handlers.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3833,7 +3833,7 @@
               "74.3"
             ],
             "details": "• In-process option: instantiate Probot with same secret; call app.webhooks.receive({ id, name, payload }).\n• Ensure event name = X-GitHub-Event, id = X-GitHub-Delivery, payload = parsed req.body.\n• Alternative: publish to internal queue/worker or HTTP-forward to a Probot service with auth.\n• Use try/catch around handler invocation; return 2xx only on successful receipt/queueing; 5xx on failures to trigger GitHub retry.\n• Log minimal context (delivery ID, event) and surface handler errors without leaking PII.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3845,7 +3845,7 @@
               "74.4"
             ],
             "details": "• Only mark delivery as processed when handler completes successfully; if handler fails, do not set 'done' state so GitHub can retry.\n• Add a short-lived processing lock (SET NX EX ~300s on 'gh:delivery:<id>:lock') to prevent concurrent processing across replicas.\n• Ensure downstream handlers are idempotent (e.g., upserts vs inserts, check run updates by external_id).\n• Decide response codes: 2xx on success or when deduped; 5xx on transient failures; 4xx on validation/signature errors.\n• Document at-least-once semantics and how to safely re-run deliveries for incident recovery.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3857,7 +3857,7 @@
               "74.5"
             ],
             "details": "• Introduce a processing queue (e.g., p-queue or BullMQ) with configurable concurrency.\n• Fast-ack strategy: enqueue then respond 202 if business logic allows; otherwise keep 200 after processing—align with Probot expectations.\n• Add lightweight metrics: request rate, queue depth, processing duration, error rate; expose /health and /metrics.\n• Implement backpressure: if queue over high-water mark, respond 503 with Retry-After.\n• Load test locally to ensure median and p95 processing times meet targets at 10 rps.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3872,7 +3872,7 @@
               "74.6"
             ],
             "details": "• Use Jest + Supertest; compute valid signatures with crypto to match body bytes.\n• Cases: valid signed request -> 200/202; tampered body -> 401; missing signature -> 400; missing delivery ID -> 400; duplicate delivery ID -> second call returns 200 with dedupe.\n• Inject a stub Probot app/handler to assert receipt of event name/id and payload.\n• Burst test: fire >=10 signed events/sec and assert throughput, bounded queue, and acceptable latency.\n• Verify logs do not leak secrets or payloads and that Redis keys are set with TTLs.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -3888,7 +3888,7 @@
           "56",
           "57"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3996,7 +3996,7 @@
           "57",
           "60"
         ],
-        "status": "pending",
+        "status": "in-progress",
         "subtasks": [
           {
             "id": 1,
@@ -4004,7 +4004,7 @@
             "description": "Create a scalable mini-map overlay rendering the VillageScene as a render texture.",
             "dependencies": [],
             "details": "Implement a MiniMap component that renders a downscaled texture of the world and anchors to the UI (e.g., top-right). Maintain aspect ratio and clamp to world extents. Provide API for world<->mini-map coordinate conversion utilities. Add show/hide toggle and configurable resolution/update cadence (e.g., on camera move or at capped FPS).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4015,7 +4015,7 @@
               "76.1"
             ],
             "details": "Render a rectangle on the mini-map representing the camera frustum/viewport. Update in real time on camera move/zoom. Handle zoom levels, letterboxing, and clamping at map edges. Ensure overlay accuracy within 1% or 1px. Provide styles for visibility in light/dark themes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4026,7 +4026,7 @@
               "76.1"
             ],
             "details": "Capture pointer/touch events on the mini-map, convert to world coordinates via provided transforms, and clamp to valid world bounds. Ignore clicks on non-interactive UI chrome. Provide hover/press feedback and optional ghost viewport preview. Expose a teleportTargetSelected event with world position.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4037,8 +4037,8 @@
               "76.2",
               "76.3"
             ],
-            "details": "On teleportTargetSelected, move the camera to the target position, clamped within navigation bounds. Prefer instant snap; allow optional sub-200ms ease if motion is enabled. Emit cameraSettled event when complete. Ensure overlay (viewport rectangle) refreshes immediately and no jitter occurs.",
-            "status": "pending",
+            "details": "On teleportTargetSelected, move the camera to the target position, clamped within navigation bounds. Prefer instant snap; allow optional sub-200ms ease if motion is enabled. Emit cameraSettled event when complete. Ensure overlay (viewport rectangle) refreshes immediately and no jitter occurs.\n<info added on 2025-09-16T11:38:59.929Z>\n- Implemented CameraNavigator.teleportOrPanTo (prefers instant snap; ≤200ms pan when motion allowed) with world-bounds clamping and cameraSettled emission on completion\n- Integrated handler into minimap fast-travel click (teleportTargetSelected) in MainScene\n- Triggered immediate viewport rectangle refresh to prevent jitter\n- Fixed panAndZoomTo camera variable reference bug to avoid stutter\n- Added cameraSettled event type to EventBus and updated listeners\n- Files updated: frontend/src/camera/CameraNavigator.ts, frontend/src/realtime/EventBus.ts, frontend/src/scenes/MainScene.ts\n- Verified: click-to-teleport pans/teleports correctly, cameraSettled fires, overlay remains in sync\n</info added on 2025-09-16T11:38:59.929Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4049,7 +4049,7 @@
               "76.4"
             ],
             "details": "Store selected agent ID, dialogue tab, and optional camera pose in an in-memory store and mirror to URL hash (e.g., #agent=ID&tab=dialogue&cam=x,y,z). Update state on change and on teleport. On app load/hashchange, hydrate UI and camera from persisted state. Handle invalid/missing IDs gracefully.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4061,7 +4061,7 @@
               "76.5"
             ],
             "details": "Add performance marks around click->cameraSettled->UI restored. Log and surface metrics. Cap mini-map refresh rate and resolution on low-end devices. Debounce expensive computations. Ensure main-thread tasks avoid long blocks. Acceptance: 95th percentile end-to-end travel <2s; camera snap <100ms on target devices.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4073,8 +4073,8 @@
               "76.3",
               "76.4"
             ],
-            "details": "Provide keyboard navigation to mini-map (tab focus), arrow/WASD or discrete grid keys to move preview, Enter/Space to teleport. Add aria-labels/roles and descriptive text for screen readers. Ensure focus outlines and color-contrast for overlays. Respect prefers-reduced-motion (disable animation). Support touch targets ≥44px.",
-            "status": "pending",
+            "details": "Provide keyboard navigation to mini-map (tab focus), arrow/WASD or discrete grid keys to move preview, Enter/Space to teleport. Add aria-labels/roles and descriptive text for screen readers. Ensure focus outlines and color-contrast for overlays. Respect prefers-reduced-motion (disable animation). Support touch targets ≥44px.\n<info added on 2025-09-16T16:05:23.003Z>\n- Added minimap focus mode toggled via Tab; upon entry, a live region announces concise instructions (use Arrow/WASD to move, Enter/Space to fast travel, Tab to exit), and announces exit when toggled off.\n- Introduced a visible focus marker constrained within minimap bounds; Arrow/WASD moves the marker and updates the live region with current target info.\n- Enter/Space triggers fast travel and announces the action/result via aria-live=\"polite\" (aria-atomic).\n- Honors prefers-reduced-motion with instant snap (no pan/zoom animation).\n- Expanded touch interaction by allowing taps on the minimap background to set/confirm targets, effectively increasing the hit surface beyond 44px minimums.\n- Maintains WCAG AA color contrast and clear focus outlines for marker/overlays.\n- Implemented in frontend/src/overlays/Minimap.ts.\n</info added on 2025-09-16T16:05:23.003Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4091,7 +4091,7 @@
               "76.7"
             ],
             "details": "Unit: coordinate transforms, clamping, URL hash parse/serialize. Integration: viewport overlay accuracy, click-to-world mapping, cameraSettled events, UI state survives teleports. E2E: teleport between regions retains selected agent and Dialogue tab; mini-map reflects viewport. Performance: assert travel <2s. A11y: axe checks and keyboard flows.",
-            "status": "pending",
+            "status": "in-progress",
             "testStrategy": ""
           }
         ]
@@ -4106,7 +4106,7 @@
         "dependencies": [
           "42"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4174,7 +4174,7 @@
               "77.5"
             ],
             "details": "Test coverage:\n- Migration: preferences column exists; defaults set for existing/new users\n- API: GET returns full prefs; PUT validates, deep-merges, and persists\n- Client: PreferencesManager applies LOD/FPS/keybind/theme immediately on change and on load\n- UI E2E: changing settings updates DB and has immediate in-app effect; persists across reload\n- Edge cases: invalid payloads rejected; uncapped FPS handling; keybinding capture and persistence",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -4516,7 +4516,7 @@
         "dependencies": [
           "42"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4722,7 +4722,7 @@
               "82.7"
             ],
             "details": "Add a CI workflow that provisions Docker, installs dependencies, and runs jest with maxWorkers. Ensure each worker uses isolated DB/schema and Redis namespaces. Configure any required Testcontainers env (e.g., DOCKER_HOST) and cache Node modules. Collect and upload test reports.",
-            "status": "in-progress",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -4988,7 +4988,7 @@
               "85.1"
             ],
             "details": "- Error rate < 1% overall\n- HTTP latency: p95 < 300 ms (track p99 too)\n- WebSocket end-to-end message latency: p95 < 200 ms\n- Resource targets: CPU avg < 75%, no sustained memory growth during soak\n- Document success criteria, alert thresholds, and error budget accounting\n- Prepare k6 thresholds and Artillery expectations to enforce SLAs during runs",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5000,7 +5000,7 @@
               "85.3"
             ],
             "details": "- k6 HTTP: ramp 0→1000 VUs over 10m, hold 60m (soak), ramp-down 10m; include realistic think times\n- WS: 100 villages, sustain 50 msgs/sec per village (≈5000 msgs/sec total); ramp message rate over 5m, hold 60m\n- Define coordinated start windows to avoid thundering herd on auth and joins\n- Specify recovery/backoff for reconnects; cap max inflight messages per client\n- Document target RPS, expected DB/QPS, and bandwidth estimates",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5041,7 +5041,7 @@
               "85.6"
             ],
             "details": "- k6: enable output (Prometheus remote write/InfluxDB); include checks and thresholds in scripts\n- Artillery: enable StatsD/Prometheus/JSON output; capture per-village delivery metrics\n- Infra: deploy Node Exporter/cAdvisor and scrape with Prometheus; integrate APM traces for hot endpoints\n- Dashboards: Grafana views for HTTP, WS, system resources, and error rates; add alerting on SLA breaches\n- Validate pipeline with smoke runs; ensure time synchronization across components",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5080,7 +5080,7 @@
           "83",
           "84"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5191,8 +5191,8 @@
             "title": "Create Vercel project, custom domain, and HSTS",
             "description": "Set up the production frontend on Vercel with a custom domain and enforce HSTS.",
             "dependencies": [],
-            "details": "- Create/attach the Vercel project to the main branch of the frontend repo.\n- Add the production custom domain (e.g., app.example.com). Configure DNS (CNAME for subdomain or A/ALIAS for apex) to Vercel.\n- Set up redirects (e.g., www -> apex) and enforce HTTPS.\n- Enable HSTS via framework config (e.g., next.config.js or vercel.json): max-age=31536000; includeSubDomains; preload. Consider hstspreload.org submission after validation.\n- Capture the final frontend origins (e.g., https://app.example.com and the Vercel *.vercel.app URL) for CORS/WS allowlists.",
-            "status": "pending",
+            "details": "- Create/attach the Vercel project to the main branch of the frontend repo.\n- Add the production custom domain (e.g., app.example.com). Configure DNS (CNAME for subdomain or A/ALIAS for apex) to Vercel.\n- Set up redirects (e.g., www -> apex) and enforce HTTPS.\n- Enable HSTS via framework config (e.g., next.config.js or vercel.json): max-age=31536000; includeSubDomains; preload. Consider hstspreload.org submission after validation.\n- Capture the final frontend origins (e.g., https://app.example.com and the Vercel *.vercel.app URL) for CORS/WS allowlists.\n<info added on 2025-09-16T02:21:22.336Z>\n- Added packages/frontend/vercel.json implementing SPA rewrites (/* -> /index.html) and response headers (HSTS + security headers).\n- Documented Vercel project setup and custom domain in docs/deployments/vercel.md.\n- WebSocketService now supports VITE_WS_URL; set this in Vercel envs (Production/Preview) to the wss:// backend endpoint.\n- Ensured Vite resolves @shared TypeScript sources for build; build verified.\n- Post-deploy: verify headers on the custom domain and SPA routing; update backend CORS/WS allowlists with the final https origins and WS URL.\n</info added on 2025-09-16T02:21:22.336Z>\n<info added on 2025-09-16T02:22:10.405Z>\n- Added vercel.json in packages/frontend to enable SPA rewrites and set HSTS/security headers.\n- Documented Vercel project setup and custom domain in docs/deployments/vercel.md.\n- Updated WebSocketService to read VITE_WS_URL; configure this in Vercel (Production and Preview) to the wss:// backend endpoint.\n- Ensured Vite resolves @shared TypeScript sources; production build verified.\n</info added on 2025-09-16T02:22:10.405Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5200,8 +5200,8 @@
             "title": "Provision Postgres 15 and Redis on Railway with backups",
             "description": "Create managed Postgres 15 and Redis instances and configure backup and access settings.",
             "dependencies": [],
-            "details": "- Create a Railway Postgres 15 instance in the target region. Note the DATABASE_URL (require SSL).\n- Configure automated backups (e.g., daily at 02:00 UTC, retention 7–14 days). Enable PITR if available. Restrict access to project services.\n- Create a dedicated DB user with least privilege for the app; avoid using the superuser in production.\n- Create a Railway Redis instance. Enable TLS if supported and require auth. Note the REDIS_URL.\n- Document connection strings, params, and maintenance windows for later env configuration.",
-            "status": "pending",
+            "details": "- Create a Railway Postgres 15 instance in the target region. Note the DATABASE_URL (require SSL).\n- Configure automated backups (e.g., daily at 02:00 UTC, retention 7–14 days). Enable PITR if available. Restrict access to project services.\n- Create a dedicated DB user with least privilege for the app; avoid using the superuser in production.\n- Create a Railway Redis instance. Enable TLS if supported and require auth. Note the REDIS_URL.\n- Document connection strings, params, and maintenance windows for later env configuration.\n<info added on 2025-09-16T02:25:42.000Z>\nDeployment guide committed at docs/deployments/railway.md. Operator to follow it for Postgres/Redis provisioning, backup configuration (with PITR), env setup, health checks, migrations, autoscaling considerations, and smoke tests.\n\nUse .env.production.template to populate:\n- DATABASE_URL with sslmode=require\n- REDIS_URL using rediss:// and required auth\nThen set these in the Railway project environment.\n\nUpon completion, document in the runbook: final connection strings (sanitized), auth/TLS settings, maintenance window, backup schedule and retention, and PITR status, with links to the Railway resources. Validate connectivity via psql SELECT 1 and redis-cli --tls PING and attach outputs.\n</info added on 2025-09-16T02:25:42.000Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5212,7 +5212,7 @@
               "87.2"
             ],
             "details": "- Create a Railway service from the backend repo. Configure build/start commands and PORT.\n- Set health check endpoint (e.g., /health) and timeout thresholds.\n- Link the service to the Postgres and Redis instances (Railway plugins/variables) so it can reach DATABASE_URL and REDIS_URL.\n- Enable autoscaling: set min/max replicas (e.g., 1–3), CPU/memory thresholds, and cooldowns. Enable graceful shutdown for draining connections.\n- Use the default Railway domain initially; optionally attach a custom domain (e.g., api.example.com) and configure DNS and TLS.\n- Expose WebSocket on the same origin (e.g., /ws or /socket).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5225,7 +5225,7 @@
               "87.3"
             ],
             "details": "- In Railway (backend): set DATABASE_URL and REDIS_URL from the provisioned instances. Generate and set strong secrets: JWT_SECRET (32–64 random bytes) and WEBHOOK_SECRET. Add GITHUB_CLIENT_ID/SECRET from the GitHub OAuth app.\n- In Vercel (frontend): set NEXT_PUBLIC_API_ORIGIN (backend origin), NEXT_PUBLIC_WS_URL (wss:// backend WS URL), and any public GitHub client ID if used client-side.\n- Verify no secrets are committed to the repo. Use project-level prod environment scopes. Document rotation procedures and maintain a .env.production.template (placeholders only).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5238,7 +5238,7 @@
               "87.4"
             ],
             "details": "- Backend HTTP CORS: allow origins [production custom domain, Vercel preview domain if needed]. Allow methods GET, POST, PUT, PATCH, DELETE, OPTIONS. Allow headers Content-Type, Authorization, and any custom headers. Set Access-Control-Allow-Credentials true if using cookies; tune Access-Control-Max-Age.\n- WebSockets: configure origin checks (e.g., Socket.IO cors.origin or ws handshake origin) to the same allowed origins.\n- Ensure reverse proxy/load balancer forwards Upgrade and Connection headers for WS.\n- If using cookies, ensure Secure, HttpOnly, and appropriate SameSite. Update any CSRF origin checks to include the production frontend domains.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5275,7 +5275,7 @@
               "87.5"
             ],
             "details": "- Evaluate platform capabilities: if session affinity/sticky sessions are available, enable them; otherwise rely on a stateless WS approach.\n- Implement WS horizontal scaling via Redis pub/sub adapter (e.g., Socket.IO Redis adapter) using REDIS_URL so rooms and events propagate across replicas.\n- Tune autoscaling thresholds for WS workloads; set graceful shutdown hooks to drain connections.\n- Document capacity assumptions (conns per pod, msg rate), min/max replicas, and mitigation steps for surges.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5286,7 +5286,7 @@
               "87.2"
             ],
             "details": "- Trigger or select a recent Postgres backup and restore it to a new temporary instance (or a staging environment) in Railway.\n- Run migrations against the restored DB; verify critical table counts and sample data integrity.\n- Point a staging/adhoc backend instance at the restored DB and run a subset of smoke tests.\n- Record recovery time and any gaps; confirm backup schedule/retention meets requirements and set alerts on failed backups.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -5299,7 +5299,7 @@
         "testStrategy": "Submit feedback and verify storage/notification. Ensure rate limit to prevent spam. Accessibility of modal verified.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5307,7 +5307,7 @@
             "description": "Build in-app modal to collect feedback with category, description, and optional email, plus NPS prompt after first week.",
             "dependencies": [],
             "details": "Create a reusable modal component with fields: category (Bug, Feature, Question, Other), description (min 10, max 2000 chars), email (optional, RFC 5322 validation); client-side validation and error states; submit to /api/feedback with loading state, optimistic UI, success and failure toasts; persist draft if modal is closed; add entry points in header Help menu and floating widget; optional NPS (0–10) prompt shown only for users active >7 days, with follow-up text area; basic analytics events for open, submit, success, fail; unit tests for validation and state transitions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5316,7 +5316,7 @@
             "description": "Implement POST /api/feedback with validation and storage or forwarding to Slack/GitHub Issues.",
             "dependencies": [],
             "details": "Expose POST /api/feedback; validate body via zod: { category: enum['bug','feature','question','other'], description: string 10..2000, email?: string, nps_score?: 0..10, metadata?: { path, userAgent } }; sanitize and strip HTML; persist to DB table feedback (id, user_id nullable, category, description, email nullable, nps_score nullable, path, user_agent, created_at, ip_hash) or, if configured, forward to Slack via webhook or create a GitHub Issue with templated body; configuration via env flags FEEDBACK_STORE=db|slack|github and secrets; return 201 with id; log failures and return 503 on downstream errors; integration tests for DB insert and Slack/GitHub mock forwarding; add admin observability metric for feedback count.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5327,7 +5327,7 @@
               "88.2"
             ],
             "details": "Add per-user and per-IP limits (e.g., 5/hour and 20/day) with sliding window; return 429 with Retry-After; implement honeypot field and time-to-submit check; optional CAPTCHA (hCaptcha/reCAPTCHA) behind env flag; profanity filter and URL whitelist for description; strip dangerous content and limit payload size; hash IP (salted) for privacy; blocklist repeated offenders; ensure Slack/GitHub forwarding respects cooldown to avoid flood; tests cover hitting limits, CAPTCHA required, and proper 429/400 responses.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5336,7 +5336,7 @@
             "description": "Add Help menu with links to documentation, Discord, and GitHub Discussions, plus a shortcut to open the feedback modal.",
             "dependencies": [],
             "details": "Implement Help menu entry in header or user menu; links: Docs (docs site base URL), Discord invite, GitHub Discussions; open in new tab with rel=noopener and UTM parameters; include app version and a 'Submit Feedback' action that opens the feedback modal; optional docs search link; track click analytics; configuration via env for external URLs; tests verify links render, target URLs, and that 'Submit Feedback' opens the modal.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5348,7 +5348,7 @@
               "88.4"
             ],
             "details": "Verify modal uses role=dialog with aria-labelledby and aria-describedby; implement focus trap, return focus on close, ESC to dismiss, and full keyboard navigation; ensure labels and inline error messages are associated and announced by screen readers; maintain visible focus outlines and adequate color contrast; Help menu items reachable via keyboard with proper roles; run axe and eslint-plugin-jsx-a11y checks, add Cypress tests for keyboard flows; address any violations found.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -5361,15 +5361,15 @@
         "testStrategy": "Move elements and reload; positions persist. Throttle avoids excessive API calls. Reset returns to auto layout.",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "Database schema for positions and sprite configs",
             "description": "Add persistent fields to store house/agent positions and sprite configurations.",
             "dependencies": [],
-            "details": "Create migration(s):\n- houses: position_x FLOAT NULL, position_y FLOAT NULL, sprite_orientation VARCHAR(16) NULL, sprite_variant VARCHAR(32) NULL, sprite_scale FLOAT NULL, last_moved_at TIMESTAMP NULL, last_moved_by UUID NULL.\n- agents: position_x FLOAT NULL, position_y FLOAT NULL, sprite_orientation VARCHAR(16) NULL, sprite_variant VARCHAR(32) NULL, sprite_scale FLOAT NULL, last_moved_at TIMESTAMP NULL, last_moved_by UUID NULL.\n- villages: layout_version INT NOT NULL DEFAULT 0 (increment on successful layout save).\nAdd partial indexes on (position_x, position_y) where NOT NULL if needed for queries; update triggers to set updated_at on change. Backfill not required; defaults are NULL meaning auto-layout.",
-            "status": "pending",
+            "details": "Create migration(s):\n- houses: position_x FLOAT NULL, position_y FLOAT NULL, sprite_orientation VARCHAR(16) NULL, sprite_variant VARCHAR(32) NULL, sprite_scale FLOAT NULL, last_moved_at TIMESTAMP NULL, last_moved_by UUID NULL.\n- agents: position_x FLOAT NULL, position_y FLOAT NULL, sprite_orientation VARCHAR(16) NULL, sprite_variant VARCHAR(32) NULL, sprite_scale FLOAT NULL, last_moved_at TIMESTAMP NULL, last_moved_by UUID NULL.\n- villages: layout_version INT NOT NULL DEFAULT 0 (increment on successful layout save).\nAdd partial indexes on (position_x, position_y) where NOT NULL if needed for queries; update triggers to set updated_at on change. Backfill not required; defaults are NULL meaning auto-layout.\n<info added on 2025-09-16T02:38:55.344Z>\nPrisma schema updated to include:\n- Village: layoutVersion Int @default(0) (mapped to layout_version).\n- House: positionX Float?, positionY Float?, spriteOrientation String?, spriteVariant String?, spriteScale Float?, lastMovedAt DateTime?, lastMovedBy String? (@db.Uuid); composite index on [positionX, positionY]; fields mapped to existing snake_case columns.\n- Agent: equivalent position/sprite/audit fields as House; composite index on [positionX, positionY]; fields mapped to snake_case columns.\nNo runtime usage yet; API endpoints will be added in 89.3. Build and prisma generate/migrate verified.\n</info added on 2025-09-16T02:38:55.344Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5381,7 +5381,7 @@
               "89.3"
             ],
             "details": "Implement per-entity change tracker with: throttle window 1000ms, trailing edge commit; debounce 300ms on dragend to flush immediately; flush on visibilitychange (hidden), scene shutdown, and beforeunload. Batch multiple entity updates into a single PUT /layout call. Keep only the last state per entity within a window. On error, exponential backoff retry up to 3 times, then surface non-blocking toast. Ensure resets bypass throttle and save immediately.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5392,7 +5392,7 @@
               "89.1"
             ],
             "details": "Endpoints:\n- GET /api/villages/:id/layout -> 200 { layout_version, houses:[{id, position_x, position_y, sprite_orientation, sprite_variant, sprite_scale, last_moved_at}], agents:[...] }\n- PUT /api/villages/:id/layout -> accepts body { layout_version, houses:[{id, position_x, position_y, sprite_*}], agents:[...] }. Validates with zod; only allowed fields updated. On success: increments villages.layout_version and returns updated payload.\nAuth: requestor must have access to village. Return 403 otherwise. Input: reject coordinates outside bounds. Rate-limit e.g., 30/min per user per village.\nConcurrency: support If-Match ETag or compare layout_version; on mismatch return 409 { server_layout_version, changed_entities:[...] }.\nLogging: audit who moved what when.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5404,7 +5404,7 @@
               "89.3"
             ],
             "details": "On scene create: call GET /layout; for each house/agent, if position present, set sprite position and config; otherwise run auto-placement algorithm and mark as dirty for save after initial settle. Hook drag events: on drag move, update in-memory state; on drag end, pass to autosave queue. Ensure camera and tilemap integration from Task 58 are respected. On errors loading layout, proceed with auto-layout and warn user. Maintain an in-memory layout_version for optimistic updates.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5416,7 +5416,7 @@
               "89.4"
             ],
             "details": "Add a Reset Layout button with confirmation modal. On confirm: compute auto-layout client-side, update all positions/configs in memory, and immediately PUT /layout (bypass throttle) with full batch. After success, refresh in-memory layout_version. Provide undo within 5s by caching previous layout in memory and re-saving if user clicks Undo. Disable reset if a save is in-flight to avoid conflicts.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5428,7 +5428,7 @@
               "89.3"
             ],
             "details": "Use villages.layout_version for coarse-grained concurrency; compare on PUT. Server computes changed_entities since client_version using updated_at/last_moved_at or a per-entity hash. Resolution: if conflicts involve different entities, allow server to merge and accept; if same entity changed, return 409 with server state and conflicting IDs. Client on 409: fetch latest layout, attempt per-entity merge, re-apply local unsaved moves for non-conflicting entities, prompt user if their move was overridden. Show non-blocking banner with ‘Review changes’ option.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5443,8 +5443,8 @@
               "89.5",
               "89.6"
             ],
-            "details": "API (Jest + Supertest):\n- GET/PUT /layout happy paths; validation errors; auth 403; version mismatch 409 with payload; layout_version increments.\n- DB assertions that positions and sprite fields persist.\nE2E (Cypress/Playwright):\n- Drag house/agent, wait < throttle window, ensure only 1 PUT sent; reload scene -> positions persist.\n- Multiple rapid drags coalesce into batched save.\n- Reset layout restores auto-layout and persists; Undo restores previous state.\n- Simulate two clients: induce conflict on same entity -> 409, client merges non-conflicting changes and prompts user.\nPerformance: autosave under throttling does not exceed rate limit.",
-            "status": "pending",
+            "details": "API (Jest + Supertest):\n- GET/PUT /layout happy paths; validation errors; auth 403; version mismatch 409 with payload; layout_version increments.\n- DB assertions that positions and sprite fields persist.\nE2E (Cypress/Playwright):\n- Drag house/agent, wait < throttle window, ensure only 1 PUT sent; reload scene -> positions persist.\n- Multiple rapid drags coalesce into batched save.\n- Reset layout restores auto-layout and persists; Undo restores previous state.\n- Simulate two clients: induce conflict on same entity -> 409, client merges non-conflicting changes and prompts user.\nPerformance: autosave under throttling does not exceed rate limit.\n<info added on 2025-09-16T09:40:34.362Z>\nPlan:\n- Implement Jest + Supertest DB-backed tests for:\n  - GET /api/villages/:id/layout returns persisted positions/sprite config, includes layout_version.\n  - PUT /api/villages/:id/layout enforces auth (401/403), validates input (400), increments layout_version on successful update, returns 409 with server payload on version mismatch.\n  - POST /api/villages/:id/layout/reset restores auto layout, persists, and bumps layout_version.\n- Follow existing Supertest patterns: create user/village fixtures, auth via helper, seed houses/agents, assert DB rows updated. Wrap suites with describe.skip when process.env.DATABASE_URL is unset.\n- Add minimal Playwright E2E harness (guarded by E2E=1): login helper/stub, baseURL from env, spec to drag an entity and verify a single throttled PUT and persistence after reload; spec to trigger Reset and verify POST /:id/layout/reset and persisted auto-layout state. Mark as optional/experimental if CI env lacks GPU.\n</info added on 2025-09-16T09:40:34.362Z>",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -5765,7 +5765,7 @@
         "testStrategy": "Emit synthetic webhooks and validate correct indicators appear and clear. Multiple concurrent indicators displayed without flicker.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5773,7 +5773,7 @@
             "description": "Define and implement mapping from GitHub webhooks to internal house activity states.",
             "dependencies": [],
             "details": "- Define internal activity state schema (per house): indicators.lights, indicators.banner, indicators.smoke with fields: active, source, contextIds, startedAt\n- Map events:\n  - push -> lights:on (context: repo_id, branch)\n  - pull_request opened -> banner:on (context: repo_id, pr_number)\n  - pull_request closed/merged -> banner:off (resolution)\n  - check_run created/in_progress -> smoke:on (context: repo_id, run_id)\n  - check_run completed -> smoke:off (resolution)\n- Include edge cases: pull_request synchronize (no flicker), check_run rerequested -> smoke:on\n- Implement parser functions to normalize webhook payloads into internal Transition objects\n- Document payload fields used and unsupported events\n- Acceptance: unit tests for payload-to-transition mapping across event types",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5784,7 +5784,7 @@
               "93.1"
             ],
             "details": "- State store keyed by houseId (repo) with indicator states and timestamps\n- Expiry rules (defaults; override via config):\n  - lights: auto-expire after 90s since last push\n  - smoke: expire on check_run completed or hard-timeout 10m\n  - banner: expire on PR closed/merged; optional hard-timeout 24h\n- Schedule expirations with timers; cancel/reschedule on new events\n- Provide atomic update API with compare-and-swap versioning to avoid races\n- Produce state diffs (before vs after) for broadcasting\n- Acceptance: unit tests for timer scheduling, cancellation, and resolution-driven expiry",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5795,7 +5795,7 @@
               "93.2"
             ],
             "details": "- Minimum display durations:\n  - lights: min 3s visible after turn-on\n  - smoke: min 5s visible after turn-on\n  - banner: min 2s visible after turn-on\n- Coalesce rapid repeats: extend expiry instead of toggling off/on\n- Throttle state broadcasts to a max frequency (e.g., 20 Hz) with 50ms coalescing window\n- Ignore redundant transitions (no change)\n- Implement trailing-edge debounce for off transitions to respect min durations\n- Acceptance: unit tests simulating rapid events to verify no flicker and minDuration honored",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5807,7 +5807,7 @@
               "93.3"
             ],
             "details": "- Allow independent lifecycles for lights, banner, and smoke\n- Define visual layering and z-index guidance: smoke (back), lights (middle), banner (front)\n- Conflict rules: none are mutually exclusive; do not suppress others\n- Compose a single aggregate state per house with per-indicator metadata (minRemainingMs)\n- Ensure updates are atomic across indicators to avoid partial frames\n- Acceptance: unit tests asserting concurrent indicators persist and compose correctly",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5821,7 +5821,7 @@
               "93.4"
             ],
             "details": "- Define message schema: type=house.activity, houseId, indicators, version, ts\n- Send on change, on expiry/resolution, and on client subscribe (initial snapshot)\n- Scope subscriptions by village/org or repo to limit fanout\n- Implement auth checks and rate limiting; backpressure with buffered queues\n- Batch multiple house updates within 50ms windows to reduce chatter\n- Acceptance: integration tests asserting clients receive correct snapshots and diffs",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5833,7 +5833,7 @@
               "93.5"
             ],
             "details": "- Components: WindowLights, PRBanner, ChimneySmoke with props reflecting indicator state\n- Subscribe to WebSocket, maintain local min-duration timers consistent with server\n- CSS/SVG animations: pulsing window glow, banner unfurl, chimney smoke puffs\n- Layering per guidance; responsive scaling across house sizes\n- Accessibility: ARIA live regions for status changes; reduced motion support\n- Acceptance: storybook examples and unit tests verifying prop-to-visual mapping",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5845,7 +5845,7 @@
               "93.5"
             ],
             "details": "- Dev-only endpoint: POST /api/dev/github/webhooks/simulate {event, payloadTemplate, repoId, prNumber, runId}\n- Prebuilt scenarios: push burst, PR open/close, check_run start/complete, overlapping events\n- CLI script to stream scenarios and observe WS messages\n- Option to bypass signature verification in dev; ensure disabled in production\n- Acceptance: e2e smoke test proving scenario triggers correct WS messages and state changes",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5857,7 +5857,7 @@
               "93.7"
             ],
             "details": "- End-to-end tests (Playwright/Cypress) driven by synthetic harness\n- Assertions: indicators appear, co-exist, and clear as expected; no flicker per debounce rules\n- Visual snapshots/video frames to compare CSS classes and keyframes at timestamps\n- Multi-indicator scenarios and rapid event bursts\n- Define acceptance criteria and thresholds for timing tolerances\n- CI integration to run headless visual tests and produce artifacts",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -5870,7 +5870,7 @@
         "testStrategy": "Menu opens on right-click and executes actions. Command palette filters and runs selected action. Keyboard accessibility confirmed.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5878,7 +5878,7 @@
             "description": "Implement right-click context menu on agent items with quick actions.",
             "dependencies": [],
             "details": "Provide context menu on agent cards/list items with actions: Start/Stop (state-aware toggle), Run Tool (recent), Go to House. Open on right-click, position at cursor, close on outside click or Esc. Show disabled/loading states as needed. Stub calls to a central action dispatcher to be wired later.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5887,7 +5887,7 @@
             "description": "Create a global command palette overlay accessible via keyboard shortcut.",
             "dependencies": [],
             "details": "Build a modal overlay with an input field and a results list. Open with Ctrl+K (Windows/Linux) and Cmd+K (macOS); close with Esc and clicking outside. Show recent actions when query is empty. Support mouse selection and Enter to execute selected command. Prepare hooks to integrate search results and action execution.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5896,7 +5896,7 @@
             "description": "Implement indexing and search APIs to feed the command palette.",
             "dependencies": [],
             "details": "Index entities: agents (name, status), houses (name/location), and available actions (Start/Stop, Run recent tool, Go to House). Provide a query function with fuzzy matching, ranking, and grouping by type. Keep the index updated on data changes. Return normalized items with labels, metadata, and an action reference for execution.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5905,7 +5905,7 @@
             "description": "Create a central action registry/dispatcher and wire actions to app services.",
             "dependencies": [],
             "details": "Define action IDs, payload schemas, and a dispatcher that routes to implementations: startAgent, stopAgent, runRecentTool(agentId, toolId), navigateToHouse(houseId). Handle optimistic updates, concurrency guards, errors (toasts), and result notifications. Expose a single executeAction(actionId, payload) API used by both context menu and palette.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5917,7 +5917,7 @@
               "94.2"
             ],
             "details": "Keyboard: Ctrl/Cmd+K to open palette, Esc to close, arrow keys to navigate list, Enter to execute; Shift+F10/ContextMenu key to open agent context menu. Focus management: focus trap in palette, return focus to opener, roving tabindex for lists. ARIA roles: menu/menuitem for context menu; combobox/listbox/option for palette; labels and live region announcements for open/close and result counts.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -5932,7 +5932,7 @@
               "94.5"
             ],
             "details": "Unit tests: index builds and updates; fuzzy search ranking; empty and no-match states. Integration/E2E: palette opens with Ctrl/Cmd+K; query filters results; arrow navigation and Enter execute selected action; context menu opens on right-click/keyboard and triggers Start/Stop, Run recent tool, Go to House (mock services). Accessibility tests: focus trap, Esc to close, ARIA attributes present.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -5945,7 +5945,7 @@
         "testStrategy": "Simulate missing webhook; periodic job catches updates. Compare sample org data between API and DB; discrepancy <0.5%.",
         "priority": "medium",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -6060,7 +6060,7 @@
         "testStrategy": "Verify events fire on key actions. Validate aggregation correctness with sample data. Ensure opt-out setting respected.",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -6068,7 +6068,7 @@
             "description": "Establish the event types, payload fields, and privacy-preserving rules for client and server.",
             "dependencies": [],
             "details": "Deliverables: (a) event catalog and schemas; (b) privacy policy and filters; (c) KPI mapping specs. Event types: village_active (heartbeat or once/day), session_start, session_end, dialogue_open, command_executed. Common fields: event_name, event_version, ts_utc, client_ts, anon_village_id, session_id (UUIDv4), app_version, platform, payload. Privacy rules: never send PII; hash village_id with rotating server-provided salt; min aggregation thresholds; payload size caps; drop free-form text; enforce allowlist fields. KPI mapping: define formulas for daily active villages (unique anon_village_id per UTC day), session duration (sum of session_end - session_start per session), dialogue opens (count), command executions (count). Provide JSON Schema for validation and sample payloads.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6080,7 +6080,7 @@
               "96.3"
             ],
             "details": "Scope: SDK/module to queue, batch, and send events; instrumentation for app/session lifecycle, dialogue opens, command executions. Features: offline queue with backoff, retry and jitter; batch POST to collector; include schema version and app metadata; respect opt-out; drop PII; clock skew handling via server time sync header. Instrumentation: fire session_start on app open/resume, session_end on app background/timeout with duration; record dialogue_open on UI entry; record command_executed on successful command completion. Config flags for sampling and endpoint base URL.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6091,7 +6091,7 @@
               "96.1"
             ],
             "details": "Client: settings toggle for analytics; default from config; persist locally; expose isAnalyticsEnabled(); add DNT support; emit no events when disabled except a one-time state change ping (optional, non-identifying). Propagate X-Analytics-Opt-Out header and omit identifiers when opted out. Server: enforce header to drop events and not log request body; provide config to globally disable analytics. Document behavior and test cases.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6103,7 +6103,7 @@
               "96.3"
             ],
             "details": "Endpoint: POST /api/analytics/events (batch). Validate against JSON Schema; reject oversize payloads; sanitize/discard disallowed fields; respect opt-out header; attach server_received_ts. Auth: internal service token or signed client key. Storage: append raw events to Redis Stream (analytics:events) or a durable queue; also store limited recent buffer for debugging (TTL). Idempotency via client batch_id + event_id. Rate limiting and minimal logging with no payload.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6114,7 +6114,7 @@
               "96.4"
             ],
             "details": "Worker: consume from analytics:events. Aggregations (UTC): daily_active_villages = PFADD/SET of anon_village_id per day then store counts; session_duration = sum per session from session_start/end pairs; dialogue_open_count and command_executed_count as daily counters. Storage options: Redis (keys like kpi:dav:2025-09-14, kpi:session_duration:avg:2025-09-14, etc.) or RedisTimeSeries/Timescale with labels. Handle late events/windowing (allow 48h updates). Backfill script for reprocessing. Metrics and alerts for lag and errors.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6125,7 +6125,7 @@
               "96.5"
             ],
             "details": "Endpoints (auth required): GET /internal/analytics/kpis/daily-active-villages?start=YYYY-MM-DD&end=YYYY-MM-DD; GET /internal/analytics/kpis/session-duration?metric=avg|p50|p95&start=&end=; GET /internal/analytics/kpis/dialogue-opens?start=&end=; GET /internal/analytics/kpis/command-executions?start=&end=. Response: time series array of {date, value}. Implement caching (e.g., 60s), input validation, and rate limits. Include health check and version.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6136,7 +6136,7 @@
               "96.6"
             ],
             "details": "Build a minimal page within the admin UI: date range picker; charts for daily active villages, session duration (avg), dialogue opens, command executions; totals and week-over-week deltas. Consume internal KPI endpoints; handle loading/empty/error states; feature flag to restrict to staff. Add basic theming and export CSV.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6153,7 +6153,7 @@
               "96.1"
             ],
             "details": "Create a synthetic event generator to simulate villages/sessions. Tests: unit (schema validation, privacy filters), integration (client to collector to aggregation to endpoints), opt-out enforcement, idempotency, late events handling, and aggregation correctness against expected counts. Performance: ingest 10k-100k events and ensure acceptable latency and memory. Add dashboards smoke checks and sample data teardown.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -6356,7 +6356,7 @@
         "dependencies": [
           "42"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -6616,7 +6616,7 @@
           "84",
           "86"
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -6624,7 +6624,7 @@
             "description": "Draft the end-to-end launch checklist and define all feature flags, owners, and rollout gates.",
             "dependencies": [],
             "details": "Deliverables: launch checklist (pre-flight, go/no-go, cutover, post-launch); feature flag registry with owners, default states by environment, phased rollout plan, kill switches, and cleanup plan; approval matrix and sign-offs; freeze windows; dependencies to observability, rollback, comms; DRI and back-up; links to runbook storage. Include checks for docs/comms readiness and support handoff.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6633,7 +6633,7 @@
             "description": "Document rollback options and a forward/backward-compatible migration plan with recovery procedures.",
             "dependencies": [],
             "details": "Deliverables: decision tree for rollback vs hotfix; feature-flag fallback steps; deployment rollback procedure; DB/schema migration plan with backward compatibility, data backfill, and gated activation; RTO/RPO targets; backup/restore playbook and verification checklist; staging dry-run and timings; scripts and runbooks for roll-forward/roll-back; integrity checks and success criteria.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6642,7 +6642,7 @@
             "description": "Create the demo narrative, script, and produce assets (video, slides, screenshots).",
             "dependencies": [],
             "details": "Deliverables: persona-based storyline and key value props; step-by-step script with timings and prompts; stable staging environment with seeded data; performance budgets for recording; screen capture plan, B-roll, thumbnails; captions/transcripts for accessibility; legal/brand review; final video export, source files, slides, and screenshots; dry-run validation; storage links and embed codes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6653,7 +6653,7 @@
               "100.1"
             ],
             "details": "Deliverables: SLOs and golden-signal dashboards; alert rules with thresholds and runbook links; feature-flag exposure and adoption metrics; synthetic probes and canary plan; staging and production health checks (readiness/liveness); PII-scrubbed logging verification; paging integration test; error budget policy; links to dashboards/monitors; pre-flight checklist results and sign-off.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6666,7 +6666,7 @@
               "100.4"
             ],
             "details": "Deliverables: severity matrix and response timelines; roles (incident commander, comms lead, scribe, ops); on-call schedule and escalation tree; paging policies; comms templates (internal, customer, status page); decision branches for rollback/migration; tabletop exercise plan and outcomes; postmortem template; vendor contacts; privacy/security considerations; integration with support escalation and hours coverage.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6678,7 +6678,7 @@
               "100.5"
             ],
             "details": "Deliverables: landing page copy, screenshots, CTAs, SEO metadata, UTM tracking (respecting privacy/opt-outs); link QA and accessibility checks; blog post outline and draft; social posts (per channel), email announcement, and optional press release; publishing calendar with time zones and approvals; embed demo video; localization stance; rollback/fallback messaging; success metrics (click-through, watch time) and link verification checklist.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6693,7 +6693,7 @@
               "100.12"
             ],
             "details": "Create a single-source launch checklist covering go/no-go gates, owner sign-offs, timelines, and rollback windows; inventory all feature flags with default states, targeting, permissions, and kill switches; define rollout stages (dark launch, % ramp, full release) and required QA checks; reference observability dashboards, migration readiness, incident plan, and comms assets; schedule a dry-run go-live and freeze period; publish checklist in the runbook and share with stakeholders.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6702,7 +6702,7 @@
             "description": "Define database/app migration steps, rollback procedures, backups, and verification.",
             "dependencies": [],
             "details": "Inventory all schema/data migrations and linked features; define pre-migration checks (backups, snapshot, capacity), maintenance windows, and compatibility strategy; specify step-by-step rollout with feature flag guards; provide rollback paths (down migrations, data restore, cache invalidation), data validation, and health checks; include command references, owners, and target time-to-recover; document post-rollback verification and communication steps.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6711,7 +6711,7 @@
             "description": "Produce demo narrative, sample data, recordings, captions, and shareable assets.",
             "dependencies": [],
             "details": "Define audience, personas, and success criteria; script the demo with scene list, cues, and expected outcomes; prepare staging environment and seed demo data; record screen flows, voiceover, and create captions and thumbnail; export final video and cutdowns; store assets in shared drive/asset library; collect approvals; schedule a dry-run demo in staging to confirm stability and accuracy.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6722,7 +6722,7 @@
               "100.8"
             ],
             "details": "Verify dashboards for key SLOs (latency, error rate, saturation) and critical paths; ensure distributed tracing coverage and log redaction; configure alert thresholds and routing to on-call; set deployment markers and health endpoints; add synthetic monitors for core user journeys; run pre-flight validation in staging and an alert fire drill; document links to dashboards and runbooks.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6733,7 +6733,7 @@
               "100.10"
             ],
             "details": "Define severity levels and triage criteria; establish escalation paths (primary/secondary on-call, engineering manager, comms lead); assign roles (incident commander, scribe, comms, ops liaison) and paging methods; prepare status page, internal Slack, and customer email templates; integrate with observability alerts; conduct a tabletop exercise simulating a launch incident and capture gaps; outline post-incident review process and action tracking.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -6744,7 +6744,7 @@
               "100.9"
             ],
             "details": "Update landing page copy, screenshots, feature list, and metadata (SEO/Open Graph); embed the demo video and add clear CTAs; draft announcement posts for blog, social, and customer email with timeline and regional considerations; generate tracking links respecting Do Not Track; obtain legal/brand approvals; verify all links/assets and schedule publication windows; prepare FAQs and support macros for launch day.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -6752,7 +6752,7 @@
     ],
     "metadata": {
       "created": "2025-09-14T14:46:03.477Z",
-      "updated": "2025-09-16T02:01:04.114Z",
+      "updated": "2025-09-16T19:35:10.942Z",
       "description": "Tasks for mvp context"
     }
   }

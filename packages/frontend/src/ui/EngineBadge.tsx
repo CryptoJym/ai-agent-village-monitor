@@ -4,11 +4,12 @@ export function EngineBadge() {
   try {
     const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
     if (!isJsdom) {
-       
       const ph = require('phaser');
       version = (ph as any)?.VERSION ?? 'unknown';
     }
-  } catch {}
+  } catch (e) {
+    void e;
+  }
   return (
     <div
       style={{

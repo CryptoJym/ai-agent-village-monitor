@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { nowIso } from '@shared';
 import { useParams } from 'react-router-dom';
 // Scenes loaded lazily to avoid importing Phaser in tests
@@ -13,28 +13,78 @@ import { GameCanvas, GameProvider } from './game';
 import { SettingsPermissions } from './ui/SettingsPermissions';
 import { FeedbackModal } from './ui/FeedbackModal';
 import { SettingsPreferences } from './ui/SettingsPreferences';
-import { track } from './analytics/client';
+import { track, flushBeacon } from './analytics/client';
+import { LegendOverlay } from './ui/LegendOverlay';
+import { LegendOverlay } from './ui/LegendOverlay';
+import { readUIHash, writeUIHash, onHashChange, type UIHashState } from './state/uiState';
+import { eventBus } from './realtime/EventBus';
+import * as perf from './metrics/perf';
 import { PerformanceOverlay } from './ui/PerformanceOverlay';
+import { SyncHealth } from './ui/SyncHealth';
 import { LocaleSwitcher } from './ui/LocaleSwitcher';
+import { HelpMenu } from './ui/HelpMenu';
 
 import { EventToastBridge } from './ui/EventToastBridge';
 import { EngineBadge } from './ui/EngineBadge';
 import { initSentry } from './observability/sentry';
+import { AnalyticsConsentBanner } from './ui/AnalyticsConsentBanner';
+import { CommandPalette } from './ui/CommandPalette';
 
 export default function App() {
   try {
     initSentry();
-  } catch {}
+  } catch (e) {
+    void e;
+  }
   const params = useParams();
   const villageId = params.id as string | undefined;
   const [panelOpen, setPanelOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<string>('demo-agent');
+  const [dialogueTab, setDialogueTab] = useState<'thread' | 'control' | 'info'>('thread');
   const [viewerRole, setViewerRole] = useState<'owner' | 'member' | 'visitor' | 'none'>('none');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   // High contrast mode
   const [highContrast, setHighContrast] = useState(false);
+  const sessionStartRef = useRef<number | null>(null);
+  const lastOpenSourceRef = useRef<'button' | 'shortcut' | 'unknown'>('unknown');
+
+  useEffect(() => {
+    // Hydrate UI state from URL hash on mount and on hash changes
+    const applyFromHash = () => {
+      const h: UIHashState = readUIHash();
+      if (h.agent) setSelectedAgent(h.agent);
+      if (h.tab) setDialogueTab(h.tab);
+    };
+    applyFromHash();
+    const off = onHashChange(() => applyFromHash());
+    return () => off();
+  }, []);
+
+  // Keep URL hash in sync with camera on cameraSettled
+  useEffect(() => {
+    const onSettle = (p: { x: number; y: number; zoom: number }) => {
+      writeUIHash({
+        cam: { x: Math.round(p.x), y: Math.round(p.y), z: Number(p.zoom.toFixed(2)) },
+      });
+      const dur = perf.endTravel();
+      if (typeof dur === 'number') {
+         
+        console.info('[perf] travel_ms', Math.round(dur));
+      }
+    };
+    eventBus.on('cameraSettled', onSettle);
+    return () => eventBus.off('cameraSettled', onSettle as any);
+  }, []);
+
+  // Keep URL hash in sync when selected agent or tab changes
+  useEffect(() => {
+    writeUIHash({ agent: selectedAgent, tab: dialogueTab });
+  }, [selectedAgent, dialogueTab]);
 
   useEffect(() => {
     let ignore = false;
@@ -58,29 +108,82 @@ export default function App() {
     };
   }, [villageId]);
 
-  // Global shortcuts: T opens dialogue, Esc handled inside components
+  // Global shortcuts: T opens dialogue, H toggles contrast, '?' shows legend
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === 't') {
         e.preventDefault();
+        lastOpenSourceRef.current = 'shortcut';
         setPanelOpen(true);
       }
       if (e.key.toLowerCase() === 'h') {
         // Toggle high contrast for accessibility
         setHighContrast((v) => !v);
       }
+      if (e.key === '?' || (e.key === '/' && e.shiftKey) || e.key === 'F1') {
+        e.preventDefault();
+        setLegendOpen((v) => !v);
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [villageId]);
 
   // Track app mount as session_start and first village view when known
   useEffect(() => {
-    track({ type: 'session_start', ts: Date.now() });
-    return () => {
-      track({ type: 'session_end', ts: Date.now(), durationMs: 0 });
+    const start = Date.now();
+    sessionStartRef.current = start;
+    track({ type: 'session_start', ts: start });
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') {
+        const end = Date.now();
+        const durationMs = sessionStartRef.current ? end - sessionStartRef.current : 0;
+        track({ type: 'session_end', ts: end, durationMs, villageId });
+        flushBeacon();
+        // Start a new session on next visibility change back to visible
+        sessionStartRef.current = Date.now();
+        track({ type: 'session_start', ts: sessionStartRef.current });
+      }
     };
-  }, []);
+    const onPageHide = () => {
+      const end = Date.now();
+      const durationMs = sessionStartRef.current ? end - sessionStartRef.current : 0;
+      track({ type: 'session_end', ts: end, durationMs, villageId });
+      flushBeacon();
+    };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onPageHide);
+      const end = Date.now();
+      const durationMs = sessionStartRef.current ? end - sessionStartRef.current : 0;
+      track({ type: 'session_end', ts: end, durationMs, villageId });
+    };
+  }, [villageId]);
+
+  // Track village view on route entry (debounced to avoid flicker double-counts)
+  useEffect(() => {
+    if (!villageId) return;
+    const t = window.setTimeout(() => {
+      track({ type: 'village_view', ts: Date.now(), villageId });
+    }, 750);
+    return () => window.clearTimeout(t);
+  }, [villageId]);
+
+  // Track dialogue open
+  useEffect(() => {
+    if (panelOpen) {
+      track({
+        type: 'dialogue_open',
+        ts: Date.now(),
+        source: lastOpenSourceRef.current,
+        villageId,
+      });
+      // reset source after logging to avoid stale attribution
+      lastOpenSourceRef.current = 'unknown';
+    }
+  }, [panelOpen, villageId]);
   return (
     <ToastProvider>
       <EventToastBridge />
@@ -132,6 +235,11 @@ export default function App() {
           <ConnectionOverlay />
           <PerformanceOverlay />
           <EngineBadge />
+          <LegendOverlay open={legendOpen} onClose={() => setLegendOpen(false)} />
+          {villageId && (
+            // Lightweight admin widget for sync health; endpoint enforces access
+            <SyncHealth villageId={villageId} />
+          )}
           {villageId && (
             <button
               type="button"
@@ -153,12 +261,40 @@ export default function App() {
               Settings
             </button>
           )}
+          {villageId && viewerRole === 'owner' && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout/reset`, {
+                    method: 'POST',
+                    credentials: 'include',
+                  });
+                } catch (e) {
+                  void e;
+                }
+              }}
+              style={{
+                position: 'absolute',
+                right: 100,
+                top: 12,
+                padding: '8px 12px',
+                background: '#0b1220',
+                color: '#e5e7eb',
+                border: '1px solid #334155',
+                borderRadius: 8,
+                cursor: 'pointer',
+              }}
+            >
+              Reset Layout
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setFeedbackOpen(true)}
             style={{
               position: 'absolute',
-              right: villageId ? 100 : 12,
+              right: villageId ? 180 : 92,
               top: 12,
               padding: '8px 12px',
               background: '#0b1220',
@@ -170,9 +306,17 @@ export default function App() {
           >
             Feedback
           </button>
+          <HelpMenu
+            onOpenFeedback={() => setFeedbackOpen(true)}
+            onOpenLegend={() => setLegendOpen(true)}
+          />
           <button
             type="button"
-            onClick={() => setPanelOpen((v) => !v)}
+            onClick={() => {
+              // attribute opening via button
+              if (!panelOpen) lastOpenSourceRef.current = 'button';
+              setPanelOpen((v) => !v);
+            }}
             style={{
               position: 'absolute',
               right: 12,
@@ -251,12 +395,20 @@ export default function App() {
                   const scene = game.scene.getScene('MainScene');
                   if (scene) scene.scene.start('MainScene', { villageId });
                 }
-              } catch {}
+              } catch (e) {
+                void e;
+              }
               setOnboardingOpen(false);
             }}
           />
         </div>
-        <DialogueUI open={panelOpen} onClose={() => setPanelOpen(false)} />
+        <DialogueUI
+          open={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          agentId={selectedAgent}
+          initialTab={dialogueTab}
+          onTabChange={(t) => setDialogueTab(t)}
+        />
         <SettingsPermissions
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
@@ -264,7 +416,11 @@ export default function App() {
         />
         <SettingsPreferences open={prefsOpen} onClose={() => setPrefsOpen(false)} />
         <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+        <LegendOverlay open={legendOpen} onClose={() => setLegendOpen(false)} />
+        {/* Global command palette overlay (Ctrl/Cmd+K) */}
+        <CommandPalette />
       </div>
+      <AnalyticsConsentBanner />
     </ToastProvider>
   );
 }

@@ -2,6 +2,33 @@
 
 This document summarizes how AI Agent Village Monitor handles personal data in the MVP.
 
+## Analytics & KPIs (MVP)
+
+We collect minimal, privacy‑preserving analytics to power KPIs in the PRD (daily active villages, dialogue opens, command executions, session duration).
+
+- Event schema is strictly validated server‑side (Zod). Only the following event types are accepted:
+  - `session_start`, `session_end` (with `durationMs`)
+  - `village_view`
+  - `dialogue_open`
+  - `command_executed` (command name limited to 64 chars)
+- Unknown fields are stripped; unknown event types are rejected.
+- `userId` and `clientId` are hashed using SHA‑256 with a server salt (never stored raw).
+- Respect user privacy controls:
+  - Client respects browser DNT/GPC and local preference; if present, analytics are disabled client‑side.
+  - Server ignores analytics when `DNT: 1` or `Sec-GPC: 1`/`GPC: 1` headers are present.
+  - Server also consults authenticated user preferences (`preferences.analytics.enabled === false`) and drops batches.
+- No raw events are persisted. If Redis is configured, we aggregate counters only:
+  - `kpi:day:<date>:villages` (unique set of village IDs)
+  - `kpi:day:<date>:dialogue_opens` (counter)
+  - `kpi:day:<date>:commands` (counter)
+  - `kpi:day:<date>:session_ms` (counter)
+- If Redis is not configured, the collector returns 202 without aggregation.
+
+User controls:
+
+- UI toggle under Settings → Preferences → Analytics (default on). Toggle updates server and local preference.
+- DNT/GPC always override any opt‑in setting.
+
 ## Data Inventory
 
 - Users
@@ -59,5 +86,8 @@ This document summarizes how AI Agent Village Monitor handles personal data in t
 - [x] Token minimization (encrypt/hash)
 - [x] Account deletion endpoint
 - [x] PII scrubbing in logs
-- [x] DNT/GPC respected for analytics
+- [x] DNT/GPC respected for analytics (client + server)
+- [x] Server Zod validation for analytics events
+- [x] Hash user/client identifiers server‑side
+- [x] Enforce command length limits and strip unknown fields
 - [x] Privacy notice drafted

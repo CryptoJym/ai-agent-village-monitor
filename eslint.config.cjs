@@ -88,6 +88,22 @@ module.exports = [
       '@typescript-eslint/no-unsafe-function-type': 'off',
     },
   },
+  // Tests: relax no-empty and unused-vars (use _ prefix when possible)
+  {
+    files: ['**/__tests__/**/*.{ts,tsx,js,jsx}', 'packages/**/test/**/*.{ts,tsx,js,jsx}'],
+    rules: {
+      'no-empty': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+    },
+  },
+  // Server scripts: allow empty blocks/looser style
+  {
+    files: ['packages/server/scripts/**/*.{js,mjs,cjs}'],
+    rules: {
+      'no-empty': 'off',
+      'no-unused-vars': 'off',
+    },
+  },
   // k6 load test globals
   {
     files: ['packages/server/load/**/*.js'],

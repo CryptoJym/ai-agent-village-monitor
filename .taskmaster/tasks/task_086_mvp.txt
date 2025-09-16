@@ -1,6 +1,6 @@
 # Task ID: 86
 # Title: CI/CD Pipelines (GitHub Actions)
-# Status: pending
+# Status: done
 # Dependencies: 81, 83, 84
 # Priority: medium
 # Description: Configure workflows for lint, type-check, tests, build, and deploy to Vercel (frontend) and Railway (backend/DB/Redis).
@@ -15,7 +15,7 @@ Secrets managed in GitHub. Cache pnpm store.
 Dry-run workflows on PRs. Verify deployments to staging succeed automatically on merge. Rollback tested by redeploying previous build. Migration step idempotent.
 
 # Subtasks:
-## 1. Define GitHub Environments and Secrets [pending]
+## 1. Define GitHub Environments and Secrets [done]
 ### Dependencies: None
 ### Description: Create staging and production environments and configure all required secrets for CI and deployments.
 ### Details:
@@ -29,7 +29,7 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
 - Set GITHUB_TOKEN permissions in workflows (contents: read, actions: read, deployments: write, id-token: write if using OIDC with cloud providers).
 - Document secret ownership, rotation cadence, and environment-level variable overrides.
 
-## 2. Create ci.yml scaffold with pnpm caching [pending]
+## 2. Create ci.yml scaffold with pnpm caching [done]
 ### Dependencies: 86.1
 ### Description: Add base CI workflow with triggers, concurrency, Node and pnpm setup, and efficient pnpm store caching.
 ### Details:
@@ -45,7 +45,7 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
   - pnpm -w install --frozen-lockfile.
 - Set default working-directory to repository root and support monorepo with -w (workspace).
 
-## 3. Add lint and type-check jobs to ci.yml [pending]
+## 3. Add lint and type-check jobs to ci.yml [done]
 ### Dependencies: 86.2
 ### Description: Implement parallel lint and type-check jobs using pnpm workspace scripts with problem matchers.
 ### Details:
@@ -60,7 +60,7 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
 - Set timeouts (e.g., 10m) and add continue-on-error false.
 - Upload reports as artifacts conditionally (handled in artifact task, but jobs should emit files under reports/).
 
-## 4. Add unit, integration, and e2e test jobs to ci.yml [pending]
+## 4. Add unit, integration, and e2e test jobs to ci.yml [done]
 ### Dependencies: 86.2
 ### Description: Implement test jobs with DB/Redis services for integration, Cypress for e2e, and coverage generation.
 ### Details:
@@ -82,7 +82,7 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
 - Matrix (optional): node-version [20], shard e2e specs if long-running.
 - Ensure all jobs use the pnpm cache and install from lockfile.
 
-## 5. Artifact uploads and test reporting [pending]
+## 5. Artifact uploads and test reporting [done]
 ### Dependencies: 86.3, 86.4
 ### Description: Upload coverage, junit reports, and Cypress artifacts; publish summary in CI.
 ### Details:
@@ -93,7 +93,7 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
 - Expose coverage percentage in job summary; consider codecov upload if CODECOV_TOKEN is provided (optional).
 - Ensure artifacts are named per job (e.g., unit-artifacts, integration-artifacts, e2e-artifacts).
 
-## 6. Configure deploy-frontend.yml for Vercel [pending]
+## 6. Configure deploy-frontend.yml for Vercel [done]
 ### Dependencies: 86.1, 86.3, 86.4
 ### Description: Create Vercel deployment workflow for preview on PRs and production on main.
 ### Details:
@@ -116,7 +116,7 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
   - Post: set deployment status and comment with URLs.
 - Concurrency: cancel previous preview deploys per PR.
 
-## 7. Configure deploy-backend.yml with migrations [pending]
+## 7. Configure deploy-backend.yml with migrations [done]
 ### Dependencies: 86.1, 86.3, 86.4
 ### Description: Create backend deployment workflow to Railway (default) or Fly.io, including Prisma/SQL migrations.
 ### Details:
@@ -137,7 +137,7 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
 - Env/secrets: inject DATABASE_URL, REDIS_URL from environment or platform secrets.
 - Zero-downtime: ensure rolling deploy or blue/green per platform; fail workflow on unsuccessful health checks.
 
-## 8. Branch protections and rollback verification [pending]
+## 8. Branch protections and rollback verification [done]
 ### Dependencies: 86.6, 86.7
 ### Description: Enforce required checks on main and implement/test rollback procedures for frontend and backend.
 ### Details:
@@ -152,4 +152,3 @@ Dry-run workflows on PRs. Verify deployments to staging succeed automatically on
   - Fly: flyctl releases -a $FLY_APP_NAME; flyctl releases revert <version>.
 - Add workflow_dispatch inputs to deploy workflows to trigger rollback steps with a deployment/version ID and validate successful restore via health checks.
 - Test plan: simulate a bad deploy on staging, perform rollback, verify health endpoints and automated alerts.
-

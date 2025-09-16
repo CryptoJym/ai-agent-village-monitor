@@ -8,6 +8,8 @@ import { inc } from '../metrics';
 import { shortCircuitDuplicate } from '../webhooks/dedupe';
 import { getRedis } from '../queue/redis';
 import { createBugBot } from '../bugs/service';
+import { applyTransition } from '../houses/activityStore';
+import { mapGitHubEventToTransitions } from '../houses/githubActivityMap';
 
 // Minimal GitHub webhook handler for issues events
 export async function githubWebhook(req: Request, res: Response) {
@@ -25,12 +27,15 @@ export async function githubWebhook(req: Request, res: Response) {
   try {
     const secret = (config as any).WEBHOOK_SECRET as string | undefined;
     const sig = req.header('x-hub-signature-256');
-    if (secret && sig) {
+    if (secret) {
+      if (!sig) return res.status(401).json({ error: 'missing signature' });
       const raw = (req as any).rawBody as Buffer | undefined;
       if (!raw) return res.status(400).json({ error: 'raw body missing' });
       const hmac = crypto.createHmac('sha256', secret).update(raw).digest('hex');
       const expected = `sha256=${hmac}`;
-      const valid = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig));
+      const a = Buffer.from(expected);
+      const b = Buffer.from(sig);
+      const valid = a.length === b.length && crypto.timingSafeEqual(a, b);
       if (!valid) return res.status(401).json({ error: 'invalid signature' });
     }
   } catch {
@@ -44,6 +49,26 @@ export async function githubWebhook(req: Request, res: Response) {
   const { resolveVillageAndHouse } = await import('./mapping');
   const mapping = await resolveVillageAndHouse(payload);
   const villageId = mapping.villageId;
+  const repoId = payload?.repository?.id ? String(payload.repository.id) : undefined;
+
+  // Activity indicators mapping (push, pull_request, check_run)
+  try {
+    const transitions = mapGitHubEventToTransitions(event, payload);
+    if (transitions.length) {
+      for (const tr of transitions) {
+        applyTransition({
+          ...tr,
+          villageId,
+          houseId: mapping.houseId,
+          repoId: tr.repoId ?? repoId,
+        });
+      }
+      // Accept early for activity-only events to reduce webhook latency
+      if (event === 'push' || event === 'pull_request' || event === 'check_run') {
+        // other handlers below may also act (e.g., issues/check_run failure → bug bots)
+      }
+    }
+  } catch {}
 
   if (event === 'issues' && payload?.action === 'opened') {
     const issue = payload.issue;
@@ -110,7 +135,9 @@ export async function githubWebhook(req: Request, res: Response) {
         x: undefined,
         y: undefined,
       });
-      try { inc('bug.created', { source: 'check_run_failure' }); } catch {}
+      try {
+        inc('bug.created', { source: 'check_run_failure' });
+      } catch {}
       return res.status(202).json({ ok: true });
     }
   }

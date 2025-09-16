@@ -1,6 +1,6 @@
 # Task ID: 60
 # Title: House Entity and Repo Visualization
-# Status: pending
+# Status: done
 # Dependencies: 49, 58, 59
 # Priority: medium
 # Description: Render houses with labels and state indicators based on repo stats and activity.
@@ -95,4 +95,3 @@ Render houses from mock repo data. Hover shows correct info. Trigger activity st
 - Health: openIssues over threshold shows scaffolding overlay with correct severity.
 - Language styling applied per mock repo; unknown falls back to default.
 - Optional snapshot/pixel tests with tolerances for animations (use paused or stepped time).
-

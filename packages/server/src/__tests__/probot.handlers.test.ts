@@ -7,13 +7,18 @@ vi.mock('../bugs/service', () => ({
 }));
 
 describe('Probot handlers (framework-less)', () => {
-  let handlers: Record<string, Function[]>;
+  let handlers: Record<string, Array<(ctx: any) => any>>;
   let app: any;
   let registerProbotHandlers: any;
 
   beforeEach(async () => {
     handlers = {};
-    app = { on: (name: string, cb: any) => ((handlers[name] ||= []), handlers[name].push(cb)) };
+    app = {
+      on: (name: string, cb: (ctx: any) => any) => (
+        (handlers[name] ||= []),
+        handlers[name].push(cb)
+      ),
+    };
     ({ registerProbotHandlers } = await import('../probot/app'));
     registerProbotHandlers(app);
   });
@@ -28,7 +33,12 @@ describe('Probot handlers (framework-less)', () => {
   it('handles issues.opened and dedupes duplicate deliveries', async () => {
     const payload = {
       action: 'opened',
-      repository: { id: 123, full_name: 'org/repo', name: 'repo', owner: { id: 456, login: 'org' } },
+      repository: {
+        id: 123,
+        full_name: 'org/repo',
+        name: 'repo',
+        owner: { id: 456, login: 'org' },
+      },
       issue: { id: 789, number: 7, title: 'x', body: '' },
       organization: { id: 456, login: 'org' },
     };
@@ -44,7 +54,12 @@ describe('Probot handlers (framework-less)', () => {
   it('handles issues.closed by resolving bug', async () => {
     const payload = {
       action: 'closed',
-      repository: { id: 123, full_name: 'org/repo', name: 'repo', owner: { id: 456, login: 'org' } },
+      repository: {
+        id: 123,
+        full_name: 'org/repo',
+        name: 'repo',
+        owner: { id: 456, login: 'org' },
+      },
       issue: { id: 789, number: 7, title: 'x', body: '' },
       organization: { id: 456, login: 'org' },
     };
@@ -62,16 +77,23 @@ describe('Probot handlers (framework-less)', () => {
         head_sha: 'abc123',
         name: 'build',
         output: { summary: 'tests failed' },
-        details_url: 'http://ci'
+        details_url: 'http://ci',
       },
-      repository: { id: 123, full_name: 'org/repo', name: 'repo', owner: { id: 456, login: 'org' } },
+      repository: {
+        id: 123,
+        full_name: 'org/repo',
+        name: 'repo',
+        owner: { id: 456, login: 'org' },
+      },
       organization: { id: 456, login: 'org' },
     };
 
     await trigger('check_run.completed', { name: 'check_run', id: 'cr-1', payload });
     const { createBugBot } = await import('../bugs/service');
     expect((createBugBot as any).mock.calls.length).toBeGreaterThan(0);
-    const lastCall = (createBugBot as any).mock.calls[(createBugBot as any).mock.calls.length - 1][0];
+    const lastCall = (createBugBot as any).mock.calls[
+      (createBugBot as any).mock.calls.length - 1
+    ][0];
     expect(lastCall.severity).toBe('high');
   });
 });

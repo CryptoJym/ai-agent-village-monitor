@@ -1,20 +1,42 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getUIState, setUIState } from '../state/uiState';
 import { ThreadTab } from './ThreadTab';
 import { useTranslation } from 'react-i18next';
 import { ControlTab } from './ControlTab';
 import { InfoTab } from './InfoTab';
+import { ToastProvider } from './Toast';
 
 export type DialogueUIProps = {
   open: boolean;
   onClose: () => void;
   agentId?: string;
+  initialTab?: 'thread' | 'control' | 'info';
+  onTabChange?: (tab: 'thread' | 'control' | 'info') => void;
 };
 
 type TabKey = 'thread' | 'control' | 'info';
 
-export function DialogueUI({ open, onClose, agentId = 'demo-agent' }: DialogueUIProps) {
+export function DialogueUI({
+  open,
+  onClose,
+  agentId = 'demo-agent',
+  initialTab,
+  onTabChange,
+}: DialogueUIProps) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<TabKey>('thread');
+  const [tab, setTab] = useState<TabKey>(() => {
+    if (initialTab) return initialTab;
+    try {
+      const st = getUIState();
+      if (
+        st.dialogueTab &&
+        (st.dialogueTab === 'thread' || st.dialogueTab === 'control' || st.dialogueTab === 'info')
+      ) {
+        return st.dialogueTab as any;
+      }
+    } catch {}
+    return 'thread';
+  });
   const [heightPct, setHeightPct] = useState(0.3);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -49,6 +71,44 @@ export function DialogueUI({ open, onClose, agentId = 'demo-agent' }: DialogueUI
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  // Persist selected agent and tab; restore tab on open
+  useEffect(() => {
+    try {
+      setUIState({ selectedAgentId: agentId });
+    } catch {}
+  }, [agentId]);
+
+  useEffect(() => {
+    if (open) {
+      try {
+        const st = getUIState();
+        if (
+          st.dialogueTab &&
+          (st.dialogueTab === 'thread' || st.dialogueTab === 'control' || st.dialogueTab === 'info')
+        ) {
+          setTab(st.dialogueTab as any);
+        }
+      } catch {}
+    }
+  }, [open]);
+
+  useEffect(() => {
+    try {
+      setUIState({ dialogueTab: tab as any });
+    } catch {}
+  }, [tab]);
+
+  // Reflect prop changes to initialTab (e.g., hash hydration)
+  useEffect(() => {
+    if (initialTab && initialTab !== tab) setTab(initialTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab]);
+
+  // Notify parent of tab changes (for URL hash sync)
+  useEffect(() => {
+    onTabChange?.(tab);
+  }, [tab, onTabChange]);
 
   // Focus management: trap initial focus and restore on close
   useEffect(() => {
@@ -176,11 +236,13 @@ export function DialogueUI({ open, onClose, agentId = 'demo-agent' }: DialogueUI
             </button>
           </div>
         </header>
-        <div style={styles.body}>
-          {tab === 'thread' && <ThreadTab agentId={agentId} />}
-          {tab === 'control' && <ControlTab agentId={agentId} />}
-          {tab === 'info' && <InfoTab agentId={agentId} />}
-        </div>
+        <ToastProvider>
+          <div style={styles.body}>
+            {tab === 'thread' && <ThreadTab agentId={agentId} />}
+            {tab === 'control' && <ControlTab agentId={agentId} />}
+            {tab === 'info' && <InfoTab agentId={agentId} />}
+          </div>
+        </ToastProvider>
       </section>
     </div>
   );
