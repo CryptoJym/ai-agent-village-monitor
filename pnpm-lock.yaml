@@ -27,8 +27,8 @@ importers:
         specifier: ^1.10.1
         version: 1.10.1
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.1.9
+        version: 4.1.9
     devDependencies:
       '@playwright/test':
         specifier: ^1.48.0
@@ -109,8 +109,8 @@ importers:
         specifier: ^4.8.1
         version: 4.8.1
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.1.9
+        version: 4.1.9
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^6.6.3
@@ -203,8 +203,8 @@ importers:
         specifier: ^4.8.1
         version: 4.8.1
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.1.9
+        version: 4.1.9
     devDependencies:
       '@prisma/client':
         specifier: ^6.16.1
@@ -4826,8 +4826,8 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.1.9:
+    resolution: {integrity: sha512-HI32jTq0AUAC125z30E8bQNz0RQ+9Uc+4J7V97gLYjZVKRjeydPgGt6dvQzFrav7MYOUGFqqOGiHpA/fdbd0cQ==}
 
 snapshots:
 
@@ -9992,4 +9992,4 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod@3.25.76: {}
+  zod@4.1.9: {}
