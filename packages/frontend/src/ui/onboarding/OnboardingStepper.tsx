@@ -269,6 +269,7 @@ export function OnboardingStepper({
       };
       setTimeout(poll, 1200);
     } catch (e: any) {
+      void e;
       // Fallback to demo mode when API is missing or unauthorized
       setError('Create failed, switching to demo mode.');
       setStep('demo');
@@ -612,7 +613,9 @@ export function OnboardingStepper({
                             return;
                           }
                         }
-                      } catch {}
+                      } catch {
+                        // Polling fallback errors are expected (village may not exist yet)
+                      }
                       if (Date.now() - start > 60_000) {
                         setError('Sync timed out again. You can try demo mode.');
                         setSyncMsg('');

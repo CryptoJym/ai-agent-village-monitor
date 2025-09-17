@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { queueAwarePost } from '../utils/queueFetch';
 import { useParams } from 'react-router-dom';
 import { useViewerRole } from '../hooks/useViewerRole';

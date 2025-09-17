@@ -36,7 +36,7 @@ export function HouseDashboardPanel({ open, data, onClose, viewerRole }: Props) 
     if (!open || !data) return;
     const handle = window.setTimeout(() => closeRef.current?.focus(), 0);
     return () => window.clearTimeout(handle);
-  }, [open, data?.houseId]);
+  }, [open, data]);
   if (!open || !data) return null;
   const canManage = viewerRole === 'owner';
   const agents = data.agents ?? [];
