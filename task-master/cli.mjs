@@ -35,6 +35,7 @@ function parseArgs(argv) {
     else if (a === '--phase') args.phase = argv[++i];
     else if (a === '--features') args.features = true;
     else if (a === '--repo') args.repo = argv[++i];
+    else if (a === '--no-labels') args.noLabels = true;
   }
   return args;
 }
@@ -97,7 +98,7 @@ function ghAvailable() {
   try { execSync('gh --version', { stdio: 'ignore' }); return true; } catch { return false; }
 }
 
-function issuesCreate(plan, { weeks, repo }) {
+function issuesCreate(plan, { weeks, repo, noLabels }) {
   if (!ghAvailable()) {
     console.error('GitHub CLI (gh) not found. Install and run `gh auth login`.');
     process.exit(1);
@@ -125,7 +126,8 @@ function issuesCreate(plan, { weeks, repo }) {
       'Deliverables:',
       ...data.deliverables.map(d => `- ${d}`)
     ].join('\n');
-    const cmd = `gh issue create --repo ${targetRepo} --title ${JSON.stringify(title)} --body ${JSON.stringify(body)} --label week:${w},plan`;
+    const base = `gh issue create --repo ${targetRepo} --title ${JSON.stringify(title)} --body ${JSON.stringify(body)}`;
+    const cmd = noLabels ? base : `${base} --label week:${w},plan`;
     try {
       const out = execSync(cmd, { stdio: ['ignore', 'pipe', 'inherit'] }).toString();
       process.stdout.write(out);
@@ -157,4 +159,3 @@ switch (cmd) {
     printHelp();
     process.exit(1);
 }
-

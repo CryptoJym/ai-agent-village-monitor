@@ -1,0 +1,68 @@
+# Task ID: 95
+# Title: Data Accuracy and Sync Validation
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Implement periodic sync jobs and sanity checks to ensure >99.5% GitHub sync accuracy.
+# Details:
+Cron job (BullMQ repeatable) to resync orgs on schedule and on webhook gaps. Reconcile houses with current repo list (archive/delete handling). Log discrepancies and repair.
+
+
+# Test Strategy:
+Simulate missing webhook; periodic job catches updates. Compare sample org data between API and DB; discrepancy <0.5%.
+
+# Subtasks:
+## 1. Set up BullMQ repeatable cron for periodic org resync [pending]
+### Dependencies: None
+### Description: Create BullMQ queue, workers, and repeatable jobs to resync GitHub orgs on a schedule and via manual trigger.
+### Details:
+Provision a BullMQ queue (e.g., 'org-sync') and worker with safe shutdown and health checks. Add a repeatable job per org (e.g., every 15 minutes) with a deterministic jobId (org:<org_id>:resync) for deduplication. Job payload includes org_id and reason (periodic|gap). Ensure idempotency guards, concurrency limits, and per-org partitioning. Expose a manual trigger (internal API/CLI) that enqueues the same job type. Configure metrics hooks and basic logging on enqueue/start/complete/fail.
+
+## 2. Implement reconciliation logic for repo archive/delete handling [pending]
+### Dependencies: None
+### Description: Compare GitHub repos to DB 'houses' and handle archive, delete, rename, and restoration states.
+### Details:
+Design a reconcile function that accepts API repo list and DB houses for an org. Map by GitHub repo ID. Cases: (1) Repo archived -> mark house.archived=true, disable automations; (2) Repo deleted -> soft-delete house or mark status=deleted; (3) Repo renamed -> update house.name/full_name; (4) Unarchived -> house.archived=false; (5) Visibility change -> update visibility; (6) Missing in DB but present in API -> optional create or log as unmanaged according to config; (7) Present in DB but missing in API -> treat as deleted. Update last_synced, changed_by='sync'. Ensure idempotence and transactional updates.
+
+## 3. Detect webhook gaps and enqueue catch-up resyncs [pending]
+### Dependencies: 95.1
+### Description: Track webhook delivery health and detect missed or delayed events to trigger resync jobs.
+### Details:
+Persist per-org webhook state: last_delivery_at, last_seen_delivery_id, consecutive_failures. On each webhook, update state. A background check flags a gap when: (a) no deliveries for > threshold (e.g., 10 minutes) while org should be active; (b) GitHub delivery status indicates failure; or (c) redelivery attempts exceed N. When a gap is detected, enqueue a catch-up resync (reason=gap) to the BullMQ queue. Optionally poll GitHub webhook delivery API (if available) to corroborate failures. Add jitter to avoid stampedes.
+
+## 4. Discrepancy logging and auto-repair [pending]
+### Dependencies: 95.2
+### Description: Log DB vs GitHub data discrepancies and apply safe, idempotent repair actions.
+### Details:
+Define discrepancy types (missing_repo, wrong_archived_flag, wrong_name, wrong_visibility, stale_metadata). Create table 'sync_discrepancies' capturing org_id, repo_id, type, detected_at, before/after snapshots, proposed_action, repair_status, correlation_id (job run). During reconcile, record discrepancies and execute repair mutations (DB updates) within transactions; if repair blocked (e.g., permission/API error), mark needs_manual_review. Provide structured logs with correlation_id to tie to job runs. Include dry-run mode toggle.
+
+## 5. Compute and persist accuracy metrics [pending]
+### Dependencies: 95.4
+### Description: Calculate sync accuracy per run, per org, and globally; persist time-series to meet >99.5% target.
+### Details:
+Define accuracy = matched_items / total_compared_items. For each resync, count total repos compared and discrepancies found (by type). Persist metrics: accuracy, discrepancy_rate, run_duration, repos_scanned, repairs_applied, failures. Store per org and global aggregates with timestamps (e.g., DB table or Prometheus). Maintain rolling windows (24h, 7d) and SLO compliance tracking against 99.5% threshold. Add labels for reason (periodic|gap) and job version.
+
+## 6. Configure retry and backoff policies [pending]
+### Dependencies: 95.1
+### Description: Establish BullMQ retry, exponential backoff with jitter, and rate-limit-aware behavior for sync jobs.
+### Details:
+Set attempts (e.g., 5) with exponential backoff (base 2) and jitter. Implement per-org concurrency=1 with a distributed lock to avoid overlapping syncs. Handle known non-retryable codes (401/403/404) by failing fast and flagging for manual action. Respect GitHub X-RateLimit headers: if exhausted, delay until reset plus jitter. Add a circuit breaker for repeated failures to pause org syncs temporarily and emit a signal for alerting. Route exhausted jobs to a dead-letter queue with context.
+
+## 7. Admin report/dashboard for sync health [pending]
+### Dependencies: 95.5, 95.4
+### Description: Expose an admin view or endpoint summarizing accuracy, discrepancies, and job states per org.
+### Details:
+Create an endpoint (e.g., GET /admin/sync-health) returning per-org: last_sync_at, last_result, accuracy (24h/7d), discrepancy counts by type, open manual reviews, job backlog, and circuit-breaker status. Provide links to discrepancy details and recent job runs (correlation_id). Support CSV export and filtering by org, time range, and status. Enforce admin-only access.
+
+## 8. Test suite with simulated gaps and reconciliation [pending]
+### Dependencies: 95.1, 95.2, 95.3, 95.4, 95.5, 95.6
+### Description: Build unit/integration tests to simulate webhook gaps and validate periodic resync and reconciliation behavior.
+### Details:
+Use HTTP mocking to emulate GitHub API responses (repo list, webhook deliveries). Simulate scenarios: archived repo, deleted repo, rename, unarchive, visibility change, and unmanaged repo. Simulate webhook silence and failures to trigger gap detection and catch-up jobs. Use fake timers to advance cron. Assert: discrepancies logged, repairs applied, accuracy >= 99.5% post-repair for test datasets, retries/backoff respected, no concurrent org syncs, and metrics emitted.
+
+## 9. Alert thresholds and notifications [pending]
+### Dependencies: 95.5, 95.6, 95.7
+### Description: Define thresholds and wire notifications for accuracy drops, failures, and backlog growth.
+### Details:
+Configure alerts when: org accuracy < 99.5% over 24h; consecutive job failures >= N; job latency/backlog exceeds thresholds; circuit breaker trips; unprocessed discrepancies age > SLA. Send notifications to Slack/Email (and optional Pager) with context (org_id, metrics, correlation_id, runbook link). Implement deduplication and suppression windows. Provide configurable thresholds per environment and org tier.
+

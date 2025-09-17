@@ -1,0 +1,97 @@
+# Task ID: 60
+# Title: House Entity and Repo Visualization
+# Status: done
+# Dependencies: 49, 58, 59
+# Priority: medium
+# Description: Render houses with labels and state indicators based on repo stats and activity.
+# Details:
+Class House extends Phaser.GameObjects.Container with sprite + name text.
+- Icons/lights for activity: window lights on commit, chimney smoke during builds
+- Health indicator for many issues (scaffolding overlay)
+- Hover tooltip shows repo name, stars, language
+- Click to zoom to house
+- Map GitHub data to visuals
+
+
+# Test Strategy:
+Render houses from mock repo data. Hover shows correct info. Trigger activity states based on simulated events. Visuals adapt to languages (style set exists).
+
+# Subtasks:
+## 1. Implement House Container Class [pending]
+### Dependencies: None
+### Description: Create House as a Phaser.GameObjects.Container with base sprite and name label scaffolding for further visuals.
+### Details:
+- Extend Phaser.GameObjects.Container; constructor accepts scene, x, y, repoId/state.
+- Add children: base house sprite, name text, windows layer (for lights), chimney smoke emitter (initially off), scaffolding overlay (health), interactive hit-zone.
+- Provide setState/update methods to toggle visuals (lights, smoke, scaffolding) and to update label text.
+- Establish depth/layering order and origins; expose size/bounds for camera focus.
+- Predefine expected texture/animation keys (e.g., house-base, window-on, smoke-puff, scaffolding) and fallback handling.
+- setInteractive on container or an invisible rectangle; pointerover/out/click events wired but no behavior yet.
+
+## 2. Add Label and Hover Tooltip UI [pending]
+### Dependencies: 60.1
+### Description: Render repo name label and show a hover tooltip with repo name, stars, and language.
+### Details:
+- Name label: bitmap or dynamic text above the house; ellipsis/clamp long names; style from UI theme.
+- Tooltip: on pointerover show panel near cursor with {name, stars, primaryLanguage}; on pointerout hide; follows cursor with screen clamping.
+- Integrate with existing Tooltip system if present; otherwise implement lightweight tooltip component.
+- Ensure correct z-index above game world; pause tooltip updates while camera panning to avoid jitter.
+- Accessibility: small delay before showing; hide on blur; no tooltip during drag.
+
+## 3. Map GitHub Repo Stats to Visual States [pending]
+### Dependencies: 60.1
+### Description: Define mapping from repo data and events to House visual properties and states.
+### Details:
+- Define HouseState interface: {name, stars, primaryLanguage, openIssues, lastCommitAt, buildStatus, activityPulse}.
+- Stars: optional influence on label prominence or subtle glow intensity; keep scale stable to avoid layout shifts.
+- Health: map openIssues to scaffolding overlay severity (none/low/med/high) with configurable thresholds; toggle scaffolding child visibility/alpha.
+- Activity: commits trigger window lights pulse for N seconds; builds in-progress trigger chimney smoke; build success/fail may vary smoke color.
+- Language: pass through primaryLanguage for styling layer (colors/accents) to be applied by visuals task.
+- Provide a pure function applyRepoStateToHouse(house, repoState, now) that updates all visuals idempotently.
+
+## 4. Implement Activity Indicators (Window Lights & Chimney Smoke) [pending]
+### Dependencies: 60.1, 60.3
+### Description: Animate window lights on commits and chimney smoke during builds based on mapped states.
+### Details:
+- Window lights: tween window sprites/tiles to bright yellow with ease in/out; pulse duration and cooldown configurable; ensure multiple commits extend pulse.
+- Chimney smoke: particle emitter or sprite animation; start on buildStatus=in_progress, stop on complete; optional color tint (neutral/green/red) by result.
+- Performance: batch/tile windows where possible; pool particles to minimize GC.
+- Integrate with House update loop; use timestamps from state to drive transitions deterministically.
+
+## 5. Apply Language-Based Visuals and Styling [pending]
+### Dependencies: 60.1, 60.3
+### Description: Style houses per repository primary language using existing style set.
+### Details:
+- Define a language->style map: roof/door colors, accent banners, optional icon badge; handle unknown languages with a default.
+- Apply styles without changing hit areas; keep contrast with labels and indicators.
+- Allow dynamic restyling if language changes; avoid full re-creation of sprites.
+- Verify compatibility with activity effects and scaffolding overlay.
+
+## 6. Implement Click-to-Zoom Behavior [pending]
+### Dependencies: 60.1
+### Description: On click, smoothly center camera on the house and adjust zoom within bounds.
+### Details:
+- On pointerup (ignore drags), tween main camera to house world position; compute target zoom respecting min/max and world bounds.
+- Provide configurable zoom level and duration; ease in/out for smoothness; cancel on new user pan/zoom.
+- Maintain previous camera state to allow back/escape behavior (out of scope to implement here, just expose hooks).
+- Ensure tooltip/labels reposition correctly during camera motion.
+
+## 7. Create Mock Data and Event Harness [pending]
+### Dependencies: 60.3, 60.4, 60.5
+### Description: Build a harness to feed mock repo data and simulate commit/build events for development.
+### Details:
+- Provide an array of mock repos varying in stars, languages, and openIssues to exercise health and styling.
+- Simulate events: periodic commits per repo, build start/complete with success/failure; dispatch into applyRepoStateToHouse.
+- Add simple debug UI toggles (per-repo commit/build, issue count slider) and a reset button.
+- Seed deterministic timers for reproducible demos; allow pausing the harness.
+
+## 8. Write Interaction and Visual Tests [pending]
+### Dependencies: 60.1, 60.2, 60.3, 60.4, 60.5, 60.6, 60.7
+### Description: Automate tests for rendering, hover tooltip, activity states, language visuals, health overlay, and click-to-zoom.
+### Details:
+- Unit test applyRepoStateToHouse for deterministic outputs given timestamps.
+- E2E tests (e.g., Playwright): hover shows tooltip with correct name/stars/language; click centers and zooms to house within expected time; camera bounds respected.
+- Simulated commit triggers window light pulse; build in-progress triggers smoke; success/failure colors verify.
+- Health: openIssues over threshold shows scaffolding overlay with correct severity.
+- Language styling applied per mock repo; unknown falls back to default.
+- Optional snapshot/pixel tests with tolerances for animations (use paused or stepped time).

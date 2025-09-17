@@ -1,0 +1,175 @@
+# Task ID: 66
+# Title: Bug Bot UI: Spawn, Assign, Progress, Celebrate
+# Status: in-progress
+# Dependencies: None
+# Priority: medium
+# Description: Implement Bug Bot sprites on houses, assignment UI, and lifecycle animations.
+# Details:
+Spawn bots near target house on WS bug_bot_spawn. Drag agent onto bot or click Assign to link via POST /api/bugs/:id/assign.
+- Appearance reflects severity (size/color/emote)
+- Fade as progress updates (based on issue timeline or linked commits)
+- Celebration animation (confetti) on resolved event
+
+
+# Test Strategy:
+Simulate WS spawn/resolved. Drag-and-drop assignment triggers API and updates bot visuals. Visual regression snapshots for severity styles. Performance test many bots simultaneously.
+
+# Subtasks:
+## 1. Bot sprite system and severity styles [done]
+### Dependencies: None
+### Description: Create Bug Bot sprite(s) with visual styles that reflect severity (size, color/tint, emote) and standardize interaction hit areas.
+### Details:
+• Implement sprite/atlas for Bug Bot with idle animation and emote layer.
+• Severity mapping: low, medium, high, critical -> scale, tint, emote (e.g., sweat/angry).
+• Provide createBugBotSprite(config) and updateSeverityStyle(sprite, severity) helpers.
+• Set depth layering above ground and below UI. Define interactive hit area and pointer cursor.
+• Expose minimal API: setAssigned(agentId), setProgress(pct), playCelebrate().
+• Acceptance: each severity renders with expected size/tint/emote, is clickable, and matches visual snapshots.
+<info added on 2025-09-15T14:44:22.076Z>
+Implemented in packages/frontend/src/bugs/BugBot.ts: BugBot sprite system with severity styling via radius and color, plus pulsing animation and an interactive container for pointer/click interactions.
+</info added on 2025-09-15T14:44:22.076Z>
+<info added on 2025-09-15T14:46:51.816Z>
+Implemented BugBot sprite system with severity styling (radius and color) in packages/frontend/src/bugs/BugBot.ts, including a pulsing idle animation and an interactive container with pointer/click handling.
+</info added on 2025-09-15T14:46:51.816Z>
+
+## 2. Spawn on WebSocket bug_bot_spawn near target house [done]
+### Dependencies: 66.1
+### Description: Listen to WS bug_bot_spawn and instantiate Bug Bot near the target house with non-overlapping placement.
+### Details:
+• Subscribe to WS channel; payload fields: bugId, houseId, severity, title/summary.
+• If house not yet in scene, queue spawns until house is available.
+• Place bot at random offset around house within ring radius, avoiding overlap using simple circle packing or jitter retries.
+• Maintain bugId->sprite registry. Add to scene group 'bugBots'.
+• Deduplicate repeated spawns by bugId.
+• Acceptance: Upon event, bot appears within 250ms within ~64–128px of house center and does not overlap an existing bot.
+<info added on 2025-09-15T14:44:56.857Z>
+• MainScene.ts: Subscribe to EventBus.on('bug_bot_spawn', handler) in create() and unsubscribe on scene shutdown. Handler payload: { bugId, houseId, severity, title?, summary?, x?, y? }.
+• If bugId already in registry, ignore. If house not in scene, enqueue payload under pendingSpawns[houseId]; flush when house sprite becomes available.
+• Positioning: if finite x,y provided and within world bounds, attempt to place at (x,y). If that spot overlaps an existing bot, jitter within a small radius (e.g., up to 8–12 retries) to resolve. If x,y not provided or invalid, compute a random position in a ring 64–128px from house center; avoid overlap via jitter/circle-packing retries.
+• Clamp any final position to world/camera bounds and ensure bot is added to the 'bugBots' scene group. Store in bugId->sprite registry after successful placement.
+• Performance/latency: spawn on the next frame (or delayedCall(0)) and ensure visible within 250ms of receiving the EventBus event.
+</info added on 2025-09-15T14:44:56.857Z>
+<info added on 2025-09-15T14:47:18.988Z>
+• File: packages/frontend/src/scenes/MainScene.ts. Do not import or reference WebSocketService directly; listen only to EventBus.on('bug_bot_spawn') which is already relayed from the WebSocket layer.
+• Treat payload x,y as world-space coordinates. If present and within bounds, try exact placement (apply small jitter only if overlapping); otherwise use the 64–128px ring around the target house as fallback.
+• QA/Acceptance (WS): when a bug_bot_spawn is received over the socket (and relayed via EventBus), a bot spawns within 250ms at the provided coords or the ring fallback, never overlaps existing bots, and duplicate bugIds are ignored.
+</info added on 2025-09-15T14:47:18.988Z>
+<info added on 2025-09-15T14:53:45.095Z>
+• Placement: sample a ring (64–128px) around the resolved target center—house center if available, otherwise the payload’s x,y. Treat x,y as the center for ring sampling, not an exact drop point. Apply jitter retries (8–12) to resolve overlaps; clamp to world bounds.
+• Pending queue flush: when only houseId is provided and the house isn’t registered, enqueue under pendingSpawns[houseId] and poll for availability on a short interval (e.g., every 250ms) in MainScene.update() to flush as houses appear.
+• QA/Acceptance: On bug_bot_spawn, the bot appears within 250ms within ~64–128px of the target center (house or provided coords), never overlaps existing bots, and duplicate bugIds are ignored. If queued waiting for a house, it spawns within 250ms of the house becoming available.
+</info added on 2025-09-15T14:53:45.095Z>
+
+## 3. Drag-and-drop assignment to agent (UI and interactions) [done]
+### Dependencies: 66.1, 66.2
+### Description: Enable dragging an agent onto a Bug Bot to initiate assignment; add an Assign button on bot overlay as an alternative.
+### Details:
+• Make agents draggable and Bug Bots droppable; highlight bot on hover with ring/outline.
+• On drop(agent -> bot), dispatch assign action with agentId and bugId.
+• Bot hover tooltip/overlay: show title, severity, an Assign button that opens agent picker.
+• Provide cancel/escape behavior and clear highlighting when drop fails.
+• Acceptance: Dragging an agent onto a bot or clicking Assign opens assignment flow; visual hover affordances are clear.
+<info added on 2025-09-15T14:45:37.348Z>
+• EventBus.ts: Add a typed 'agent_drop' event with payload { agentId: string; x: number; y: number }. Export on/emit helpers for this event.
+
+• Agent.ts: On dragend (only if a drag actually occurred and not canceled), emit EventBus.emit('agent_drop', { agentId, x: worldX, y: worldY }). Compute worldX/worldY from the agent sprite position (account for camera/zoom). Ensure only one emit per drag sequence.
+
+• MainScene.ts:
+  - Maintain a collection of active BugBots with { bugId, x, y, radiusPx }.
+  - Subscribe to EventBus.on('agent_drop', ({ agentId, x, y })) and:
+    1) Find the nearest BugBot by Euclidean distance to (x, y).
+    2) If nearestDistance <= DROP_ASSIGN_RADIUS_PX (e.g., 56), treat as a successful drop:
+       • Dispatch the assign intent/action with { agentId, bugId } to open the assignment flow.
+       • Clear any hover highlights.
+    3) Otherwise:
+       • Consider this a failed drop; clear highlights and show the standard cancel feedback.
+  - If multiple bots are within threshold, choose the nearest. Ignore bots already assigned/resolving.
+  - Use world coordinates to avoid camera offset bugs; optional: log a warning if no bots are present.
+
+• Constants: Define DROP_ASSIGN_RADIUS_PX in MainScene.ts (tunable; start at ~56 px or 1.25× bot radius).
+
+• Acceptance additions:
+  - Dropping an agent within the threshold of a BugBot triggers the assignment flow without requiring precise overlap.
+  - Dropping outside the threshold does not trigger assignment and clears all highlights.
+</info added on 2025-09-15T14:45:37.348Z>
+<info added on 2025-09-15T14:48:00.174Z>
+• Constants: Set DROP_ASSIGN_RADIUS_PX to 40.
+
+• MainScene.ts: Use a 40 px nearest-distance threshold to trigger assignment on agent_drop; otherwise treat as a failed drop and clear highlights.
+
+• Acceptance: Dropping an agent within 40 px of a BugBot triggers the assignment flow; drops beyond 40 px do not.
+</info added on 2025-09-15T14:48:00.174Z>
+
+## 4. Assign API integration (POST /api/bugs/:id/assign) [done]
+### Dependencies: 66.3
+### Description: Wire assignment UI to backend; optimistic update with error handling and retries.
+### Details:
+• Call POST /api/bugs/:id/assign with { agentId } on drop or Assign confirm.
+• Optimistic update: mark bot as assigned (badge/line tether) immediately; revert on failure.
+• Disable Assign while request in flight; show toast/snackbar on success/failure.
+• Handle 409/422 gracefully (already assigned, invalid agent) with user guidance.
+• Acceptance: 2xx persists assignment and visuals; 4xx/5xx reverts and surfaces an actionable error.
+<info added on 2025-09-15T14:46:03.305Z>
+- Backend stub implemented: POST /api/bugs/:id/assign returns 202 Accepted and emits a simulated resolution event via Socket.IO ~1s later.
+- Treat 202 as a successful assignment response (no response body required); keep optimistic assignment state and do not revert.
+- Frontend should fetch via the Vite proxy using relative /api paths.
+- Wire Socket.IO client to connect (exposed in server/index.ts) so the app can receive the subsequent resolution event; assignment flow should not block on this.
+- Touchpoints: server/app.ts, server/index.ts (exposes io), frontend/MainScene.ts assign().
+- Acceptance addition: 202 responses are considered success and preserve assignment visuals; resolution will arrive asynchronously via WS.
+</info added on 2025-09-15T14:46:03.305Z>
+<info added on 2025-09-15T14:48:44.975Z>
+- Backend now returns 202 with JSON payload { bugId, agentId }; treat as success. You may parse this payload for sanity-checking but UI should not depend on it.
+- Socket.IO event name is 'bug_bot_resolved' (broadcast ~1s post-assign via app.set('io')); listen and correlate by bugId.
+- Frontend must POST with headers { 'Content-Type': 'application/json' } and body { agentId } to /api/bugs/:id/assign from MainScene.ts (via Vite proxy) on drop.
+- Acceptance addendum: 202 with or without JSON body preserves optimistic assignment; app listens for 'bug_bot_resolved' without blocking the assign flow.
+</info added on 2025-09-15T14:48:44.975Z>
+
+## 5. Progress visualization and fade behavior [pending]
+### Dependencies: 66.1, 66.2
+### Description: Visualize bug progress over time and fade bot opacity as progress increases.
+### Details:
+• Listen for WS progress updates (e.g., bug_progress { bugId, progress: 0..1 }) or poll timeline/commits if WS absent.
+• Smoothly tween bot alpha from 1.0 at 0% to ~0.2 at 100%; adjust tint/lightness subtly.
+• Optional: add a circular progress ring or small progress bar above bot.
+• Debounce bursts and coalesce updates; guard against out-of-order events.
+• Acceptance: Progress updates reflect within 100ms and fade is smooth without flicker.
+
+## 6. Resolved celebration animation and cleanup [done]
+### Dependencies: 66.2
+### Description: Play confetti celebration when a bug resolves and remove the bot after animation.
+### Details:
+• Handle WS resolved event (e.g., bug_resolved { bugId }).
+• Trigger confetti particle emitter and brief sparkle; optional sound gated behind user setting.
+• Disable interactions during celebration; remove bot sprite and registry entry after <=2s.
+• Ensure idempotency if duplicate resolved events arrive.
+• Acceptance: On resolve, confetti plays once, performance remains stable, bot is removed and cannot be interacted with.
+
+## 7. Performance and batch handling for many bots [pending]
+### Dependencies: 66.2, 66.5, 66.6
+### Description: Optimize for high volumes of bots and events using pooling, culling, and message batching.
+### Details:
+• Implement sprite pooling/reuse and offscreen culling; pause animations for offscreen bots.
+• Batch WS processing on animation frames; coalesce multiple progress updates per bot.
+• Limit particle count during celebrations; cap concurrent emitters.
+• Validate 60 FPS target on desktop with 200+ bots receiving frequent updates.
+• Acceptance: Under load, frame time <16.7ms avg, no GC spikes >50ms, and no dropped inputs.
+
+## 8. Accessibility and UX hints [pending]
+### Dependencies: 66.3, 66.4
+### Description: Add accessible labels, keyboard flows, and clear hints to supplement drag-and-drop and color-based severity.
+### Details:
+• Provide keyboard flow: focus bot -> press Enter to open agent picker -> confirm to assign.
+• Ensure Assign button and overlay are reachable via tab order and have ARIA labels.
+• Verbalize severity (e.g., 'Critical bug') in tooltip/overlay; ensure color contrast meets WCAG.
+• Increase hit areas to ~44px min; provide reduced motion setting to limit confetti intensity.
+
+## 9. Tests, simulations, and visual snapshots [pending]
+### Dependencies: 66.2, 66.3, 66.4, 66.5, 66.6, 66.7, 66.8
+### Description: Implement unit/integration tests, WS simulations, and visual regression snapshots for severity styles and lifecycle.
+### Details:
+• Simulate WS spawn/progress/resolved to verify sprite lifecycle and visuals.
+• Drag-and-drop tests and keyboard assignment path; mock API and assert payloads and optimistic updates.
+• Snapshot tests for severity styles; thresholds for progress fade.
+• Load/perf test with 200 bots to assert frame time budgets.
+• Acceptance: All tests pass; snapshots stable; perf thresholds met in CI.
+

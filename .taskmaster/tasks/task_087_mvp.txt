@@ -1,0 +1,103 @@
+# Task ID: 87
+# Title: Production Deployment and Environment Configuration
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Stand up production environment with domain, SSL, env vars, and database backups.
+# Details:
+Frontend: Vercel project + custom domain. Backend: Railway with auto-scaling, Redis instance, Postgres 15 with backups. Set env: DATABASE_URL, REDIS_URL, JWT_SECRET, GITHUB_CLIENT_ID/SECRET, WEBHOOK_SECRET. Configure CORS and WS origins.
+
+# Test Strategy:
+Smoke test production endpoints and WS connectivity. Validate SSL and HSTS headers. Database backup/restore dry run. Verify scaling events keep WS sticky sessions or use stateless rooms.
+
+# Subtasks:
+## 1. Create Vercel project, custom domain, and HSTS [pending]
+### Dependencies: None
+### Description: Set up the production frontend on Vercel with a custom domain and enforce HSTS.
+### Details:
+- Create/attach the Vercel project to the main branch of the frontend repo.
+- Add the production custom domain (e.g., app.example.com). Configure DNS (CNAME for subdomain or A/ALIAS for apex) to Vercel.
+- Set up redirects (e.g., www -> apex) and enforce HTTPS.
+- Enable HSTS via framework config (e.g., next.config.js or vercel.json): max-age=31536000; includeSubDomains; preload. Consider hstspreload.org submission after validation.
+- Capture the final frontend origins (e.g., https://app.example.com and the Vercel *.vercel.app URL) for CORS/WS allowlists.
+
+## 2. Provision Postgres 15 and Redis on Railway with backups [pending]
+### Dependencies: None
+### Description: Create managed Postgres 15 and Redis instances and configure backup and access settings.
+### Details:
+- Create a Railway Postgres 15 instance in the target region. Note the DATABASE_URL (require SSL).
+- Configure automated backups (e.g., daily at 02:00 UTC, retention 7–14 days). Enable PITR if available. Restrict access to project services.
+- Create a dedicated DB user with least privilege for the app; avoid using the superuser in production.
+- Create a Railway Redis instance. Enable TLS if supported and require auth. Note the REDIS_URL.
+- Document connection strings, params, and maintenance windows for later env configuration.
+
+## 3. Deploy backend on Railway with autoscaling [pending]
+### Dependencies: 87.2
+### Description: Deploy the backend service to Railway, connect it to DB/Redis, and enable autoscaling.
+### Details:
+- Create a Railway service from the backend repo. Configure build/start commands and PORT.
+- Set health check endpoint (e.g., /health) and timeout thresholds.
+- Link the service to the Postgres and Redis instances (Railway plugins/variables) so it can reach DATABASE_URL and REDIS_URL.
+- Enable autoscaling: set min/max replicas (e.g., 1–3), CPU/memory thresholds, and cooldowns. Enable graceful shutdown for draining connections.
+- Use the default Railway domain initially; optionally attach a custom domain (e.g., api.example.com) and configure DNS and TLS.
+- Expose WebSocket on the same origin (e.g., /ws or /socket).
+
+## 4. Set and manage production environment variables [pending]
+### Dependencies: 87.1, 87.2, 87.3
+### Description: Populate and secure environment variables across Railway and Vercel.
+### Details:
+- In Railway (backend): set DATABASE_URL and REDIS_URL from the provisioned instances. Generate and set strong secrets: JWT_SECRET (32–64 random bytes) and WEBHOOK_SECRET. Add GITHUB_CLIENT_ID/SECRET from the GitHub OAuth app.
+- In Vercel (frontend): set NEXT_PUBLIC_API_ORIGIN (backend origin), NEXT_PUBLIC_WS_URL (wss:// backend WS URL), and any public GitHub client ID if used client-side.
+- Verify no secrets are committed to the repo. Use project-level prod environment scopes. Document rotation procedures and maintain a .env.production.template (placeholders only).
+
+## 5. Configure CORS policies and WebSocket origins [pending]
+### Dependencies: 87.1, 87.3, 87.4
+### Description: Allow only the production frontend origins for HTTP and WS, with correct credentials and headers.
+### Details:
+- Backend HTTP CORS: allow origins [production custom domain, Vercel preview domain if needed]. Allow methods GET, POST, PUT, PATCH, DELETE, OPTIONS. Allow headers Content-Type, Authorization, and any custom headers. Set Access-Control-Allow-Credentials true if using cookies; tune Access-Control-Max-Age.
+- WebSockets: configure origin checks (e.g., Socket.IO cors.origin or ws handshake origin) to the same allowed origins.
+- Ensure reverse proxy/load balancer forwards Upgrade and Connection headers for WS.
+- If using cookies, ensure Secure, HttpOnly, and appropriate SameSite. Update any CSRF origin checks to include the production frontend domains.
+
+## 6. Enforce SSL and security headers [pending]
+### Dependencies: 87.1, 87.3
+### Description: Verify TLS certificates and add security headers on both frontend and backend.
+### Details:
+- TLS: confirm HTTPS works on Vercel domain and backend domain (Railway default or custom). Force HTTPS redirects server-side.
+- Security headers (frontend + backend):
+  - Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  - Content-Security-Policy: restrict to self, Vercel assets, API origin, and WS origin as needed
+  - X-Frame-Options: DENY (or SAMEORIGIN if embedding is needed)
+  - X-Content-Type-Options: nosniff
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy: disable unused features
+- Validate with SSL Labs and securityheaders.com; fix any issues found.
+
+## 7. Execute production smoke tests (HTTP and WS) [pending]
+### Dependencies: 87.5, 87.6
+### Description: Run end-to-end checks against production to verify core functionality, SSL/HSTS, and WS connectivity.
+### Details:
+- HTTP: GET /health returns 200, DB query path works, and Redis ping endpoint succeeds.
+- Auth: complete GitHub OAuth flow using production callback; confirm secure cookies set (Secure, HttpOnly, SameSite) and CORS preflight passes.
+- WS: connect to wss:// backend, join a room/channel, round-trip a test message, and verify broadcasts.
+- Headers: confirm HSTS and CSP present on responses; verify redirects to HTTPS.
+- Record results, capture logs, and create follow-up issues for any failures.
+
+## 8. Define scaling and WebSocket stickiness strategy [pending]
+### Dependencies: 87.2, 87.3, 87.5
+### Description: Configure approach to handle scale events while preserving WS behavior (stickiness or stateless rooms).
+### Details:
+- Evaluate platform capabilities: if session affinity/sticky sessions are available, enable them; otherwise rely on a stateless WS approach.
+- Implement WS horizontal scaling via Redis pub/sub adapter (e.g., Socket.IO Redis adapter) using REDIS_URL so rooms and events propagate across replicas.
+- Tune autoscaling thresholds for WS workloads; set graceful shutdown hooks to drain connections.
+- Document capacity assumptions (conns per pod, msg rate), min/max replicas, and mitigation steps for surges.
+
+## 9. Perform database backup and restore dry run [pending]
+### Dependencies: 87.2
+### Description: Test restoring a backup to validate RTO/RPO and playbook accuracy.
+### Details:
+- Trigger or select a recent Postgres backup and restore it to a new temporary instance (or a staging environment) in Railway.
+- Run migrations against the restored DB; verify critical table counts and sample data integrity.
+- Point a staging/adhoc backend instance at the restored DB and run a subset of smoke tests.
+- Record recovery time and any gaps; confirm backup schedule/retention meets requirements and set alerts on failed backups.
+

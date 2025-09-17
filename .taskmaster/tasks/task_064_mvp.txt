@@ -1,0 +1,79 @@
+# Task ID: 64
+# Title: Control Panel Actions: Run Tool, Commit, PR
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Implement control actions wired to backend to run tools and GitHub operations from the Dialogue Control tab.
+# Details:
+Buttons:
+- Run Tool: select tool name + params -> POST /api/agents/:id/command {type:'run_tool', params}
+- Commit: run tool that stages/commits via MCP or GitHub API
+- PR: use GitHub API to create PR from branch
+Confirmations and disabled states during execution. Error toasts on failure.
+
+
+# Test Strategy:
+Mock backend responses. Verify buttons call correct endpoints, show in-flight and result states. Create a test repo and perform real PR via sandbox to ensure E2E function (optional).
+
+# Subtasks:
+## 1. Control Panel UI: Action Buttons and Forms [done]
+### Dependencies: None
+### Description: Add Run Tool, Commit, and PR controls with input forms in the Dialogue Control tab.
+### Details:
+Implement UI components: Action bar with three primary buttons (Run Tool, Commit, PR). Forms: (a) Run Tool: tool selector (dropdown or free-text if no catalog available), JSON/kv param editor with basic validation; (b) Commit: fields for paths (multi-select or stage-all), commit message, optional sign-off, branch selector; (c) PR: fields for repo/owner (pre-filled if known), head branch, base branch, title, body, draft toggle. Structure as modular components (RunToolForm, CommitForm, PRForm) with controlled inputs, minimal client-side validation, and accessibility (labels, roles, keyboard). Prepare confirm modal stubs and form state management.
+
+## 2. Integrate Run Tool API [done]
+### Dependencies: 64.1
+### Description: Wire Run Tool form to backend POST /api/agents/:id/command with type 'run_tool'.
+### Details:
+Create client method runTool(agentId, toolName, params) -> POST /api/agents/:id/command with body {type: 'run_tool', tool: toolName, params}. Handle 200/202 responses and extract commandId/jobId if returned. Initiate WS subscription to room agent:{id} to surface streaming work_stream events (if available) and final status. Update local action state (started, success, failed) and surface response payload. Validate params as JSON before submit.
+
+## 3. Commit and PR Flows via Backend [done]
+### Dependencies: 64.1, 64.2
+### Description: Implement commit and pull request actions using MCP tool or GitHub API routes.
+### Details:
+Commit: Prefer MCP tool via runTool(..., 'git_commit', {paths, message, stageAll, branch}). If MCP tool not available, call backend GitHub commit helper (e.g., POST /api/github/commit) with {owner, repo, branch, paths|all, message}. PR: Use backend GitHub API wrapper (e.g., POST /api/github/pr) with {owner, repo, head, base, title, body, draft, maintainer_can_modify}. Provide an abstraction createCommit() and createPullRequest() to encapsulate endpoint differences/feature flags. Capture returned ids/urls (commit sha, PR number/url) and pass to UI for display. Handle 401/403 for auth and 404 for repo/branch not found.
+
+## 4. Execution States, Confirmations, and Disabled Controls [done]
+### Dependencies: 64.1, 64.2, 64.3
+### Description: Add in-flight state management, confirm dialogs, and disable buttons during execution.
+### Details:
+Introduce per-action execution flags (isRunningTool, isCommitting, isCreatingPR). Disable corresponding buttons and inputs while in-flight; show inline spinners. Add confirmation modals: (a) Commit summary (branch, files, message), (b) PR summary (head->base, title). Support cancel before firing calls. Use AbortController to cancel pending fetches when needed. Prevent duplicate submissions with idempotency guard keyed by form snapshot hash or action lock.
+<info added on 2025-09-15T14:30:18.319Z>
+Implemented disabled states and confirmation dialogs for Commit and PR. Commit/Create PR buttons and related inputs are disabled while requests are in flight (isCommitting/isCreatingPR), with inline spinners shown. Confirmation modals present the commit summary (branch, files, message) and PR summary (head->base, title) and require explicit confirmation before sending.
+</info added on 2025-09-15T14:30:18.319Z>
+
+## 5. Error Handling and Toast Notifications [done]
+### Dependencies: 64.2, 64.3, 64.4
+### Description: Standardize error surfacing with toasts and inline messages for all actions. [Updated: 9/15/2025]
+### Details:
+Implement a centralized handleActionError(action, error) that parses HTTP status and backend error codes into user-friendly messages. Show error toast with context (e.g., 'Run Tool failed', 'Commit failed', 'PR creation failed') and optional details/trace id. Render inline field errors for validation (e.g., missing title, invalid branch). Add retry buttons on toast when possible. Log errors for observability and optionally forward to Sentry. Ensure toasts dismiss and state resets correctly.
+<info added on 2025-09-15T14:30:52.192Z>
+- Integrate a global ToastProvider (useToast hook) and route all control panel notifications through it.
+- Emit success toasts for Run Tool, Commit, and PR actions with contextual info: tool name and brief output snippet; commit created with short SHA and optional copy/link; PR opened with number and link to GitHub.
+- Pipe all errors through handleActionError and display via the provider with Retry and View logs actions; include traceId when available.
+- Deduplicate by action id and update the same toast from in-progress to success/error; auto-dismiss success after ~4–5s; errors persist ~8–10s or until dismissed; pause on hover; Esc to close.
+- Accessibility: aria-live polite for success and assertive for errors; no focus theft; readable labels.
+- Limit concurrent toasts to 3; replace the oldest non-error if the queue is full.
+- Analytics: emit toast_shown events with action, outcome, errorCode, and traceId; include a toast_id for correlation.
+- Tests: ensure provider wrapping; verify success and error toasts fire for all actions; confirm dedup/update behavior, links for commit/PR, and dismissal timing.
+</info added on 2025-09-15T14:30:52.192Z>
+
+## 6. Optimistic Updates and Result Surfacing [done]
+### Dependencies: 64.2, 64.3, 64.4, 64.5
+### Description: Provide optimistic UI entries for actions and reconcile with responses and WS events.
+### Details:
+On submit, append an optimistic activity item (pending) to a Control Panel activity list/timeline with temp id. On success, replace with final item including commandId, commit sha, or PR number/link. On failure, mark as failed and provide quick retry. Reconcile optimistic entries with WS work_stream/agent_update events using commandId correlation to avoid duplicates. Persist last successful inputs (e.g., last branch, last tool) in local storage for convenience.
+
+## 7. Sandbox E2E Flow (Optional) [done]
+### Dependencies: 64.2, 64.3, 64.4, 64.5, 64.6
+### Description: Create an optional sandbox run against a test repo to validate commit and PR end-to-end.
+### Details:
+Prepare a documented script/playbook to run against a disposable GitHub repo: prereqs (GH_TOKEN or GitHub App installation, repo slug), seed a branch with a trivial change, run Commit via MCP tool or backend, then create a PR. Capture outputs (commit sha, PR URL) and verify via GitHub API. Provide cleanup (close PR, delete branch). Add an environment-gated E2E test path so it never runs in CI without explicit opt-in.
+
+## 8. Unit and Integration Tests [done]
+### Dependencies: 64.1, 64.2, 64.3, 64.4, 64.5, 64.6
+### Description: Add tests for forms, API calls, state handling, toasts, and optimistic updates.
+### Details:
+Unit: validate form schemas and client methods (runTool, createCommit, createPullRequest) with MSW/nock. Integration: render Dialogue Control tab and simulate user flows; assert disabled states, confirmation modals, correct payloads, and toasts on success/failure. Mock WS events to verify reconciliation of optimistic entries. Ensure coverage for edge cases (401/403/404, network errors, cancellation). Snapshot activity list updates and verify PR link rendering.
+

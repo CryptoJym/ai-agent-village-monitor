@@ -1,0 +1,98 @@
+# Task ID: 52
+# Title: Agent Session Management and Command Queue
+# Status: pending
+# Dependencies: 44, 51
+# Priority: medium
+# Description: Implement start/stop/restart agent sessions and command processing via BullMQ for reliability.
+# Details:
+Routes:
+- POST /api/agents/:id/start -> create agent_sessions row, connectAgent
+- POST /api/agents/:id/stop -> end session, disconnect client
+- POST /api/agents/:id/command -> enqueue to agentCommandsQueue {type, params}
+Processor executes via MCPAgentController and appends work_stream_events.
+Retry + DLQ on failures, emit error events.
+
+
+# Test Strategy:
+Integration test: start session, send command (run_tool), observe DB events and WS messages. Stop session ends stream. Queue retry on simulated failure. Ensure idempotency for duplicate starts.
+
+# Subtasks:
+## 1. Session and Event Models & Migrations [pending]
+### Dependencies: None
+### Description: Design and migrate database schema for agent sessions and work stream events.
+### Details:
+- Create agent_sessions table: id (uuid), agent_id (fk), status enum (active|stopped), started_at, ended_at, last_heartbeat_at, restart_count (int), metadata (jsonb), unique_partial_index to allow only one active session per agent.
+- Create work_stream_events table: id (uuid), session_id (fk), agent_id (fk), type (text), level (info|warn|error|audit), payload (jsonb), job_id (text, nullable), created_at.
+- Add indexes: work_stream_events(session_id, created_at), work_stream_events(agent_id, created_at), agent_sessions(agent_id, status).
+- Define ORM models and repository helpers: createSession, endSession, appendEvent.
+- Data validation and referential integrity with ON DELETE SET NULL for events when sessions purge.
+
+## 2. Implement Start/Stop Session Endpoints [pending]
+### Dependencies: 52.1
+### Description: Add POST /api/agents/:id/start and /api/agents/:id/stop HTTP endpoints with session lifecycle.
+### Details:
+- start: validate agent exists; create agent_sessions row; connectAgent via connection manager; return {sessionId, status}.
+- stop: find active session; mark ended_at + status=stopped; disconnect client; return final session state.
+- Append work_stream_events: session.started and session.stopped.
+
+## 3. Idempotency Guards and Restart Semantics [pending]
+### Dependencies: 52.1, 52.2
+### Description: Ensure safe repeated calls and support restart behavior.
+### Details:
+- Use DB unique partial index (agent_id where status='active') and transactional logic for idempotent start.
+- If start called and active session exists: return existing session unless restart=true, then end current and create a new one atomically.
+- For stop: if no active session, return 200 no-op.
+- Protect with advisory lock or Redis mutex per agent_id to avoid races.
+- Return idempotency headers (Idempotency-Key if provided) and consistent responses.
+
+## 4. BullMQ Command Producer and /command Endpoint [pending]
+### Dependencies: 52.1, 52.2, 52.3
+### Description: Create command enqueue endpoint and configure BullMQ queue.
+### Details:
+- POST /api/agents/:id/command validates active session and schema {type, params}.
+- Initialize BullMQ Queue agentCommandsQueue with Redis config; define job data: {agentId, sessionId, type, params, correlationId, enqueuedAt, requestedBy}.
+- Set job options: attempts (configurable), backoff (exponential), removeOnComplete/Fail policies, priority support.
+- Append work_stream_events: command.enqueued; return {jobId, correlationId}.
+
+## 5. Worker: Execute Commands via MCPAgentController [pending]
+### Dependencies: 52.1, 52.4
+### Description: Implement BullMQ Worker to process queued commands and interact with MCPAgentController.
+### Details:
+- Create BullMQ Worker for agentCommandsQueue; validate session still active before execution.
+- Invoke MCPAgentController based on command type (e.g., run_tool) with provided params.
+- Stream progress/output to work_stream_events (command.start, command.progress, command.completed) and set job progress.
+- Handle cancellation if session stops mid-execution; clean resource handles.
+
+## 6. Retry Strategy and Dead-Letter Queue [pending]
+### Dependencies: 52.5
+### Description: Configure retries, backoff, and DLQ with error recording.
+### Details:
+- Set attempts/backoff defaults; classify retryable vs non-retryable errors.
+- On final failure, move job to agentCommandsDLQ (separate BullMQ queue) with failure reason.
+- Append work_stream_events: command.failed with error details and retry metadata; emit structured error codes.
+- Provide minimal admin utility to requeue DLQ jobs (script or function).
+
+## 7. WebSocket/SSE Event Emission [pending]
+### Dependencies: 52.1, 52.2, 52.5, 52.6
+### Description: Broadcast session and command lifecycle events to clients.
+### Details:
+- Emit WS/SSE messages on session.started/stopped and command.enqueued/start/progress/completed/failed.
+- Scope broadcasts to agent-specific channels with auth checks.
+- Ensure each emission also appends to work_stream_events for durability; handle backpressure and disconnects gracefully.
+
+## 8. Audit Logging for Sessions and Commands [pending]
+### Dependencies: 52.1, 52.2, 52.4, 52.5, 52.7
+### Description: Record auditable events for compliance and traceability.
+### Details:
+- Write audit entries as work_stream_events with level='audit' for: session start/stop/restart, command enqueue/complete/fail.
+- Include actor (userId/service), ip, agentId, sessionId, jobId/correlationId, timestamps.
+- Ensure logs are immutable and queryable via indexes.
+
+## 9. Integration Tests: Start → Command → Stop [pending]
+### Dependencies: 52.1, 52.2, 52.3, 52.4, 52.5, 52.6, 52.7, 52.8
+### Description: End-to-end tests covering lifecycle, reliability, and idempotency.
+### Details:
+- Spin up test Redis and BullMQ worker; mock MCPAgentController to simulate success, progress, and failures.
+- Test flow: start session, enqueue run_tool, observe DB work_stream_events and WS messages; stop session ends stream.
+- Verify retries and DLQ on injected failures; ensure idempotent start/stop; assert command rejected if no active session.
+

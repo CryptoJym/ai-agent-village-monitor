@@ -1,0 +1,115 @@
+name: Deploy Backend (Railway/Fly.io)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+
+jobs:
+  railway:
+    name: Railway Deploy
+    if: ${{ github.ref == 'refs/heads/main' && secrets.RAILWAY_TOKEN != '' && secrets.RAILWAY_PROJECT_ID != '' && secrets.RAILWAY_SERVICE_ID != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Railway CLI version
+        run: pnpm dlx @railway/cli@latest --version
+      - name: Railway Deploy (detached)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway deploy --project "$RAILWAY_PROJECT_ID" --service "$RAILWAY_SERVICE_ID" --detach
+      - name: Run Prisma migrations (idempotent)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway run --service "$RAILWAY_SERVICE_ID" -- pnpm -C packages/server exec prisma migrate deploy
+      - name: Health check
+        if: ${{ vars.BACKEND_HEALTH_URL != '' }}
+        env:
+          HEALTH_URL: ${{ vars.BACKEND_HEALTH_URL }}
+        run: |
+          for i in {1..20}; do curl -fsS "$HEALTH_URL/healthz" && curl -fsS "$HEALTH_URL/readyz" && exit 0; sleep 5; done; exit 1
+
+  flyio:
+    name: Fly.io Deploy
+    if: ${{ github.ref == 'refs/heads/main' && secrets.FLY_API_TOKEN != '' && secrets.FLY_APP_NAME != '' }}
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - name: Restore pnpm store cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@v1
+      - name: Fly Deploy
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ secrets.FLY_APP_NAME }}
+        run: |
+          flyctl deploy --remote-only -a "$FLY_APP_NAME"
+      - name: Run Prisma migrations (idempotent)
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP_NAME: ${{ secrets.FLY_APP_NAME }}
+        run: |
+          flyctl ssh console -C "pnpm -C packages/server exec prisma migrate deploy" -a "$FLY_APP_NAME" || echo "Migration step skipped"
+      - name: Health check
+        if: ${{ vars.BACKEND_HEALTH_URL != '' }}
+        env:
+          HEALTH_URL: ${{ vars.BACKEND_HEALTH_URL }}
+        run: |
+          for i in {1..20}; do curl -fsS "$HEALTH_URL/healthz" && curl -fsS "$HEALTH_URL/readyz" && exit 0; sleep 5; done; exit 1
+

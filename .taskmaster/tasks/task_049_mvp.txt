@@ -1,0 +1,80 @@
+# Task ID: 49
+# Title: GitHub Organization and Repositories Sync
+# Status: pending
+# Dependencies: 46
+# Priority: medium
+# Description: Fetch org repos via GitHub API/GraphQL, create/update houses, map languages and stats.
+# Details:
+Implement service GitHubService.ts using REST + GraphQL for efficiency.
+- GraphQL query: repos(name, id, primaryLanguage, stargazers, updatedAt)
+- REST fallback for languages endpoint
+- POST /api/villages/:id/houses/sync triggers sync or schedule via githubSyncQueue
+- Upsert houses by github_repo_id; set position_x/y initially via grid layout
+- Store stars, primary_language
+Rate limit handling: ETag/If-None-Match, backoff on 403.
+
+
+# Test Strategy:
+Mock GitHub API with nock. Sync creates houses for a seeded org. Re-running sync idempotent. Large org (100 repos) completes within acceptable time and houses count matches.
+
+# Subtasks:
+## 1. GitHubService scaffolding (REST + GraphQL) [pending]
+### Dependencies: None
+### Description: Create GitHubService.ts that wraps GitHub REST and GraphQL clients with shared config and typing.
+### Details:
+Implement GitHubService.ts with injected auth token, base URL, and timeout. Expose methods stubs: fetchOrgReposGraphQL(org), getRepoLanguagesREST(owner, repo). Add shared error normalization, request headers, and simple response typing. Prepare hooks for rate limit/ETag and retries to be filled in later.
+
+## 2. GraphQL repo query and pagination [pending]
+### Dependencies: 49.1
+### Description: Implement GraphQL query to fetch org repositories with pagination and required fields.
+### Details:
+Query organization repositories: id, name, nameWithOwner, primaryLanguage{name}, stargazers{totalCount}, updatedAt. Use cursor-based pagination (first:100, after:cursor) until hasNextPage=false. Return normalized list with minimal fields needed for sync. Allow filters (e.g., exclude archived/forks) via options if needed.
+
+## 3. REST languages fallback [pending]
+### Dependencies: 49.1, 49.2
+### Description: Implement REST fallback for languages endpoint when primary language is missing or needs resolution.
+### Details:
+For each repo lacking primaryLanguage, call GET /repos/{owner}/{repo}/languages to obtain byte counts. Choose top language by bytes as primary_language. Provide batch processing with limited concurrency. Return the resolved primary_language without storing side effects.
+
+## 4. Sync endpoint and BullMQ job pipeline [pending]
+### Dependencies: 49.1, 49.2, 49.3
+### Description: Add POST /api/villages/:id/houses/sync to trigger or enqueue a sync job in githubSyncQueue and implement a basic job processor.
+### Details:
+Route validates user access to the village, derives org login from village config, and either runs immediate sync or enqueues a job on githubSyncQueue with payload {villageId, org}. Implement a worker processor that invokes GitHubService to fetch repos, enrich with languages fallback, and passes results to the upsert layer. Configure queue with sensible concurrency and removeOnComplete/Failed options.
+
+## 5. Upsert houses with deterministic grid layout [pending]
+### Dependencies: 49.4, 49.2, 49.3
+### Description: Map repos to houses and upsert by github_repo_id; set initial position_x/y via deterministic grid; store stars and primary_language.
+### Details:
+Implement upsert (ON CONFLICT github_repo_id DO UPDATE) to create/update house records linked to villageId. Fields: github_repo_id, repo_name, stars, primary_language, updated_at. On first insert set position_x/y using a stable grid algorithm (e.g., sort by stars desc then name asc, assign row-major positions). Preserve existing positions on updates; only assign positions for new houses.
+
+## 6. Rate limit handling with ETag/If-None-Match [pending]
+### Dependencies: 49.1, 49.3
+### Description: Add ETag caching and conditional requests to minimize REST calls and handle 304 responses.
+### Details:
+Maintain ETag store keyed by REST resource (e.g., languages:{owner}/{repo}). Send If-None-Match on subsequent calls; on 304 use cached language result. Track X-RateLimit headers for observability. Integrate ETag flow into getRepoLanguagesREST while keeping a simple in-memory or Redis-backed cache.
+
+## 7. Retries and exponential backoff on limits [pending]
+### Dependencies: 49.1, 49.4, 49.6
+### Description: Implement retry/backoff for 403 secondary rate limit, 429, and transient 5xx errors.
+### Details:
+Use exponential backoff with jitter and respect Retry-After/X-RateLimit-Reset when present. Apply to both REST and GraphQL calls in GitHubService and to the queue processor (retry strategy, delayed requeue on rate limit). Cap retries, log final failures, and surface retry metadata to metrics.
+
+## 8. Idempotency and job deduplication [pending]
+### Dependencies: 49.4, 49.5
+### Description: Ensure sync is idempotent and jobs are deduplicated to avoid duplicate work.
+### Details:
+Make upsert logic fully idempotent by using unique github_repo_id and selective field updates. Use deterministic layout so re-runs do not reorder existing houses. Deduplicate queue jobs by jobId pattern githubSync:village:{villageId} (optionally include org) and skip enqueue if an active job exists. Support safe re-run when no changes detected.
+
+## 9. Metrics and structured logging [pending]
+### Dependencies: 49.4, 49.6, 49.7
+### Description: Add logs and metrics around sync runs, API calls, pagination, ETag hits, and backoffs.
+### Details:
+Emit structured logs (villageId, org, repoCount, duration_ms, pages, api_calls_graphql/rest, etag_hits, retries, backoff_ms). Expose counters/timers (e.g., sync_duration, github_calls_total, etag_304_total, rate_limit_backoffs_total). Include per-run summary and per-error context.
+
+## 10. Nock-based tests: small/large orgs and idempotency [pending]
+### Dependencies: 49.1, 49.2, 49.3, 49.4, 49.5, 49.6, 49.7, 49.8, 49.9
+### Description: Write nock-backed tests verifying correctness, idempotency, pagination, ETag, and rate limit handling.
+### Details:
+Tests: (1) Small org seed creates houses, re-run is no-op and preserves positions. (2) Large org (>=100 repos) exercises GraphQL pagination and completes within time budget; house count matches mocked total. (3) Languages fallback when primaryLanguage missing. (4) ETag returns 304 and cached values used. (5) 403 secondary limits trigger backoff/retry. Assert metrics/logs where applicable.
+

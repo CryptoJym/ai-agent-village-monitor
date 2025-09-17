@@ -1,0 +1,80 @@
+# Task ID: 51
+# Title: MCP Agent Controller Service
+# Status: pending
+# Dependencies: 45, 50
+# Priority: medium
+# Description: Integrate official TypeScript MCP client SDK for connecting agents, streaming tool calls, and broadcasting events.
+# Details:
+Implement class MCPAgentController similar to PRD snippet with Map<agentId, client>.
+- connectAgent(agentId, serverUrl)
+- runTool(agentId, toolName, params)
+- runTask(agentId, taskDescription)
+- Reconnect with exponential backoff; emit error states
+- Broadcast to WS rooms agent:{id} work_stream events and agent_update status
+Persist work_stream_events in DB via Prisma on events.
+
+
+# Test Strategy:
+Mock MCP client or connect to a sample MCP server. Verify streaming callbacks persist to DB and broadcast WS. Induce disconnects and confirm reconnection logic and error surfaces in UI via WS.
+
+# Subtasks:
+## 1. Design MCPAgentController class and lifecycle [pending]
+### Dependencies: None
+### Description: Define the controller class, interfaces, and lifecycle primitives for managing per-agent MCP client connections and streams.
+### Details:
+Create MCPAgentController with Map<agentId, ClientContext> storing MCP client instance, status, timers, and listeners. Expose public API: connectAgent(agentId, serverUrl), runTool(agentId, toolName, params), runTask(agentId, taskDescription), disconnectAgent(agentId), getAgentStatus(agentId), dispose(). Inject dependencies via constructor: mcpClientFactory, prisma (DB), wsBroadcaster, logger, metrics, clock/timers, backoff strategy. Add internal EventEmitter for work_stream and agent_update. Establish per-agent concurrency control (mutex) to serialize connect/disconnect and prevent races.
+
+## 2. Implement connectAgent with reconnect/backoff lifecycle [pending]
+### Dependencies: 51.1
+### Description: Implement connection establishment using the official TypeScript MCP client SDK with resilient reconnection using exponential backoff and jitter.
+### Details:
+connectAgent(agentId, serverUrl): create client via factory, attach listeners, set status to connecting→connected on success. Implement auto-reconnect on disconnect/error with exponential backoff (e.g., base 500ms, factor 2, max 30s, full jitter). Support cancellation via disconnectAgent, resetting backoff on stable period (e.g., 60s). Handle auth/handshake if required by SDK. Enforce per-agent single active connection. Emit agent_update on lifecycle changes and surface lastError on failures.
+
+## 3. Implement runTool and runTask APIs with streaming support [pending]
+### Dependencies: 51.2, 51.4
+### Description: Add runTool and runTask methods that invoke MCP tools/tasks and support streaming outputs and progress.
+### Details:
+runTool(agentId, toolName, params, options?): validate connection and inputs, create correlationId, optional timeout/abort, call SDK to start tool invocation with streaming callbacks. runTask(agentId, taskDescription, options?): map to appropriate MCP invocation (e.g., planning/agent task). Forward all stream callbacks to the event pipeline (work_stream events) with sessionId/correlationId, sequence numbers, timestamps. Handle concurrent invocations per agent with bounded concurrency and cancellation support.
+
+## 4. Wire event streaming hooks and normalization [pending]
+### Dependencies: 51.2
+### Description: Subscribe to MCP client stream events and normalize them into a WorkStreamEvent domain model.
+### Details:
+Attach listeners for token/chunk, tool_call_start, tool_call_delta, tool_call_end, status/progress, error. Normalize to WorkStreamEvent {agentId, sessionId, correlationId, ordinal, type, payload, createdAt}. Guarantee monotonic ordinals per session. Handle partial/delta aggregation when needed while preserving original deltas. Emit normalized events via internal bus for downstream persistence and WS broadcast. Apply lightweight backpressure and buffering with max queue size and drop/slowlog policy.
+
+## 5. Broadcast events and status to WebSocket rooms [pending]
+### Dependencies: 51.4, 51.7
+### Description: Publish work_stream events and agent_update status messages to WS rooms agent:{id}.
+### Details:
+Define broadcaster interface: broadcast(room, eventName, payload). On each WorkStreamEvent, broadcast to room agent:{agentId} with event name work_stream. On state changes, broadcast agent_update with {agentId, status, lastError?, retry?, connectedAt}. Ensure JSON-safe payloads, include correlationId/sessionId. Add rate limiting/throttling for high-frequency token streams (batching optional with small delay). Handle broadcaster errors gracefully and record metrics.
+
+## 6. Persist work_stream_events in DB via Prisma [pending]
+### Dependencies: 51.4
+### Description: Create Prisma model and repository to store streaming events and write them on receipt.
+### Details:
+Add Prisma model WorkStreamEvent(id UUID/ULID, agentId, sessionId, correlationId, ordinal int, type string, payload Json, createdAt). Consider composite uniqueness on (agentId, sessionId, ordinal) for idempotency. Create repository with batchInsert(events) and save(event). Persist events as they arrive; optionally batch in micro-batches (e.g., 50ms or N=100) with flush on session end/shutdown. Add indexes on agentId, sessionId, createdAt. Ensure serialization of writes per session to maintain order.
+
+## 7. Define error handling and state transitions [pending]
+### Dependencies: 51.2
+### Description: Implement a finite state machine for per-agent states and propagate errors and transitions to observers.
+### Details:
+States: idle, connecting, connected, reconnecting, degraded, error, disconnected. Transitions on connect success/failure, stream errors, SDK disconnects, max retries exceeded. Track lastError (message, code, timestamp) and retry metadata (attempt, nextDelay). Emit agent_update on each transition. Promote to degraded on transient stream issues while connected. Reset to idle on explicit disconnect. Clear lastError after stable period. Integrate with backoff controller.
+
+## 8. Implement resource cleanup and shutdown [pending]
+### Dependencies: 51.2, 51.4, 51.5, 51.6
+### Description: Ensure proper teardown of connections, timers, listeners, and pending buffers on disconnect or service shutdown.
+### Details:
+disconnectAgent(agentId) and dispose(): cancel reconnect timers, abort in-flight tool/task invocations, detach SDK listeners, close client connection, flush and close event buffers, ensure pending DB writes complete with timeout and fallback, stop WS broadcasting for agent, remove from maps, and emit final agent_update(disconnected). Prevent memory leaks by clearing all references and intervals.
+
+## 9. Add metrics and structured logging [pending]
+### Dependencies: 51.1, 51.2, 51.3, 51.4, 51.5, 51.6, 51.7
+### Description: Instrument the controller with metrics and logs for observability and debugging.
+### Details:
+Metrics: counters (connections_opened, reconnects, connection_failures, streams_started, streams_completed, ws_broadcasts, db_events_written), histograms (connect_latency, stream_duration, tool_latency, backoff_delay). Labels: agentId, toolName, outcome. Logs: structured JSON with correlationId, agentId, event type; redact sensitive fields; log levels with sampling for high-volume token events. Optional Prometheus exporter hooks.
+
+## 10. Create mockable interfaces and tests [pending]
+### Dependencies: 51.1, 51.2, 51.3, 51.4, 51.5, 51.6, 51.7, 51.8, 51.9
+### Description: Provide mocks for MCP client and broadcaster, and implement unit/integration tests covering core flows.
+### Details:
+Define interfaces: MCPClientFactory, MCPClient, WSbroadcaster, Repository. Provide in-memory mocks and fakes. Tests (Jest/Vitest): connect and reconnect with backoff (use fake timers), runTool/runTask streaming path emits normalized events, DB persistence order/idempotency, WS broadcasts payloads and rooms, error/state transitions surfaced as agent_update, cleanup cancels timers/listeners, metrics/logging hooks invoked. Optional integration test against sample MCP server.
+

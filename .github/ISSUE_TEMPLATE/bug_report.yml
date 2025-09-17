@@ -1,0 +1,30 @@
+name: Bug report
+description: File a bug report
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Include minimal repro steps and logs (redacted)
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - frontend
+        - server
+        - ci-cd
+        - docs
+

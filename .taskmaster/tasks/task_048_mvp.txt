@@ -1,0 +1,60 @@
+# Task ID: 48
+# Title: Villages REST Endpoints
+# Status: done
+# Dependencies: 47
+# Priority: medium
+# Description: Implement CRUD for villages and retrieval per API design.
+# Details:
+Routes:
+- GET /api/villages (list by user access)
+- POST /api/villages (create from GitHub org: name, github_org_id, owner_id)
+- GET/PUT/DELETE /api/villages/:id
+Validation via zod. Persist village_config and is_public.
+Ensure ownership checks for updates/deletes. Update last_synced when sync occurs.
+
+# Test Strategy:
+Supertest: CRUD flows with auth. Attempt to access another user's village: 403. Validate input sanitization and 400s. DB assertions for created rows.
+
+# Subtasks:
+## 1. Define Zod schemas for Villages API [done]
+### Dependencies: None
+### Description: Create Zod schemas for request bodies, params, queries, and response payloads for all Villages endpoints.
+### Details:
+Schemas: (1) Params: { id: string UUID } for /api/villages/:id. (2) List query: { page?: number >=1, limit?: number 1–100, orderBy?: 'created_at'|'updated_at'|'name', order?: 'asc'|'desc' }. (3) Create body: { name: string (1–100), github_org_id: string UUID, owner_id: string UUID, village_config?: record<string, unknown> default {}, is_public?: boolean default false }. Enforce stripUnknown. Owner ID must be validated at handler against auth user. (4) Update body: allow partial { name?, village_config?, is_public? } only; reject github_org_id/owner_id updates. (5) Village response: { id, name, github_org_id, owner_id, village_config (JSON), is_public (boolean), last_synced: string ISO or null, created_at: string ISO, updated_at: string ISO }. Provide error shape schema for 400/403/404.
+
+## 2. Implement GET /api/villages (list by access) [done]
+### Dependencies: 48.1
+### Description: Return paginated villages the current user can access per access rules.
+### Details:
+Auth required. Access rules: admin -> all villages; non-admin -> villages where owner_id = user.id OR user has access via org membership (user is member of github_org_id) OR explicit ACL if present. Apply pagination and ordering from validated query schema. Respond 200 with array of VillageResponse (no sensitive fields). Return 200 [] when none. Ensure efficient DB queries with indexes on owner_id and github_org_id.
+
+## 3. Implement POST /api/villages (create from GitHub org) [done]
+### Dependencies: 48.1
+### Description: Create a village tied to a GitHub org with ownership and validation.
+### Details:
+Auth required. Validate body with Create schema. Enforce owner_id === auth.user.id unless role=admin. Verify github_org_id exists and user has access (owner/admin/member per orgs table or GitHub sync cache). Persist: name, github_org_id, owner_id, village_config (JSONB default {}), is_public (default false). Set created_at/updated_at; last_synced remains null until sync completes. Return 201 with VillageResponse. Errors: 400 on validation, 403 on unauthorized org/owner mismatch, 409 if duplicate village for same org/name per unique constraints.
+
+## 4. Implement GET/PUT/DELETE /api/villages/:id with access and ownership checks [done]
+### Dependencies: 48.1
+### Description: Retrieve, update, and delete villages with proper authorization and validation.
+### Details:
+GET: If village.is_public = true, allow unauthenticated access; otherwise require auth with same access rules as list. Return 200 with VillageResponse or 404 if not found (do not leak existence when unauthorized). PUT: Require auth; only owner or admin may update. Validate body with Update schema. Allowed fields: name, village_config, is_public. Persist changes and return 200 with updated VillageResponse. DELETE: Require auth; only owner or admin may delete. Perform hard delete (or soft per project standard) and return 204. Consistent errors: 400 on validation, 403 on forbidden, 404 on not found. Implement reusable middleware/helpers: loadVillageOr404(id), assertCanRead(village, user), assertIsOwnerOrAdmin(village, user).
+
+## 5. Ensure persistence and sanitization of village_config and is_public [done]
+### Dependencies: 48.3, 48.4
+### Description: Guarantee correct storage, defaults, and serialization for config JSON and public flag across create/update flows.
+### Details:
+DB/model: village_config JSONB NOT NULL DEFAULT '{}', is_public BOOLEAN NOT NULL DEFAULT false. In handlers, coerce village_config to plain JSON (no functions, symbols); reject payloads exceeding size limit (e.g., 64KB) with 413/400. On update, replace village_config by default (no deep-merge) unless a patch strategy is explicitly defined; document behavior. Always return serialized config JSON and is_public in responses. Add migration if columns or defaults are missing. Include data access layer safeguards and type guards.
+
+## 6. Add last_synced update hook/service [done]
+### Dependencies: 48.3
+### Description: Provide a mechanism to set last_synced when a village sync completes.
+### Details:
+Create service/repo method setVillageLastSynced(villageId: string, at: Date = new Date()). Wire to an event emitter or callback invoked by the GitHub sync job (e.g., on 'village.synced' event). Ensure id existence check and optimistic concurrency via updated_at. Do not allow direct client mutation of last_synced via PUT; field is read-only in API. Expose internal function for use by workers and optionally an admin-only endpoint to simulate sync in non-prod. Unit test service separately; integration verification in Supertest suite.
+
+## 7. Supertest integration tests for Villages CRUD and access [done]
+### Dependencies: 48.2, 48.3, 48.4, 48.5, 48.6
+### Description: End-to-end tests covering validation, access control, persistence, and public read.
+### Details:
+Scenarios: (1) GET /api/villages returns only user-accessible villages; admin sees all. (2) POST create: happy path 201; 400 on invalid; 403 when owner_id mismatch or org not accessible. (3) GET /api/villages/:id public village without JWT returns 200; non-public without JWT is 401/403; unauthorized user gets 403 or 404 as appropriate. (4) PUT updates name, village_config, is_public; verify DB persistence and response shape; non-owner gets 403. (5) DELETE by owner/admin 204; non-owner 403; 404 after deletion. (6) last_synced: simulate sync by calling hook/service, then GET reflects updated ISO timestamp. (7) Validation and sanitization: reject extra fields, oversized village_config, forbidden updates to owner_id/github_org_id. Include DB assertions and cleanup between tests.
+

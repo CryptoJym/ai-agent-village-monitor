@@ -1,0 +1,76 @@
+# Task ID: 73
+# Title: Security Hardening: Validation, Rate Limit, Secrets
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Implement input validation, API rate limiting, secure secret storage, and HTTPS enforcement.
+# Details:
+Validation with zod schemas per endpoint. Rate limiting middleware (e.g., express-rate-limit + Redis store). Helmet CSP tuned for Phaser and WS. Secrets via environment with restricted access.
+- Audit logging for agent commands (who, what, when)
+- CSRF not needed for pure API + JWT; ensure CORS strict origins
+
+
+# Test Strategy:
+Pen-test basic vulnerabilities: SQL injection prevented, invalid JSON rejected with 400, rate limit kicks in on rapid calls. Verify audit log entries for commands. CSP doesn't break assets.
+
+# Subtasks:
+## 1. Define Zod schemas per endpoint [pending]
+### Dependencies: None
+### Description: Implement request validation using Zod for all API endpoints.
+### Details:
+Create a reusable validate middleware to parse and validate req.params, req.query, and req.body with Zod per endpoint. Ensure invalid JSON/body yields HTTP 400 with a clear message. Add typesafe inference to handlers. Provide examples for Villages routes and any agent-related endpoints. Centralize shared schemas (IDs, pagination, enums).
+
+## 2. Input sanitization and unified error shapes [pending]
+### Dependencies: 73.1
+### Description: Sanitize inputs and standardize API error responses.
+### Details:
+Implement input sanitation (trim strings, length caps, safe lists where appropriate) and optional HTML/XSS filtering for any text fields. Add a global error handler that maps Zod errors and operational errors to a standard envelope: { error: { code, message, details?, requestId } }. Ensure JSON parse failures return 400 with code 'invalid_json'. Hide stack traces in production but log them with requestId. Attach requestId to responses.
+
+## 3. CORS strict origin configuration [pending]
+### Dependencies: None
+### Description: Configure strict CORS allow-list suited for JWT-based APIs (no CSRF).
+### Details:
+Use cors middleware with an explicit allow-list of origins sourced from environment variables validated by Zod. Block null origins, disallow wildcard. Set allowed methods and headers minimally required. Disable credentials unless strictly necessary. Cache preflights safely (e.g., maxAge). Document dev overrides for localhost. Verify WebSocket origin checks align with HTTP CORS policy.
+
+## 4. Helmet CSP for Phaser/WS + HTTPS enforcement [pending]
+### Dependencies: 73.3
+### Description: Harden security headers and enforce HTTPS across the service.
+### Details:
+Enable helmet with HSTS (e.g., maxAge 180d, includeSubDomains, preload if eligible). Enforce HTTPS: trust proxy and redirect HTTP->HTTPS except health checks. Configure CSP tailored for Phaser and WebSockets: default-src 'self'; script-src 'self' (avoid unsafe-eval; only allow if absolutely required by build); style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss:; worker-src 'self' blob:; frame-ancestors 'none'. Use report-only in staging to tune without breakage. Confirm CSP does not block Phaser assets or WS connections.
+
+## 5. API rate limiting with Redis store [pending]
+### Dependencies: 73.6, 73.2
+### Description: Add express-rate-limit backed by Redis with per-IP and per-user buckets.
+### Details:
+Implement rate limits with express-rate-limit and a Redis store (e.g., rate-limit-redis or rate-limiter-flexible). Separate policies: strict for auth endpoints, moderate for general APIs, and bypass for health/admin as appropriate. Identify buckets by JWT subject when authenticated, else by IP. Return standardized 429 responses with Retry-After. Read Redis URL, TLS, and credentials from env. Include headers to help clients back off.
+
+## 6. Secret management policy and environment config [pending]
+### Dependencies: None
+### Description: Define and implement secure secret storage and validation.
+### Details:
+Use environment-based secrets with least-privilege access (e.g., Kubernetes Secrets or cloud secret manager). Provide .env.sample for dev only; never commit real secrets. Validate required env vars with Zod at startup (DB_URL, REDIS_URL, JWT_SECRET, CORS_ORIGINS, etc.). Document rotation procedures, audit requirements, and permission boundaries. Ensure secrets are not logged; mask in process dumps.
+
+## 7. Audit logging for agent commands (who, what, when) [pending]
+### Dependencies: 73.9, 73.6
+### Description: Implement structured, append-only audit logs for agent command operations.
+### Details:
+Wrap agent command endpoints with middleware capturing: userId, role, action, target resource IDs, minimal payload hash (avoid raw PII), timestamp, IP, user agent, requestId, and outcome (success/failure). Persist to an append-only table with immutability controls and restricted access. Optionally mirror to a write-only external sink. Provide queries and dashboards for investigations. Include tests verifying presence and integrity of entries.
+
+## 8. Security pen-test checklist and automated tests [pending]
+### Dependencies: 73.1, 73.2, 73.3, 73.4, 73.5, 73.6, 73.7, 73.9
+### Description: Create and execute a pen-test checklist with automated verification.
+### Details:
+Author checklist covering: input validation failures (400), invalid JSON (400), SQL injection attempts blocked, rate limits trigger (429), CORS denies unknown origins, HTTPS redirect and HSTS present, CSP blocks disallowed inline/eval while not breaking Phaser/WS, headers sanity (X-Content-Type-Options, X-Frame-Options via CSP), log redaction verified. Implement Supertest cases and manual WS checks. Record findings and remediation tasks.
+
+## 9. Logging PII scrubbing and redaction [pending]
+### Dependencies: None
+### Description: Configure logger to redact PII and secrets across all logs.
+### Details:
+Use a structured logger (e.g., Pino) with redact rules for headers.authorization, cookies, set-cookie, query.*token*, body.*password*, emails, phone numbers, and any secret-like fields. Apply to request/response logging and audit logs. Ensure nested redaction and safe serialization for big objects. Add tests asserting that tokens and sensitive fields never appear in logs.
+
+## 10. Security hardening docs and runbooks [pending]
+### Dependencies: 73.1, 73.2, 73.3, 73.4, 73.5, 73.6, 73.7, 73.8, 73.9
+### Description: Author developer docs and ops runbooks for ongoing security maintenance.
+### Details:
+Document: how to add endpoints with Zod and error shapes, updating CORS origins and WS constraints, tuning CSP for Phaser assets and WS, enforcing/validating HTTPS/HSTS behind proxies, rate-limit tuning and exemptions, secret rotation procedures, audit log access/retention, pen-test steps and acceptance criteria, incident response for suspected leaks or abuse. Include checklists and examples.
+

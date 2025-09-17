@@ -1,0 +1,71 @@
+# Task ID: 68
+# Title: Onboarding Flow and Demo Mode
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Create guided onboarding to connect GitHub org, auto-generate village, and provide demo mode.
+# Details:
+React flow with steps: Login -> Select Org -> Install App/Grant scopes -> Generate Village -> Enter.
+- Progress indicators, helpful copy
+- Demo mode with mock data for users without GitHub setup
+- On success, call POST /api/villages then houses sync; show spinner until village renders
+
+
+# Test Strategy:
+UX test: complete onboarding <2 minutes. Track step timings. Ensure error recovery for denied scopes. Demo mode loads immediately with mock village.
+
+# Subtasks:
+## 1. Build Onboarding Stepper UI and Flow Shell [pending]
+### Dependencies: None
+### Description: Create the multi-step React stepper with progress indicators, helpful copy, and gated navigation for the onboarding flow.
+### Details:
+Implement OnboardingLayout, Stepper, and Step components with states: idle, active, completed, error, skipped. Provide OnboardingContext to manage currentStep, stepComplete, setError, and shared data (org selection, villageId, demo flag). Persist step via URL (?step=) and/or localStorage. Add Next/Back/Retry CTAs with disabled logic until a step reports completion. Ensure accessibility (ARIA for stepper, focus management) and responsive design.
+
+## 2. Integrate GitHub Login [pending]
+### Dependencies: 68.1
+### Description: Implement the Login step with GitHub OAuth, session persistence, and error handling for cancellations/denials.
+### Details:
+Add 'Sign in with GitHub' CTA using existing auth provider/OAuth. On success, store session/user profile in context and mark step complete. Show 'Continue as {username}' post-login. Handle states: loading, success, canceled, error. Surface helpful copy on why login is needed. Telemetry hooks for success/failure (will be wired in analytics subtask).
+
+## 3. Organization Selection UI and Data [pending]
+### Dependencies: 68.2
+### Description: Fetch and present GitHub orgs for the authenticated user and capture the selected org (or personal account).
+### Details:
+Call backend to list orgs (e.g., GET /api/github/orgs). Display searchable list with org avatar/name and option for personal account if applicable. Validate membership/admin rights where needed. Store selected org {id, name, type} in context. Copy for users without orgs and link to change account. Mark step complete only when selection is made.
+
+## 4. App Install and Scope Grant UX [pending]
+### Dependencies: 68.3
+### Description: Guide users to install the GitHub App or grant required scopes for the selected org and verify completion.
+### Details:
+Show required permissions and why. Open GitHub App installation URL with selected org prefilled. Handle return callback route and verify installation via backend (e.g., GET /api/github/installations?orgId=). Poll for installation status with timeout and retry. Provide 'I installed it' manual verify, 'Change org', and clear error states for denied scopes. Mark step complete once installation verified.
+
+## 5. Create Village API Integration [pending]
+### Dependencies: 68.4
+### Description: Call POST /api/villages after successful install to auto-generate a village for the selected org and store the ID.
+### Details:
+Invoke POST /api/villages with payload { orgId, mode: 'github' }. Handle 201 with villageId; handle 409 (already exists) by fetching/using existing village. Persist villageId in context. On error, show retry/back and friendly copy. Transition to sync step immediately after success.
+
+## 6. Repo/Houses Sync Progress and Enter [pending]
+### Dependencies: 68.5
+### Description: Show progress spinner while repositories/houses sync and navigate to the village once ready.
+### Details:
+Trigger sync if needed (POST /api/villages/:id/sync) or rely on auto-start from creation. Poll status (e.g., GET /api/villages/:id/sync-status) until complete or timeout. Display spinner/progress, remaining messages, and helpful copy. On success, route to /village/:id and mark onboarding finished. On long-running sync, allow viewing partial render once minimum assets ready; otherwise offer retry.
+
+## 7. Demo Mode with Mock Data [pending]
+### Dependencies: 68.1
+### Description: Provide a demo path that loads a mock village for users without GitHub setup, bypassing auth and install steps.
+### Details:
+Add 'Try a demo' CTA on initial step. Option A: request backend to create demo village (POST /api/villages with mode:'demo', seed). Option B: local mock dataset fallback. Set demo flag in context, skip/login/org/install steps, and go directly to 'Enter' with preloaded village data. Ensure clear labeling as demo and easy exit to full onboarding. Clean up demo state on logout.
+
+## 8. Error and Recovery States Across Steps [pending]
+### Dependencies: 68.2, 68.3, 68.4, 68.5, 68.6, 68.7
+### Description: Implement consistent error UI, retry/back paths, and specific recovery flows for denied scopes, timeouts, and API failures.
+### Details:
+Standardize ErrorBanner and inline helpers across steps. Cases: login canceled/denied; no org access; app install denied scopes; village create 4xx/5xx; sync timeout/partial; demo load failure. Provide actionable CTAs: Retry, Change org, Open install page, Contact support. Persist errors for analytics. Ensure stepper can move backward safely and re-validate forward progression.
+
+## 9. Analytics and Step Timing Instrumentation [pending]
+### Dependencies: 68.1, 68.2, 68.3, 68.4, 68.5, 68.6, 68.7
+### Description: Track per-step timings, success/failure funnel, and demo usage; send to analytics endpoint for onboarding KPI.
+### Details:
+Emit events: onboarding_step_view, onboarding_step_complete, onboarding_error, onboarding_demo_start, onboarding_success with timestamps and correlation onboardingId. Capture duration per step and total time-to-village (target <2 minutes). Send batched payloads to POST /api/analytics/onboarding (or provider SDK). Ensure PII minimization and user consent. Add basic dashboard hooks or logs for verification.
+

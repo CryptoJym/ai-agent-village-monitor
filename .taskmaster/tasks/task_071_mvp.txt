@@ -1,0 +1,70 @@
+# Task ID: 71
+# Title: Performance Optimization: Rendering and State
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Ensure 60 FPS with 100+ sprites using culling and LOD techniques.
+# Details:
+Implement spatial hashing for culling off-screen sprites. Reduce draw calls via batching. Throttle WS UI updates into animation frames. Defer heavy computations to Web Workers if needed for layout.
+- LOD: reduce animation complexity when zoomed out
+- FPS overlay via PerformanceManager
+
+
+# Test Strategy:
+Profile under load (100+ agents/sprites). Maintain 60 FPS baseline on mid-tier laptop. Verify culling correctness (objects reappear when in view). Track garbage collection spikes.
+
+# Subtasks:
+## 1. Spatial Hashing for View Culling [pending]
+### Dependencies: None
+### Description: Implement grid-based spatial hashing to cull off-screen sprites and return the visible set per frame.
+### Details:
+Design a spatial hash with configurable cell size (tuned to typical sprite AABB). Provide APIs: insert(id, AABB), update(id, AABB), remove(id), query(cameraAABB+margin). Integrate with camera/viewport to compute visible sprite IDs each frame. Handle dynamic additions/removals and sprite movement across cells. Add optional debug visualization for buckets and visible bounds. Verify correctness: sprites reappear when entering view and are not prematurely culled. Target: reduce per-frame sprite consideration from 100+ to only visible.
+
+## 2. Sprite Draw Call Batching [pending]
+### Dependencies: 71.1
+### Description: Batch sprite rendering to minimize draw calls and state changes.
+### Details:
+Sort visible sprites by texture/material. Use texture atlases; group into batches by atlas/shader. For WebGL: use instanced rendering with per-instance transforms; for Canvas2D: pre-bake layers/offscreen canvases and minimize state flips. Ensure compatibility with culling output. Add counters for draw calls and batch sizes. Acceptance: draw calls reduced significantly (e.g., <10 for 100+ sprites) while maintaining correctness.
+
+## 3. Throttle WebSocket/UI Updates to requestAnimationFrame [pending]
+### Dependencies: None
+### Description: Coalesce WebSocket-driven state updates and UI rendering into the animation frame loop.
+### Details:
+Implement an event buffer that accumulates WS messages/state mutations and applies them once per rAF tick. Use microtask/macrotask boundaries to avoid layout thrash; schedule DOM/UI changes in rAF. Provide backpressure (drop/coalesce identical updates) and maximum per-frame processing budget. Validate that bursts (e.g., 200 events/s) do not cause frame drops. Maintain state consistency and ordering guarantees.
+
+## 4. Zoom-based LOD Tuning [pending]
+### Dependencies: 71.1
+### Description: Reduce animation and render complexity based on camera zoom levels.
+### Details:
+Define LOD tiers by zoom thresholds (e.g., near/medium/far). For far tiers: lower animation frame rate, switch to simplified sprites or static frames, disable expensive effects (shadows/particles), and reduce update frequency for off-screen or tiny-on-screen sprites. Compute LOD per sprite using camera zoom and (optionally) distance from viewport via spatial hash. Ensure transitions are smooth and non-jarring. Acceptance: at far zoom with 100+ sprites, maintain 60 FPS with acceptable visual fidelity.
+
+## 5. Reduce GC Pressure in Hot Paths [pending]
+### Dependencies: 71.2, 71.3
+### Description: Eliminate per-frame allocations and memory churn in render and state pipelines.
+### Details:
+Audit hot loops for allocations; reuse arrays/typed arrays and preallocate buffers. Implement object pools for sprites/components/events. Avoid creating closures or boxing in critical paths; prefer struct-like data. Stabilize data shapes for JIT friendliness. Track GC events and pause times via PerformanceManager. Acceptance: fewer GC spikes under load and <5 ms GC pauses; memory growth remains bounded over a 5-minute run.
+
+## 6. Optional Web Worker Offload for Layout/Heavy Computation [pending]
+### Dependencies: 71.5
+### Description: Offload expensive layout or computation to a Web Worker when main-thread frame budget is exceeded.
+### Details:
+Identify costly tasks (e.g., layout computation, pathfinding, broad-phase collision) via profiling. Implement a Worker module with a message schema and transferable typed arrays to avoid copies. Add batching and backpressure; ensure deterministic application of results on the main thread during rAF. Provide fallback to main thread if Workers unavailable. Acceptance: with offload enabled, main-thread frame time stays ≤16.6 ms at 100+ sprites.
+
+## 7. FPS Overlay via PerformanceManager [pending]
+### Dependencies: None
+### Description: Add an in-app performance overlay showing FPS, frame time, draw calls, visible sprite count, and GC events.
+### Details:
+Integrate with PerformanceManager to sample performance.now() and compute smoothed FPS. Expose toggles and minimal-overhead rendering (<0.5 ms/frame). Display key counters (draw calls, batches, visible sprites, GC events). Enable runtime logging for captures. Acceptance: overlay accuracy within ±1 FPS compared to browser devtools.
+
+## 8. Profiling Scenarios and Load Test Harness [pending]
+### Dependencies: 71.7
+### Description: Create reproducible scenarios to profile and validate performance at 100–300 sprites.
+### Details:
+Build a harness to spawn sprites with varied sizes, textures, and motion patterns; script camera pans/zooms; generate WS event bursts. Record traces (CPU/GPU/GC) and capture overlay metrics. Verify culling correctness (objects reappear) and LOD transitions. Baseline: maintain 60 FPS on a mid‑tier laptop at 100+ sprites; document bottlenecks.
+
+## 9. Performance Regression Guardrails [pending]
+### Dependencies: 71.8
+### Description: Add automated performance benchmarks and CI checks to prevent regressions.
+### Details:
+Create microbenchmarks for spatial queries and batch rendering, plus end-to-end scene benchmarks. Define budgets (e.g., frame time, draw calls, GC events). Integrate with CI to fail PRs that exceed thresholds and publish trend reports. Add runtime asserts for rAF budget overruns in dev builds. Document perf SLAs and tuning knobs.
+

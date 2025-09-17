@@ -1,0 +1,77 @@
+# Task ID: 65
+# Title: GitHub Integration Middleware and Client
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Create server-side GitHub API client with rate limit handling, ETags, and retries.
+# Details:
+Wrapper around @octokit/rest and @octokit/graphql with plugins for throttling and retry.
+- Store and rotate tokens (OAuth app or GitHub App installation tokens if applicable)
+- Add helper methods: listOrgRepos, getRepoLanguages, triggerDispatch, createPR, listIssues
+- Automatic retry on 403 secondary rate limits with exponential backoff
+
+
+# Test Strategy:
+Unit tests with nock to assert ETag usage and retry on rate limit. Validate minimal scopes. Measure API call counts vs GraphQL efficiency.
+
+# Subtasks:
+## 1. Initialize Octokit REST/GraphQL with throttle & retry [done]
+### Dependencies: None
+### Description: Create client factory wrapping @octokit/rest and @octokit/graphql with throttling and retry plugins.
+### Details:
+Compose Octokit with @octokit/plugin-throttling and @octokit/plugin-retry; support baseUrl (GHE), custom user-agent, timeouts, and keep-alive agents. Expose a factory that injects request/response hooks for token selection, ETag handling, metrics, and error normalization.
+
+## 2. Token sourcing and rotation [done]
+### Dependencies: 65.1
+### Description: Implement token providers for OAuth App user tokens and GitHub App installation tokens with rotation.
+### Details:
+Define TokenProvider interface (getToken/release/reportFailure). Support: encrypted OAuth tokens, GitHub App installation tokens via @octokit/auth-app with auto-refresh. Implement pool/round-robin with health and remaining-limit awareness. Select token per owner/repo/scope; handle 401/revoked tokens and failover.
+
+## 3. ETag caching and conditional requests [done]
+### Dependencies: 65.1
+### Description: Add helpers to store/apply ETags (If-None-Match) and serve cached payloads on 304.
+### Details:
+Create storage abstraction (in-memory with optional Redis). Key by method+route+stable params. Persist {etag, lastModified, payload, fetchedAt}. Inject request hook to add If-None-Match and response hook to capture ETag/Last-Modified. TTL/eviction policy, opt-out per-call. Validate on repos, languages, issues endpoints.
+
+## 4. Backoff and retry policies [done]
+### Dependencies: 65.1
+### Description: Centralize exponential backoff with jitter for 403 secondary rate limit, 429, and 5xx.
+### Details:
+Detect limits via headers (x-ratelimit-*, retry-after) and GitHub secondary limit responses. Implement full-jitter exponential backoff with caps and respect ratelimit-reset. Idempotency-aware retries; classify retryable GraphQL errors (rate limit/abuse). Emit structured events on retry decisions.
+
+## 5. Error normalization and mapping [done]
+### Dependencies: 65.1, 65.4
+### Description: Map Octokit/GraphQL errors to internal types with retryability and context.
+### Details:
+Define AuthError, NotFoundError, RateLimitError, ValidationError, ConflictError, ServerError, NetworkError. Attach status, method, path, requestId, tokenType, retryAfter. Normalize GraphQL errors (extensions.code, rateLimit). Provide helper isRetryable(error) and consistent logging payload.
+
+## 6. Helper methods: repos, languages, dispatch, PRs, issues [done]
+### Dependencies: 65.1, 65.2, 65.3, 65.4, 65.5
+### Description: Implement listOrgRepos, getRepoLanguages, triggerDispatch, createPR, listIssues using shared client.
+### Details:
+listOrgRepos via GraphQL with pagination (id, name, isPrivate, defaultBranch, primaryLanguage, stargazers, updatedAt) with REST fallback. getRepoLanguages via REST + ETag. triggerDispatch POST /repos/{owner}/{repo}/dispatches. createPR (ensure branch existence, title/body, draft flag). listIssues with filters (state, labels, assignee, since). All methods must use token provider, conditional requests, retries, and error mapping; return typed results.
+
+## 7. Rate-limit observability and telemetry [done]
+### Dependencies: 65.1, 65.4, 65.5
+### Description: Expose metrics/logs for rate usage, retries, and token pool health.
+### Details:
+Capture x-ratelimit-remaining/reset/used per response and per token. Counters for retries by reason, histograms for latency/backoff, gauges for token remaining quota. Emit events on secondary limit hits and token rotation. Integrate with OpenTelemetry spans and optional Prometheus exporter; redact secrets.
+
+## 8. Unit tests with nock [done]
+### Dependencies: 65.1, 65.2, 65.3, 65.4, 65.5, 65.6
+### Description: Test ETag behavior, rate-limit retries, token rotation, and helper methods.
+### Details:
+Use nock to mock REST/GraphQL. Assert If-None-Match is sent and 304 serves cached payload. Simulate 403 secondary limit then success; verify backoff attempt count and jitter bounds. Simulate 401 to force token rotation and fallback. Validate helper methods pagination and payload shapes. Enforce coverage thresholds and CI determinism.
+
+## 9. Minimal scopes and permissions audit [done]
+### Dependencies: 65.6
+### Description: Determine minimal GitHub scopes/permissions per operation and enforce runtime checks.
+### Details:
+Map operations to OAuth scopes (read:org, repo, workflow) and GitHub App installation permissions (contents, pull_requests, metadata). Add preflight validation/warnings when token lacks required scope; tests to assert AuthError on insufficient scopes. Produce scope/permission matrix for documentation.
+
+## 10. Documentation and examples [done]
+### Dependencies: 65.6, 65.7, 65.8, 65.9
+### Description: Write usage docs for configuration, helper methods, caching, retries, and observability.
+### Details:
+Create README with installation, configuration (env vars, baseUrl, tokens), security notes, and code examples for each helper. Explain ETag caching behavior, retry/backoff policies, and interpreting metrics/logs. Include troubleshooting (secondary limits, GHE quirks) and link to scope/permission matrix.
+

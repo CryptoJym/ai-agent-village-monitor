@@ -1,0 +1,66 @@
+# Task ID: 63
+# Title: Dialogue UI Panel with Tabs and Streaming
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Build bottom-panel UI that slides up, with Thread, Control, and Info tabs, streaming live work thread.
+# Details:
+React components: DialogueUI, ThreadTab (auto-scroll), ControlTab (buttons), InfoTab (agent details).
+- Slide animation 300ms ease-out; ESC/click-away closes
+- Input box with Enter to send question -> POST /api/agents/:id/command (type: task)
+- Stream updates via WS to ThreadTab with timestamps
+- Keep panel at 30% height (mobile 50%)
+
+
+# Test Strategy:
+UI tests: open <300ms after click, auto-scroll behavior, tab switches preserve scroll. Stream messages appear in order with timestamps. Mobile responsive layout verified in viewport tests.
+
+# Subtasks:
+## 1. Panel Container with Slide Animation and Dismissal [done]
+### Dependencies: None
+### Description: Implement bottom-panel DialogueUI with 300ms ease-out slide-up animation, ESC and click-away to close.
+### Details:
+Create DialogueUI container anchored to bottom with CSS transform translateY(100%) -> 0 and transition: 300ms ease-out. Add backdrop overlay. Manage open/close state via props/context. Attach keydown listener for Escape and backdrop click handler to close. Trap focus inside when open and restore focus on close. Ensure initial render sets animation class on next frame to trigger transition. Provide aria-modal and role=dialog.
+
+## 2. Tabbed Navigation: Thread, Control, Info [done]
+### Dependencies: 63.1
+### Description: Add accessible tabs within the panel for Thread, Control, and Info views; preserve per-tab state.
+### Details:
+Implement Tabs (role=tablist) with three tabs and tab panels. Keep panels mounted to preserve scroll and WS bindings. Manage activeTab state in DialogueUI. Persist last-selected tab per session (optional). Ensure keyboard navigation (ArrowLeft/Right/Home/End).
+
+## 3. ThreadTab Streaming Message List with Auto-Scroll [done]
+### Dependencies: 63.2
+### Description: Build message list that displays streamed items with timestamps and auto-scroll-to-bottom behavior.
+### Details:
+Create ThreadTab with a scrollable container. Render messages (role=list) with timestamps formatted to local time. Auto-scroll to bottom on new messages only if user is at bottom; if scrolled up, show a 'Jump to latest' affordance. Detect isAtBottom via scrollTop calculations and throttle scroll handlers. Preserve scroll position when switching tabs.
+
+## 4. Input Box with Enter-to-Send [done]
+### Dependencies: 63.2
+### Description: Add input box in ThreadTab that sends on Enter and supports Shift+Enter for newline.
+### Details:
+Place a sticky footer input (textarea) in ThreadTab. Handle onKeyDown: Enter without Shift submits; prevent default; disable during in-flight; show spinner. Clear input on success and keep focus. Add placeholder and character limit. Announce errors via toast/aria-live.
+
+## 5. REST Command Integration for Task Submission [done]
+### Dependencies: 63.4
+### Description: Wire input send action to POST /api/agents/:id/command with payload type 'task'.
+### Details:
+Implement API helper useSendTask(agentId) that POSTs to /api/agents/:id/command with JSON { type: 'task', text: <message> }. Handle loading, success, error states; cancel via AbortController on unmount. On success, optionally append a local 'sent' echo entry pending WS confirmation. Standardize error handling and toasts.
+
+## 6. WebSocket Stream Binding to ThreadTab [done]
+### Dependencies: 63.2, 63.3
+### Description: Subscribe to WS room agent:{id} for work_stream and agent_update; append messages in order.
+### Details:
+Use WS client to join room agent:{id} on mount and leave on unmount. Handle work_stream events with payload {id, timestamp, content, role}. Deduplicate by event id and ensure stable ordering by timestamp then id. Reconnect with backoff; buffer during reconnect. Update ThreadTab list state and cooperate with auto-scroll logic. Emit received timestamps and ensure monotonic display.
+
+## 7. Responsive Layout and Sizing [done]
+### Dependencies: 63.1, 63.2
+### Description: Keep panel at 30% height on desktop and 50% on mobile; ensure safe-area and small viewport handling.
+### Details:
+Add CSS media queries: default height 30vh; at max-width: 768px use 50vh. Respect env(safe-area-inset-bottom) padding. Make input area sticky above safe area. Ensure tablist is touch-friendly and horizontal scrollable if needed. Test orientation changes and prevent layout shift during keyboard open on mobile.
+
+## 8. Component and Integration Tests [done]
+### Dependencies: 63.1, 63.2, 63.3, 63.4, 63.5, 63.6, 63.7
+### Description: Write tests for animation timing, auto-scroll, tab state, WS message ordering, and responsive behavior.
+### Details:
+Using React Testing Library + Jest: verify panel opens and animates (class toggle within <300ms), ESC and backdrop close. Confirm ThreadTab auto-scrolls when at bottom and preserves position when user scrolls up and when switching tabs. Mock REST to assert POST payload. Mock WS to stream messages and verify ordered rendering with timestamps. Use viewport mocks to assert 30% vs 50% height. Snapshot key states.
+

@@ -1,0 +1,75 @@
+# Task ID: 58
+# Title: VillageScene: Tilemap and Camera Controls
+# Status: pending
+# Dependencies: 57
+# Priority: medium
+# Description: Implement isometric village scene with pan/zoom and responsive sizing.
+# Details:
+Use Phaser 3.70+ with isometric tilemap plugin or custom iso transform utils.
+- Create grid/map, ground tiles, paths
+- Camera: drag to pan, wheel/pinch zoom 0.5x–2x
+- Resize handler to fit viewport; 60 FPS target
+- Fast travel: double-click house to center camera
+Pseudo:
+this.input.on('pointermove', ...);
+this.cameras.main.setZoom(zoom);
+
+
+# Test Strategy:
+Performance test with 50+ houses and 100+ sprites achieves ~60 FPS on desktop. Verify pan/zoom fluidity on desktop/mobile. Double-click centers camera on a house.
+
+# Subtasks:
+## 1. Isometric grid utilities or plugin integration [pending]
+### Dependencies: None
+### Description: Decide on and implement isometric transform layer (plugin vs custom) for Phaser 3.70+.
+### Details:
+Evaluate an isometric plugin or implement custom utilities. Implement cartesian<->isometric conversion, tile metrics (tileWidth, tileHeight, origin), depth sort strategy (depth = screenY), and helper methods to convert pointer screen coords to iso grid coords. Provide a small debug overlay toggle to verify transforms.
+
+## 2. Base tilemap render [pending]
+### Dependencies: 58.1
+### Description: Create isometric grid, render ground tiles and paths, and place houses.
+### Details:
+Load textures/atlas, build an N×M grid, render ground and path layers using StaticTilemapLayer or batched Sprites, and place house sprites/objects with correct depth. Establish world origin and camera bounds from map extents. Ensure depth sorting works when tiles/objects overlap.
+
+## 3. Camera pan via drag [pending]
+### Dependencies: 58.2
+### Description: Implement pointer drag panning on the main camera.
+### Details:
+Wire pointerdown/move/up to translate camera scroll with drag threshold and optional inertia. Clamp pan within world bounds. Support desktop mouse drag and single-finger touch drag. Ensure panning remains smooth at 60 FPS.
+
+## 4. Zoom with bounds and cursor anchoring [pending]
+### Dependencies: 58.2, 58.3
+### Description: Implement wheel and pinch zoom with limits 0.5×–2×, keeping the zoom anchored under the cursor.
+### Details:
+Handle mouse wheel and touch pinch gestures. Smoothly lerp zoom and maintain the world point under cursor/focal point by adjusting camera scroll. Recompute and clamp camera bounds at each zoom change. Debounce zoom input for stability.
+
+## 5. Responsive resize handling [pending]
+### Dependencies: 58.4
+### Description: Adjust scene and camera to fit viewport on resize.
+### Details:
+Listen to ScaleManager resize events, update camera viewport, recompute world/culling bounds relative to current zoom, and handle devicePixelRatio changes. Verify no stretching and maintain aspect while keeping content centered or edge-aligned as designed.
+
+## 6. Double-click fast travel to house [pending]
+### Dependencies: 58.2, 58.3, 58.4
+### Description: Double-click/tap a house to smoothly center the camera on it.
+### Details:
+Implement double-click/double-tap detection, pick house under pointer via iso grid/object lookup, and tween camera to center on the house at current zoom. Optional highlight/flash on the target house and cancel tween on user input.
+
+## 7. Performance tuning and culling [pending]
+### Dependencies: 58.2, 58.3, 58.4, 58.5
+### Description: Optimize rendering for 60 FPS using culling and batching.
+### Details:
+Use StaticTilemapLayer where possible, enable/implement culling based on camera visible rect, pool and reuse sprites, minimize per-frame allocations, and freeze depth where stable. Profile with the performance overlay and ensure stable 60 FPS on desktop with target entity counts.
+
+## 8. Mobile input support [pending]
+### Dependencies: 58.3, 58.4, 58.6
+### Description: Refine touch gestures for pan, pinch-zoom, and double-tap fast travel.
+### Details:
+Integrate touch gesture handling with proper thresholds and smoothing, prevent page scroll/zoom conflicts (CSS touch-action: none), and ensure consistent behavior across iOS/Android. Adjust gesture sensitivity and velocity for mobile ergonomics.
+
+## 9. Performance test harness [pending]
+### Dependencies: 58.1, 58.2, 58.3, 58.4, 58.5, 58.6, 58.7, 58.8
+### Description: Create a test scene/setup to validate FPS, pan/zoom fluidity, and fast travel.
+### Details:
+Spawn 50+ houses and 100+ moving sprites/NPCs, script camera sweeps and user-like interactions, and display an on-screen FPS/metrics overlay. Log average/min FPS and GC spikes. Acceptance: ~60 FPS on desktop; verify pan/zoom smoothness and double-click/tap centering on both desktop and mobile.
+

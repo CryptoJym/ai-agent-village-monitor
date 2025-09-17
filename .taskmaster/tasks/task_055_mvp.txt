@@ -1,0 +1,72 @@
+# Task ID: 55
+# Title: Bug Bot Persistence and Lifecycle
+# Status: pending
+# Dependencies: 43, 54
+# Priority: medium
+# Description: Implement data model and services for creating, updating, assigning, and resolving Bug Bots.
+# Details:
+DB: bug_bots table as PRD. Services: createBugBot, removeBugBot, assignAgentToBug, updateBugStatus.
+Endpoints:
+- GET /api/villages/:id/bugs
+- POST /api/bugs/:id/assign {agent_id}
+- PUT /api/bugs/:id/status {status}
+Emit WS: bug_bot_spawn, bug_bot_resolved, bug_bot_update to repo and village rooms.
+
+# Test Strategy:
+Integration tests: create bug via webhook -> GET bugs includes it; assign agent updates assigned_agent_id; closing issue removes bot. Invalid agent/village returns 400/404 as appropriate.
+
+# Subtasks:
+## 1. Finalize bug_bots DB schema and migration [pending]
+### Dependencies: None
+### Description: Design and migrate the bug_bots table per PRD with keys, constraints, enums, and indexes.
+### Details:
+Create migration for bug_bots with fields: id (uuid/serial), village_id (fk), repo_id (fk), provider (enum: github/gitlab/etc), issue_id (string), issue_number (int), title, description, status (enum: open, assigned, in_progress, resolved), severity (enum or nullable), assigned_agent_id (fk nullable), source (enum: webhook/manual), metadata (jsonb), created_at, updated_at, resolved_at (nullable). Add unique constraint on (provider, repo_id, issue_id) to ensure idempotency. Index village_id, repo_id, status, assigned_agent_id, created_at. Enforce FKs to villages, repos, agents with appropriate ON DELETE behavior (cascade or set null for assigned_agent_id).
+
+## 2. Implement core services for Bug Bot lifecycle [pending]
+### Dependencies: 55.1
+### Description: Implement createBugBot, removeBugBot, assignAgentToBug, updateBugStatus with domain rules and events.
+### Details:
+Create service functions: createBugBot(input) -> inserts row, sets status=open, publishes DomainEvent BugBotSpawned; removeBugBot(id, reason?) -> marks resolved/removed and sets resolved_at, publishes BugBotResolved; assignAgentToBug(bugId, agentId, actorId) -> validates agent-village membership, updates assigned_agent_id and status=assigned if applicable, publishes BugBotUpdated; updateBugStatus(bugId, status, actorId, reason?) -> validates allowed transitions, updates status/resolved_at, publishes corresponding event. Enforce optimistic locking via updated_at or version, wrap operations in transactions, and normalize return DTOs.
+
+## 3. WebSocket emissions for spawn/update/resolved [pending]
+### Dependencies: 55.2
+### Description: Emit bug_bot_spawn, bug_bot_update, bug_bot_resolved to repo and village rooms.
+### Details:
+Subscribe to domain events from services and emit WS messages to rooms: repo:{repo_id} and village:{village_id}. Define payload contract: {id, village_id, repo_id, issue_id, issue_number, title, status, assigned_agent_id, severity, metadata, timestamps}. Ensure events: bug_bot_spawn on createBugBot, bug_bot_update on assign/status changes, bug_bot_resolved on removal/resolve. Guarantee no PII leakage; include correlation_id for tracing. Add delivery safeguards (error handling, minimal retries) and unit tests for payload shapes.
+
+## 4. REST endpoints for list/assign/status [pending]
+### Dependencies: 55.2, 55.1
+### Description: Implement GET /api/villages/:id/bugs, POST /api/bugs/:id/assign, PUT /api/bugs/:id/status.
+### Details:
+GET /api/villages/:id/bugs: supports filters (status, repo_id, assigned_agent_id), pagination (limit, cursor/offset), sorts; returns array of Bug Bots. POST /api/bugs/:id/assign {agent_id}: calls assignAgentToBug and returns updated Bug Bot. PUT /api/bugs/:id/status {status}: calls updateBugStatus and returns updated Bug Bot. Define OpenAPI/JSON schemas, consistent response envelopes, and map service errors to HTTP codes. Ensure endpoints trigger service-layer events leading to WS emissions.
+
+## 5. Validation and authorization for endpoints [pending]
+### Dependencies: 55.4, 55.2
+### Description: Add input validation, status transition rules, and role-based access control to API endpoints.
+### Details:
+Implement middleware for auth (e.g., JWT/session) and RBAC (roles: admin/maintainer/triager/village_operator). Validate request bodies (agent_id presence and UUID format; status in allowed enum; village/bug ID format). Verify: agent belongs to the village; bug belongs to the village in path; allowed status transitions; user has permission to assign/update. Return 400 for invalid input, 403 for unauthorized, 404 for missing entities. Add rate limiting/throttling on mutating endpoints.
+
+## 6. Webhook integration for repository issues/events [pending]
+### Dependencies: 55.2, 55.1
+### Description: Ingest repo webhooks to create/update/resolve Bug Bots idempotently.
+### Details:
+Expose POST /api/webhooks/repo (or provider-specific paths). Verify signatures/secrets. Map events: issue opened -> createBugBot; issue edited/labeled -> updateBugStatus/severity; issue closed -> removeBugBot or update status=resolved. Use composite unique key to avoid duplicates; support idempotency keys. Resolve repo_id and village_id from webhook installation/config. Offload heavy processing to a job queue; return 200 quickly. Log mappings and failures.
+
+## 7. Repository consistency checks and reconciliation [pending]
+### Dependencies: 55.2, 55.1, 55.6
+### Description: Scheduled job to reconcile bug_bots with upstream repo issues and ensure state consistency.
+### Details:
+Implement periodic reconciliation: list open/closed issues from configured repos, compare with bug_bots. Backfill missing bots, resolve bots for issues closed upstream, reopen/match status if diverged. Respect API rate limits and pagination; dry-run mode; bounded batch size. Use service functions for mutations to trigger WS and maintain audit. Record metrics for discrepancies and outcomes.
+
+## 8. Lifecycle integration tests and WS verification [pending]
+### Dependencies: 55.3, 55.4, 55.5, 55.6, 55.7, 55.1, 55.2
+### Description: Add tests covering creation via webhook, listing, assignment, status changes, resolutions, and WS events.
+### Details:
+Test flow: send webhook -> createBugBot -> GET /api/villages/:id/bugs includes it; POST assign updates assigned_agent_id; PUT status to resolved removes/resolves and sets resolved_at; invalid agent/village returns 400/404; unauthorized returns 403. Assert WS events bug_bot_spawn/update/resolved arrive in repo and village rooms with correct payloads. Include concurrency tests and idempotency checks.
+
+## 9. Error handling, retries, and observability [pending]
+### Dependencies: 55.4, 55.6, 55.3, 55.2
+### Description: Standardize error responses, add logging/metrics, and implement retry/dead-letter for webhook and WS failures.
+### Details:
+Define JSON error format with codes and messages; map domain errors to HTTP statuses. Add structured logging, tracing (correlation_id), and metrics (counts, latencies, failures) for services, API, webhooks, and WS. Implement retries with backoff for transient DB/socket failures; dead-letter queue for failed webhook jobs; timeouts/circuit breakers for repo API calls. Create dashboards/alerts for significant error rates.
+

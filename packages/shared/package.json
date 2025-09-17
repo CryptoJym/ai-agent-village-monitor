@@ -1,0 +1,9 @@
+{
+  "name": "@ai-agent-village-monitor/shared",
+  "version": "0.0.0",
+  "private": true,
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

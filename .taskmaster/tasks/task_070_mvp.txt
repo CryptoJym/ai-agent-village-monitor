@@ -1,0 +1,112 @@
+# Task ID: 70
+# Title: Caching and Rate-Limit Backoff for GitHub
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Add server-side caching of repo/org data and robust rate-limit handling.
+# Details:
+Redis cache keys: org:{id}:repos, repo:{id}:languages, issues lists.
+- TTLs and cache invalidation via webhooks
+- Use GraphQL to batch fields; fallback REST
+- Backoff policy: exponential with jitter on 403, respect X-RateLimit-Reset
+
+
+# Test Strategy:
+Simulate rate limit with mocked headers. Ensure retries respect reset time. Cache hit ratio measured in logs. Webhook invalidation clears appropriate keys.
+
+# Subtasks:
+## 1. Define Redis Key Schema [pending]
+### Dependencies: None
+### Description: Design namespacing and patterns for all GitHub cache entries.
+### Details:
+- Keys: org:{org_id}:repos, repo:{repo_id}:languages, repo:{repo_id}:issues:{state}, repo:{repo_id}:meta
+- Index keys for invalidation: index:org:{org_id} (SET of keys), index:repo:{repo_id}
+- Serialization: JSON with versioning field v to allow schema evolution
+- TTL guidance: org repos 15m, languages 24h, issues list 2–5m; allow overrides per key via config
+- Key size and limits: ensure max length < 512 bytes; avoid user-provided strings without sanitization
+- Document patterns for SCAN-less invalidation using index sets
+
+## 2. Implement Cache Get/Set with TTLs [pending]
+### Dependencies: 70.1
+### Description: Create a Redis cache wrapper with TTL support, namespacing, and serialization.
+### Details:
+- Functions: cache.get(key), cache.set(key, value, ttlSec), cache.mget(keys), cache.del(keys), cache.touch(key, ttlSec)
+- Support per-key TTL defaults and config overrides
+- JSON serialize/deserialize with version check; handle corrupt entries safely
+- Optional compression for large payloads (>32KB)
+- Metrics hooks: increment hit/miss/evict counters and timing (to be wired in metrics task)
+- Error handling: fail-open on Redis errors, with logs and circuit-breaker threshold
+
+## 3. Implement 403 Rate-Limit Backoff with Jitter [pending]
+### Dependencies: None
+### Description: Create reusable backoff utility respecting X-RateLimit-Reset and Retry-After.
+### Details:
+- Inputs: HTTP response/status, headers (X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After), attempt count
+- Strategy: exponential backoff (base=500ms, factor=2, max=60s) + full jitter; if X-RateLimit-Reset in future, sleep until reset plus small jitter cap
+- Detect secondary rate limit/abuse via headers/message; respect Retry-After when present
+- Provide withBackoff(fn) helper to wrap API calls; supports cancellation and maxAttempts
+- Emit metrics: backoff.sleep_ms, backoff.attempts, rate_limit.events
+
+## 4. GraphQL Batching Fetchers [pending]
+### Dependencies: 70.2, 70.3
+### Description: Add GraphQL queries to batch-fetch org repos, repo languages, and issues.
+### Details:
+- Build queries to fetch multiple repositories by owner with pagination (first/after), selecting needed fields
+- Languages: repository.languages(first: 100) totals; Issues: filter by state with page info
+- Batch inputs to stay within node/size limits; chunk if necessary
+- Integrate backoff utility for 403/resets; retry on transient errors
+- Return structured results suitable for caching; do not cache within this layer
+- Error handling: partial data propagation with error collection
+
+## 5. REST Fallback Fetchers [pending]
+### Dependencies: 70.4, 70.3
+### Description: Implement REST endpoints as fallback when GraphQL fails or is disabled.
+### Details:
+- Endpoints: GET /orgs/{org}/repos (paginate), GET /repos/{owner}/{repo}/languages, GET /repos/{owner}/{repo}/issues
+- Use ETag/If-None-Match when possible to reduce rate usage
+- Integrate backoff helper for 403 and secondary limits; honor Retry-After
+- Normalize responses to same shape as GraphQL fetchers
+- Detect when to fallback: GraphQL errors, disabled flag, or unsupported fields
+
+## 6. Webhook-Based Cache Invalidation [pending]
+### Dependencies: 70.1, 70.2
+### Description: Invalidate relevant cache keys upon GitHub webhook events.
+### Details:
+- Handle events: repository, organization, membership, issues, push (as needed)
+- Map events to key sets via index: index:org:{org_id}, index:repo:{repo_id}
+- On event, compute affected keys and DEL; avoid wildcard deletes in production paths
+- Debounce/throttle bursts to prevent stampedes; optional revalidation trigger
+- Security: verify webhook signatures; idempotent processing
+- Logging: record invalidation counts and keys removed
+
+## 7. Metrics and Logging for Cache and Backoff [pending]
+### Dependencies: 70.2
+### Description: Instrument cache hit ratio and backoff behavior.
+### Details:
+- Counters/gauges: cache.hit, cache.miss, cache.set, cache.del, cache.bytes, cache.ttl_seconds, cache.evictions
+- Backoff metrics: backoff.attempts, backoff.sleep_ms_total, rate_limit.reset_waits
+- Expose Prometheus/StatsD metrics and structured logs with request IDs
+- Add sampling to reduce noise in high-throughput paths
+- Dashboard: basic panels for hit ratio, error rates, and rate-limit waits
+
+## 8. Configuration Toggles and Policies [pending]
+### Dependencies: 70.2, 70.3, 70.4, 70.5
+### Description: Add runtime-configurable flags for caching, GraphQL, REST fallback, and backoff.
+### Details:
+- Flags: GITHUB_CACHE_ENABLED, GITHUB_GRAPHQL_ENABLED, GITHUB_REST_FALLBACK_ENABLED, GITHUB_BACKOFF_ENABLED
+- TTL overrides per key: GITHUB_TTL_ORG_REPOS, GITHUB_TTL_LANGUAGES, GITHUB_TTL_ISSUES
+- Backoff params: base, factor, max, jitter; per-client timeouts
+- Dynamic reload via env/config service; safe defaults
+- Feature-guard pathways to force REST-only or GraphQL-only for troubleshooting
+
+## 9. Simulated Rate-Limit and Caching Tests [pending]
+### Dependencies: 70.3, 70.4, 70.5, 70.6, 70.7
+### Description: Create tests to simulate rate limits and validate caching/invalidation.
+### Details:
+- Mock GitHub responses with 403 and headers: X-RateLimit-Remaining: 0, X-RateLimit-Reset, Retry-After
+- Assert retries respect reset time and backoff limits; verify jitter bounds
+- Cache tests: hit/miss flows, TTL expiry, stale entries, serialization errors (fail-open)
+- Webhook tests: send sample events and ensure correct keys are deleted via indices
+- End-to-end: cold start fetch -> cache set -> subsequent hit -> webhook invalidation -> refetch
+- Validate metrics increments and log fields for observability
+

@@ -1,0 +1,76 @@
+# Task ID: 83
+# Title: Frontend Unit and Component Tests (Vitest/RTL)
+# Status: pending
+# Dependencies: 57
+# Priority: medium
+# Description: Add tests for React components (DialogueUI, ControlTab) and utility modules.
+# Details:
+Set up Vitest + React Testing Library. Mock WebSocketService. Test slide animation triggers, auto-scroll, and tab content. Snapshot important UI states.
+
+# Test Strategy:
+Run vitest with jsdom. Ensure components render under various props. Interaction tests simulate clicks and keyboard shortcuts and verify ARIA roles.
+
+# Subtasks:
+## 1. Configure Vitest + React Testing Library with jsdom [pending]
+### Dependencies: None
+### Description: Install and configure Vitest, RTL, and jest-dom with a jsdom environment so React component tests can run reliably.
+### Details:
+Steps:
+- Add devDependencies: vitest, @testing-library/react, @testing-library/user-event, @testing-library/jest-dom, jsdom, @types/jest (if TS type helpers needed).
+- Create vitest.config.ts: test.environment='jsdom', globals=true, setupFiles=['src/test/setupTests.ts'], resolve.alias matches Vite aliases (@, @shared), include patterns for src/**/*.test.{ts,tsx}, coverage reporters (text, html) and thresholds.
+- Create src/test/setupTests.ts: import '@testing-library/jest-dom'; configure cleanup; polyfill/mocks for matchMedia, ResizeObserver, IntersectionObserver, Element.prototype.scrollIntoView/scrollTo, requestAnimationFrame as needed by animations/auto-scroll.
+- Add package.json scripts: test, test:watch, test:coverage, test:update-snapshots.
+- Ensure TypeScript: tsconfig includes 'types': ['vitest/globals', 'jest-dom'] and path aliases resolve in tests.
+
+## 2. Create WebSocketService test mock and helpers [pending]
+### Dependencies: 83.1
+### Description: Provide a reliable vi.mock replacement for WebSocketService with helper APIs to emit and observe events in tests.
+### Details:
+Steps:
+- Implement src/test/mocks/WebSocketService.mock.ts exposing an event-driven stub (connect, disconnect, on/off or subscribe/unsubscribe, send) and helpers: emit(event, payload), reset(), getState().
+- vi.mock the real module path (e.g., '@shared/services/WebSocketService') to return the test stub. Export a getMockWS() accessor for tests.
+- Ensure mock maintains isolation between tests (reset in afterEach). Spy on send/connect to assert interactions from components.
+
+## 3. DialogueUI tests: open/close, slide animation triggers, auto-scroll [pending]
+### Dependencies: 83.1, 83.2
+### Description: Write RTL tests for DialogueUI covering visibility toggling, animation class/state transitions, and auto-scroll behavior on new messages.
+### Details:
+Cases:
+- Renders closed by default; opens via toggle button/prop; closes with button/action; assert DOM state (data-state, classes, aria-expanded).
+- Slide animation trigger: when opening/closing, assert transition/animation classes or data attributes toggle; use fake timers/raf to advance transitions if needed.
+- Auto-scroll: when a new message arrives (emit via WebSocket mock), last message scrollIntoView/scrollTop is called when near bottom; when user scrolled up, auto-scroll does not trigger.
+- Edge: multiple rapid messages coalesce correctly; no duplicate listeners; cleanup verified.
+- Place tests in src/components/DialogueUI.test.tsx; use userEvent and getMockWS().
+
+## 4. ControlTab interaction and content tests [pending]
+### Dependencies: 83.1, 83.2
+### Description: Verify ControlTab tablist behavior, content switching, and side-effects (e.g., sending commands via WebSocketService).
+### Details:
+Cases:
+- Tablist semantics: role=tablist with tabs; clicking/keyboard navigation updates aria-selected and shows the correct panel content.
+- Interaction: clicking action buttons/controls invokes WebSocketService.send/connect with expected payloads; disabled states respected based on props/state.
+- Conditional rendering: panels/components appear/hide with toggles or permissions.
+- Robustness: re-render with different props maintains selection or resets as designed.
+- Place tests in src/components/ControlTab.test.tsx; use spies on mock WS.
+
+## 5. Snapshot important UI states [pending]
+### Dependencies: 83.1, 83.2, 83.3, 83.4
+### Description: Capture stable snapshots for key states of DialogueUI and ControlTab to guard against unintended UI regressions.
+### Details:
+Scope:
+- DialogueUI: closed (no messages), open (with messages), during loading/typing indicator if applicable.
+- ControlTab: each primary tab's initial render; a representative state after a common interaction.
+- Stabilize snapshots: mock Date.now, performance.now, randomUUID, and any dynamic IDs; strip transient attributes if necessary.
+- Use toMatchSnapshot/toMatchInlineSnapshot; store files under __snapshots__.
+- Document when to update snapshots and review process.
+
+## 6. Keyboard shortcuts and ARIA/accessibility assertions [pending]
+### Dependencies: 83.1, 83.2, 83.3, 83.4
+### Description: Test keyboard shortcuts for UI control and validate ARIA roles/attributes for accessibility of DialogueUI and ControlTab.
+### Details:
+Cases:
+- DialogueUI: Esc closes; shortcut (e.g., Ctrl+/ or configured key) opens/toggles; focus moves to expected element; assert aria-expanded and focus trapping behavior if present.
+- ControlTab: arrow key navigation between tabs, Home/End behavior; focus management stays within tablist; role=tablist/tab/tabpanels with accessible names; aria-controls relationships valid.
+- Live regions: if messages use aria-live, assert polite/assertive updates do not break tests.
+- Include negative tests (ignored keys do nothing). Use userEvent.keyboard and RTL role/aria queries.
+

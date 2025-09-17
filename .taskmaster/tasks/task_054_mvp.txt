@@ -1,0 +1,123 @@
+# Task ID: 54
+# Title: Probot App Setup and Webhooks
+# Status: pending
+# Dependencies: 45, 49
+# Priority: medium
+# Description: Create Probot app for GitHub issue and check_run events, connect to backend webhook.
+# Details:
+Use Probot framework.
+- Handlers: issues.opened, issues.closed, check_run.completed
+- For opened: call backend createBugBot(repo.id, issue.id, title, severity) then emit WS to repo room
+- For closed: removeBugBot(issue.id) and emit resolved event
+- For check_run failure: create BugBot with severity: high
+Security: verify webhook secret; signature validation.
+Expose POST /api/github/webhook to receive events.
+
+
+# Test Strategy:
+Use Probot testing utilities to simulate payloads. Verify bug_bots rows created/updated and WS events emitted. Signature mismatch 401. Handle replay attacks via delivery id dedup.
+
+# Subtasks:
+## 1. Initialize Probot app skeleton and webhook route [pending]
+### Dependencies: None
+### Description: Scaffold a Probot app and expose POST /api/github/webhook to receive GitHub events.
+### Details:
+- Create project structure (Node 18+, Probot, optional TypeScript).
+- Configure environment variables: GITHUB_APP_ID, GITHUB_PRIVATE_KEY, WEBHOOK_SECRET, BACKEND_BASE_URL, BACKEND_TOKEN, WS_URL, REDIS_URL (optional).
+- Boot Probot server and mount the webhook receiver at POST /api/github/webhook.
+- Add basic health endpoint GET /healthz.
+- Configure logging (request ID, delivery ID, event name) and graceful shutdown.
+
+## 2. Webhook secret configuration and signature validation [pending]
+### Dependencies: 54.1
+### Description: Validate GitHub webhook payload signatures and reject invalid requests.
+### Details:
+- Load WEBHOOK_SECRET and configure HMAC SHA-256 verification (X-Hub-Signature-256).
+- Ensure raw body is available for signature verification (no JSON parsing before verify).
+- On mismatch, return 401 and log reason without dumping body.
+- Enforce content-type: application/json and reasonable body size limit.
+- Record X-GitHub-Delivery and X-GitHub-Event for traceability.
+
+## 3. Backend bridge abstractions (HTTP + WebSocket) [pending]
+### Dependencies: 54.1
+### Description: Create a bridge module for backend calls and WS emissions used by event handlers.
+### Details:
+- Implement HTTP client with base URL BACKEND_BASE_URL and Authorization: Bearer BACKEND_TOKEN.
+- Functions:
+  - createBugBot(repoId, sourceId, title, severity, origin='issue', correlationId)
+  - removeBugBot(sourceId, correlationId)
+  - emitToRepoRoom(repoId, event, payload)
+- Map endpoints (example): POST /api/bug-bots, DELETE /api/bug-bots/{sourceId}.
+- WS emitter publishes to room repo:{repoId} with events bugbot.created and bugbot.resolved.
+- Add timeouts, retries with backoff, and include X-Delivery-ID header from X-GitHub-Delivery.
+
+## 4. Implement issues.opened and issues.closed handlers [pending]
+### Dependencies: 54.1, 54.2, 54.3
+### Description: Handle issue opened/closed events, invoke backend bridge, and emit WS events.
+### Details:
+- Register handlers for issues.opened and issues.closed.
+- On opened:
+  - Extract repo.id, issue.id, issue.title.
+  - Determine severity from labels (severity: high|medium|low) or default medium.
+  - Call createBugBot(repoId, issueId, title, severity, origin='issue').
+  - Emit WS event bugbot.created to repo room with issue context.
+- On closed:
+  - Call removeBugBot(issueId).
+  - Emit WS event bugbot.resolved to repo room with issue context.
+- Include robust error handling and structured logs with delivery ID.
+
+## 5. Implement check_run.completed handler for CI failures [pending]
+### Dependencies: 54.1, 54.2, 54.3
+### Description: On CI check failure, create a high-severity BugBot and notify via WS.
+### Details:
+- Register handler for check_run.completed.
+- If conclusion == 'failure':
+  - Extract repo.id, check_run.id, name, head_sha.
+  - Title format: "[CI] Check failed: <name> @ <short_sha>".
+  - Call createBugBot(repoId, sourceId=check_run.id, title, severity='high', origin='check_run').
+  - Emit WS event bugbot.created to repo room with CI context.
+- Ignore non-failure conclusions.
+- Add error handling and correlation with delivery ID.
+
+## 6. Idempotency and event de-duplication [pending]
+### Dependencies: 54.1, 54.2
+### Description: Prevent duplicate processing using delivery and resource-level idempotency keys.
+### Details:
+- Store processed X-GitHub-Delivery IDs in Redis (REDIS_URL) with TTL (e.g., 24h); provide in-memory LRU fallback for local dev.
+- Provide helper: processOnce(key, handler) that ensures single execution per key.
+- Keys:
+  - delivery:<deliveryId>
+  - issue:<issueId>:opened and issue:<issueId>:closed
+  - check_run:<checkRunId>:failure
+- Wrap handlers to first check delivery:<id>, then resource-level key to guard backend calls.
+
+## 7. Security hardening and replay protection [pending]
+### Dependencies: 54.2, 54.6
+### Description: Augment security beyond signature verification and mitigate replays.
+### Details:
+- Enforce rate limiting on /api/github/webhook to mitigate floods (tune for GitHub bursts).
+- Optional IP allowlist using GitHub Meta hooks IP ranges (cache and update periodically); rely primarily on signature verification.
+- Set strict body size limit and reject non-JSON.
+- Use delivery ID de-dup TTL as replay window; log and drop re-deliveries.
+- Sanitize logs (no secrets, no payload dumps) and standardize error responses.
+
+## 8. Local runner and tooling for manual testing [pending]
+### Dependencies: 54.1, 54.2, 54.3, 54.4, 54.5, 54.6, 54.7
+### Description: Provide scripts and tooling to run app locally and receive real webhooks.
+### Details:
+- Add npm scripts: dev (nodemon), start, probot:run.
+- Provide .env.example with required variables.
+- Set up smee.io or gh webhook forward to tunnel events to http://localhost:<port>/api/github/webhook.
+- Document how to install and register the GitHub App locally.
+- Include curl examples for signed test payloads when useful.
+
+## 9. Probot automated test suite [pending]
+### Dependencies: 54.1, 54.2, 54.3, 54.4, 54.5, 54.6, 54.7
+### Description: Write tests using Probot utilities to validate handlers, security, and idempotency.
+### Details:
+- Use @probot/test (or @octokit/webhooks) to simulate issues.opened, issues.closed, and check_run.completed (failure) payloads.
+- Mock backend bridge HTTP and WS; assert createBugBot/removeBugBot and WS events are called with expected args.
+- Test signature mismatch returns 401 and no handler execution.
+- Test idempotency: send same X-GitHub-Delivery twice; verify single backend call. Also test resource-level dedup (e.g., repeated issues.opened).
+- Include coverage thresholds and CI job to run tests.
+

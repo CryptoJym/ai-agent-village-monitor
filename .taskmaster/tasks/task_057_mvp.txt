@@ -1,0 +1,99 @@
+# Task ID: 57
+# Title: Frontend Project Initialization (Vite + React + Phaser)
+# Status: done
+# Dependencies: 41
+# Priority: medium
+# Description: Bootstrap React app with Phaser canvas integration, global styles, and routing.
+# Details:
+Create app entry with React 18, set up a GameProvider to mount Phaser.Game in a container.
+- Vite config with alias @ and @shared
+- Tailwind or CSS modules for UI (choose minimal CSS modules)
+- React Router for routes: /login, /village/:id, /world
+- Service for API calls with fetch + zod validation
+- WebSocketService singleton
+
+
+# Test Strategy:
+App compiles, initial page renders. Verify Phaser canvas mounts and resizes. Unit tests for WebSocketService connecting and handling events (mock socket.io-client).
+
+# Subtasks:
+## 1. Scaffold Vite React TypeScript project [done]
+### Dependencies: None
+### Description: Initialize a Vite + React 18 + TypeScript app with base project structure and scripts.
+### Details:
+- Run: npm create vite@latest . -- --template react-ts
+- Ensure React 18 root setup in src/main.tsx using createRoot and StrictMode
+- Verify scripts: dev, build, preview in package.json
+- Add .gitignore and .editorconfig (optional)
+- Confirm app compiles and serves at http://localhost:5173 with a simple App.tsx
+
+## 2. Configure path aliases (@, @shared) [done]
+### Dependencies: 57.1
+### Description: Add Vite and TypeScript path aliases for cleaner imports.
+### Details:
+- In vite.config.ts, set resolve.alias for '@' -> 'src' and '@shared' -> 'src/shared'
+- Update tsconfig.json compilerOptions.paths to mirror aliases
+- Create src/shared/index.ts to validate alias resolution
+- Migrate a couple of imports to use '@/...'
+- Build to ensure alias mapping works in both dev and prod
+
+## 3. Set up minimal CSS Modules and global styles [done]
+### Dependencies: 57.1
+### Description: Introduce CSS Modules for component styles and a lightweight global stylesheet.
+### Details:
+- Create src/styles/global.css (normalize/reset + base vars) and import it in src/main.tsx
+- Create an example CSS module: src/components/App.module.css and use it in App.tsx
+- Document naming convention: *.module.css for scoped styles
+- Verify styles load without conflicts and HMR works
+
+## 4. Routing setup (React Router) [done]
+### Dependencies: 57.1
+### Description: Configure React Router with routes: /login, /village/:id, /world.
+### Details:
+- Install react-router-dom
+- Create pages: src/pages/LoginPage.tsx, src/pages/VillagePage.tsx, src/pages/WorldPage.tsx (placeholder content)
+- Create router in src/routes/index.tsx with routes /login, /village/:id, /world
+- Wrap app with RouterProvider (or BrowserRouter + Routes) in src/App.tsx
+- Verify navigation works and unknown routes redirect to /login (optional)
+
+## 5. Phaser integration via GameProvider [done]
+### Dependencies: 57.1, 57.4
+### Description: Implement GameProvider to mount Phaser.Game into a container and expose via context/hook.
+### Details:
+- Install phaser
+- Create src/game/GameProvider.tsx: React context holding game instance and a <GameHost> that creates a ref container for Phaser
+- Minimal Phaser config (AUTO, parent: container, scale to fit parent, a stub Scene)
+- Ensure lifecycle: instantiate on mount, game.destroy(true) on unmount
+- Use GameProvider and GameHost within WorldPage to mount the canvas
+- Verify canvas mounts and resizes with window
+
+## 6. API client with fetch and zod validation [done]
+### Dependencies: 57.1, 57.2
+### Description: Create a typed API service that wraps fetch and validates responses with zod.
+### Details:
+- Install zod
+- Create src/services/apiClient.ts with helpers: request<T>(path, options, schema), get/post convenience methods
+- Read base URL from import.meta.env.VITE_API_URL; add .env.example with VITE_API_URL=
+- Define example schema (e.g., AuthResponseSchema) and sample call in a placeholder service file
+- Handle errors: network, HTTP status, and schema parse errors with clear messages
+
+## 7. WebSocketService singleton (Socket.IO client stub) [done]
+### Dependencies: 57.1, 57.2
+### Description: Introduce a singleton WebSocket service using socket.io-client with basic connect/emit/on/off.
+### Details:
+- Install socket.io-client
+- Create src/services/WebSocketService.ts implementing a singleton with connect(url), disconnect(), on(event, cb), off(event, cb), emit(event, payload), isConnected()
+- Use import.meta.env.VITE_WS_URL; add to .env.example
+- No-op reconnect/backoff for now; log basic lifecycle events in dev
+- Export a default instance and optionally a getInstance() factory
+
+## 8. Unit tests: Phaser mount and WebSocketService mock [done]
+### Dependencies: 57.5, 57.7
+### Description: Add tests verifying GameProvider mounts/destroys Phaser and WebSocketService connects and handles events via mocks.
+### Details:
+- Install dev deps: vitest, @testing-library/react, @testing-library/jest-dom, jsdom
+- Configure testing: add test script, vitest config (environment: jsdom)
+- Mock phaser (e.g., vi.mock('phaser')) so Phaser.Game constructor and destroy are trackable; test GameHost mounts and cleanup calls destroy
+- Mock socket.io-client; test WebSocketService.connect uses correct URL, and on/off/emit proxy to socket
+- Ensure tests run: npm run test and they pass
+

@@ -1,0 +1,66 @@
+# Task ID: 47
+# Title: JWT Auth Middleware and Access Control
+# Status: in-progress
+# Dependencies: 46
+# Priority: medium
+# Description: Add JWT verification middleware, role-based village access per village_access table.
+# Details:
+Middleware attaches req.user. Authorization helpers:
+- requireAuth, requireVillageRole(villageId, roles)
+- Populate roles from village_access; owner has full permissions
+Token structure: sub=userId, scopes, iat, exp.
+Protect routes under /api/* and WS connections.
+
+
+# Test Strategy:
+Unit tests: tokens valid/expired, tampered signature. Integration: Access allowed/denied based on village_access rows. Ensure 401/403 responses are consistent JSON.
+
+# Subtasks:
+## 1. JWT verification utility [done]
+### Dependencies: None
+### Description: Implement a reusable utility to verify and decode JWTs according to the token structure (sub, scopes, iat, exp).
+### Details:
+Create a verifyJWT(token) function using a reliable JWT library. Use HS256 with JWT_SECRET from env. Validate signature, exp, and iat with a small clock skew tolerance. Return a typed payload { userId from sub, scopes array, iat, exp }. Throw specific errors for malformed, expired, and invalid signature cases.
+
+## 2. Request and context typing [done]
+### Dependencies: None
+### Description: Add TypeScript types and module augmentation for request and WebSocket contexts to carry authenticated user info.
+### Details:
+Augment Express Request to include user: { id: string; scopes: string[] }. Define types for VillageRole = 'owner' | 'member' | 'visitor'. Provide shared interfaces for auth claims and WS connection context (e.g., ws.user).
+
+## 3. Standardized 401/403 JSON error responses [done]
+### Dependencies: None
+### Description: Define consistent JSON error shape and helpers for unauthorized and forbidden responses.
+### Details:
+Create AuthError and ForbiddenError classes and an express helper to send { error: { code: 'unauthorized'|'forbidden', message } } with correct HTTP status. Add WWW-Authenticate: Bearer header on 401. Ensure all auth middleware uses this format.
+
+## 4. requireAuth middleware for /api/* [done]
+### Dependencies: 47.1, 47.2, 47.3
+### Description: Implement middleware that enforces authentication on HTTP routes and attaches req.user.
+### Details:
+Parse Authorization: Bearer <token>. Use verifyJWT to validate. On success, attach req.user = { id, scopes }. On failure, return standardized 401 JSON error. Apply to /api/* router. Optionally support token from cookies if present.
+
+## 5. Village role resolver from village_access [done]
+### Dependencies: 47.2
+### Description: Create a resolver to fetch a user's role for a given village from the village_access table.
+### Details:
+Implement getUserVillageRole(userId, villageId) -> Promise<VillageRole | null>. Query village_access and map to 'owner'|'member'|'visitor'. Ensure owner implies full permissions. Consider simple caching per request to avoid repeated queries.
+
+## 6. requireVillageRole authorization helper [done]
+### Dependencies: 47.2, 47.3, 47.4, 47.5
+### Description: Implement middleware factory to enforce allowed roles for a village-scoped route.
+### Details:
+Export requireVillageRole(getVillageId, roles). Ensure req.user exists, otherwise 401. Resolve role via getUserVillageRole. If role is 'owner', allow. Otherwise allow only if role is in roles; else respond with standardized 403. Support getVillageId as a function reading req.params or body.
+
+## 7. WebSocket auth integration [done]
+### Dependencies: 47.1, 47.2, 47.3, 47.5, 47.6
+### Description: Integrate JWT verification and village role gating for WS connections.
+### Details:
+On WS upgrade/connection, accept token via Authorization header or query param. Verify with verifyJWT and attach user to connection context. For village-scoped channels, apply the same role checks as HTTP using the resolver/helper. On auth failure, close with appropriate code and/or send standardized error payload.
+
+## 8. Auth and access control tests [pending]
+### Dependencies: 47.1, 47.4, 47.5, 47.6, 47.7, 47.3, 47.2
+### Description: Add unit and integration tests for JWT validation and role-based access on HTTP and WS.
+### Details:
+Unit: valid/expired/tampered tokens, iat/exp validation. Integration: /api/* routes return 401/403 with consistent JSON, access allowed/denied based on village_access rows, owner override behavior. WS: handshake with valid/invalid tokens, role gating for village channels, consistent error handling.
+

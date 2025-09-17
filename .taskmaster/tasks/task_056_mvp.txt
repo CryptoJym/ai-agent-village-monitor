@@ -1,0 +1,53 @@
+# Task ID: 56
+# Title: GitHub Actions Trigger Endpoint
+# Status: pending
+# Dependencies: 46
+# Priority: medium
+# Description: Implement endpoint to dispatch GitHub Actions or repository_dispatch from Control panel.
+# Details:
+Route: POST /api/github/dispatch {repo_id, event_type, client_payload}
+Use GitHub REST: POST /repos/{owner}/{repo}/dispatches with token.
+Check user has access to repo via installation or OAuth token.
+Emit WS back to UI with action_triggered status.
+
+
+# Test Strategy:
+Mock API call with nock and assert successful 204. Unauthorized returns 403. UI button triggers endpoint and shows confirmation.
+
+# Subtasks:
+## 1. Implement POST /api/github/dispatch endpoint with Zod validation [pending]
+### Dependencies: None
+### Description: Create the endpoint to trigger GitHub repository_dispatch with strict input validation.
+### Details:
+Add route POST /api/github/dispatch. Validate body with zod: { repo_id: string | number, event_type: string (non-empty, max 100), client_payload: object (optional, passthrough) }. Require authenticated user (JWT). Resolve repo by repo_id from DB to obtain owner/repo. Return 202 on accept with {status:"queued"} and correlation_id. Attach request-scoped correlation ID for logging.
+
+## 2. Permission check for repository access (installation or OAuth) [pending]
+### Dependencies: 56.1
+### Description: Ensure the authenticated user has access to the target repository.
+### Details:
+Implement checkRepoAccess(user, owner, repo). Prefer GitHub App installation token if the repo is installed; else fall back to user's OAuth token (Task 46). Verify access by fetching repo and ensuring at least write/triage permissions suitable for repository_dispatch. On failure, do not leak repo existence; return standardized forbidden error. Cache positive checks briefly.
+
+## 3. Octokit repository_dispatch call implementation [pending]
+### Dependencies: 56.1, 56.2
+### Description: Trigger the GitHub Actions dispatch via REST using appropriate token.
+### Details:
+Using the GitHub client wrapper (Task 65) or @octokit/rest, call POST /repos/{owner}/{repo}/dispatches (repos.createDispatchEvent) with {event_type, client_payload}. Select token: installation token if available, else user's OAuth token. Handle 204 response as success. Add retries/backoff via client wrapper on secondary rate limits. Log audit event (user_id, repo, event_type, correlation_id) without payload secrets.
+
+## 4. WebSocket confirmation event emission [pending]
+### Dependencies: 56.3
+### Description: Notify UI that the action was triggered successfully.
+### Details:
+On successful dispatch (204), emit WS event to the requesting user's channel: {type:"github.action_triggered", repo_id, event_type, status:"action_triggered", timestamp, correlation_id}. Ensure broadcaster is resilient (non-blocking) and failures do not affect HTTP response.
+
+## 5. Error mapping and 403 handling [pending]
+### Dependencies: 56.1, 56.3
+### Description: Normalize validation, auth, and GitHub errors to API responses.
+### Details:
+Map Zod validation errors -> 400 with field details. Missing/invalid auth -> 401. No repo access or GitHub 403/404 -> 403 FORBIDDEN_REPO_ACCESS. GitHub secondary rate limit -> 429 with Retry-After if available. Network/unknown -> 502/500. Standardize error shape {error_code, message, correlation_id}. Sanitize logs to avoid leaking tokens or client_payload secrets.
+
+## 6. Nock-based tests for endpoint and flows [pending]
+### Dependencies: 56.1, 56.2, 56.3, 56.4, 56.5
+### Description: Add tests covering success, permissions, validation, and rate limits.
+### Details:
+Use supertest + nock. Cases: (1) 204 from GitHub -> 202 response and WS event emitted. (2) Permission denied -> 403. (3) Validation failure -> 400. (4) Rate limited -> 429 with retry-after. (5) OAuth vs installation token selection. Assert correct Octokit call body. Include teardown to clean nocks and WS mocks.
+

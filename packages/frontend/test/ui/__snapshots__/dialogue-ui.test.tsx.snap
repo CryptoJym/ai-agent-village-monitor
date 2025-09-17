@@ -1,0 +1,108 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`DialogueUI > matches snapshot in open state 1`] = `
+<DocumentFragment>
+  <div
+    aria-hidden="false"
+    data-testid="dialogue-overlay"
+    style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); pointer-events: auto; transition: background 200ms ease; z-index: 30;"
+  >
+    <section
+      aria-label="Agent dialogue panel"
+      aria-modal="true"
+      data-testid="dialogue-panel"
+      role="dialog"
+      style="position: absolute; left: 0px; right: 0px; bottom: 0px; height: 30vh; background: rgb(11, 18, 32); border-top: 1px solid rgb(31, 41, 55); box-shadow: 0 -10px 30px rgba(0,0,0,0.25); transform: translateY(0%); transition: transform 300ms ease-out; display: flex; flex-direction: column;"
+    >
+      <header
+        aria-label="Dialogue tabs"
+        data-testid="dialogue-tabs"
+        style="display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid rgb(31, 41, 55); background: rgb(15, 23, 42);"
+      >
+        <button
+          aria-label="Thread tab (1)"
+          aria-pressed="true"
+          style="padding: 6px 10px; border-radius: 6px; background: rgb(31, 41, 55); color: rgb(229, 231, 235); border: 1px solid rgb(55, 65, 81); cursor: pointer;"
+        >
+          Thread
+        </button>
+        <button
+          aria-label="Control tab (2)"
+          aria-pressed="false"
+          style="padding: 6px 10px; border-radius: 6px; background: transparent; color: rgb(229, 231, 235); border: 1px solid rgb(55, 65, 81); cursor: pointer;"
+        >
+          Control
+        </button>
+        <button
+          aria-label="Info tab (3)"
+          aria-pressed="false"
+          style="padding: 6px 10px; border-radius: 6px; background: transparent; color: rgb(229, 231, 235); border: 1px solid rgb(55, 65, 81); cursor: pointer;"
+        >
+          Info
+        </button>
+        <div
+          style="margin-left: auto;"
+        >
+          <button
+            aria-label="Close dialogue (Esc)"
+            style="padding: 6px 10px; border-radius: 6px; background: transparent; color: rgb(229, 231, 235); border: 1px solid rgb(55, 65, 81); cursor: pointer;"
+          >
+            Close (Esc)
+          </button>
+        </div>
+      </header>
+      <div
+        style="flex: 1 1 0%; min-height: 0; overflow: hidden;"
+      >
+        <div
+          style="display: flex; flex-direction: column; height: 100%;"
+        >
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid rgb(31, 41, 55); background: rgb(11, 18, 32);"
+          >
+            <div
+              style="color: rgb(148, 163, 184);"
+            >
+              Agent: a-1
+            </div>
+            <div
+              data-testid="thread-status"
+              style="display: flex; align-items: center; gap: 8px;"
+            >
+              <span
+                style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background: rgb(239, 68, 68);"
+              />
+              <span
+                style="color: rgb(203, 213, 225);"
+              >
+                Disconnected
+              </span>
+            </div>
+          </div>
+          <div
+            data-testid="thread-list"
+            style="flex: 1 1 0%; overflow-y: auto; padding: 8px 12px; background: rgb(15, 23, 42);"
+          />
+          <div
+            style="display: flex; gap: 8px; padding: 12px; border-top: 1px solid rgb(31, 41, 55); background: rgb(11, 18, 32);"
+          >
+            <input
+              data-testid="thread-input"
+              placeholder="Ask the agent..."
+              style="flex: 1 1 0%; padding: 10px 12px; background: rgb(15, 23, 42); color: rgb(229, 231, 235); border: 1px solid rgb(55, 65, 81); border-radius: 8px; outline: none;"
+              value=""
+            />
+            <button
+              data-testid="thread-send"
+              style="padding: 10px 14px; background: rgb(31, 41, 55); color: rgb(229, 231, 235); border: 1px solid rgb(55, 65, 81); border-radius: 8px; cursor: pointer;"
+              type="button"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BugStatus {
+  open
+  assigned
+  in_progress
+  resolved
+}
+
+enum BugSeverity {
+  low
+  medium
+  high
+}
+
+model BugBot {
+  id              String       @id @default(cuid())
+  villageId       String
+  village         Village      @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  provider        String
+  repoId          String?
+  issueId         String
+  issueNumber     Int?
+  title           String?
+  description     String?
+  status          BugStatus    @default(open)
+  severity        BugSeverity?
+  assignedAgentId String?
+  metadata        Json?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  resolvedAt      DateTime?
+  x               Float?
+  y               Float?
+
+  @@unique([provider, issueId], name: "u_provider_issueId")
+  @@index([villageId], name: "idx_village")
+  @@map("bug_bots")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String?  @unique @db.Citext
+  githubId       BigInt?  @unique
+  username       String?  @unique
+  name           String?
+  avatarUrl      String?
+  accessTokenHash String?
+  preferences    Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  villages VillageAccess[]
+  agents   Agent[]
+}
+
+model Village {
+  id          String   @id @default(cuid())
+  orgName     String
+  githubOrgId BigInt?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  config      Json?
+  // Layout concurrency/versioning
+  layoutVersion Int     @default(0)
+
+  houses  House[]
+  bugBots BugBot[]
+  access  VillageAccess[]
+
+  @@index([orgName])
+}
+
+model House {
+  id           String   @id @default(cuid())
+  villageId    String
+  village      Village  @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  repoName     String
+  githubRepoId BigInt?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  metadata     Json?
+  // Layout persistence
+  positionX    Float?
+  positionY    Float?
+  spriteOrientation String?  @db.VarChar(16)
+  spriteVariant     String?  @db.VarChar(32)
+  spriteScale       Float?
+  lastMovedAt       DateTime?
+  lastMovedBy       String?  @db.Uuid
+
+  @@index([villageId])
+  @@index([positionX, positionY])
+}
+
+model Agent {
+  id        String   @id @default(cuid())
+  name      String
+  status    String   @default("idle")
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  config    Json?
+  // Layout and sprite persistence
+  positionX Float?
+  positionY Float?
+  spriteConfig Json?
+  spriteOrientation String?  @db.VarChar(16)
+  spriteVariant     String?  @db.VarChar(32)
+  spriteScale       Float?
+  lastMovedAt       DateTime?
+  lastMovedBy       String?  @db.Uuid
+  currentStatus String? @default("idle")
+
+  sessions AgentSession[]
+  events   WorkStreamEvent[]
+}
+
+model AgentSession {
+  id        String    @id @default(cuid())
+  agentId   String
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  state     String?
+
+  @@index([agentId])
+  @@index([startedAt])
+  @@index([agentId, startedAt])
+}
+
+model WorkStreamEvent {
+  id      String   @id @default(cuid())
+  agentId String
+  agent   Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  message String
+  ts      DateTime @default(now())
+
+  @@index([agentId])
+  @@index([ts])
+  @@index([agentId, ts])
+}
+
+model VillageAccess {
+  villageId String
+  userId    String
+  role      String @default("viewer")
+
+  village Village @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([villageId, userId])
+  @@index([userId])
+}
+
+/// Encrypted OAuth tokens at rest (per userKey and provider).
+/// userKey typically maps to a stable identifier such as a GitHub login.
+model OAuthToken {
+  id            String    @id @default(cuid())
+  userKey       String
+  provider      String
+  scopes        String?
+  encCiphertext Bytes
+  encIv         Bytes
+  encTag        Bytes
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime?
+
+  @@unique([userKey, provider], name: "u_user_provider")
+  @@index([provider], name: "idx_provider")
+  @@map("oauth_tokens")
+}

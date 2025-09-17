@@ -1,0 +1,84 @@
+# Task ID: 74
+# Title: GitHub Webhook Handler Endpoint (Express Bridge)
+# Status: pending
+# Dependencies: None
+# Priority: medium
+# Description: Expose POST /api/github/webhook to receive Probot events behind Express and validate signatures.
+# Details:
+Mount Probot app into Express or run as separate process and forward. Validate X-Hub-Signature-256. Handle retries idempotently using delivery id stored in Redis set to avoid duplicate processing.
+
+
+# Test Strategy:
+Send signed and tampered payloads; only signed accepted. Duplicate deliveries ignored. Measure processing time under burst (10 events/sec).
+
+# Subtasks:
+## 1. Create Express webhook endpoint with raw body capture [pending]
+### Dependencies: None
+### Description: Expose POST /api/github/webhook and capture the exact raw request body required for signature verification.
+### Details:
+• Route: POST /api/github/webhook
+• Use raw body middleware for this route (e.g., express.raw({ type: '*/*' })) or body-parser verify hook to store req.rawBody as Buffer.
+• Do not JSON-parse before signature check; keep raw bytes intact.
+• Read headers: X-GitHub-Event, X-GitHub-Delivery, X-Hub-Signature-256 (case-insensitive).
+• Basic 200 JSON response scaffold with structured error handling and logging (without leaking payloads).
+
+## 2. Implement HMAC SHA-256 signature validation [pending]
+### Dependencies: 74.1
+### Description: Validate X-Hub-Signature-256 using the shared secret with timing-safe comparison.
+### Details:
+• Load secret from env (GITHUB_WEBHOOK_SECRET). Optionally support key rotation via comma-separated secrets.
+• Compute HMAC: sha256 of raw body buffer; expected header format: 'sha256=<hex>'
+• Use constant-time compare (crypto.timingSafeEqual). On mismatch return 401; on missing header return 400.
+• Do not log secrets or full payload; include delivery ID in logs for traceability.
+• After validation, parse JSON from raw body and attach to req.body for downstream handling.
+
+## 3. Add Redis-based delivery ID deduplication [pending]
+### Dependencies: 74.1, 74.2
+### Description: Prevent duplicate processing using X-GitHub-Delivery with Redis for idempotency.
+### Details:
+• Read X-GitHub-Delivery as the unique key.
+• Use Redis SET with NX and EX (e.g., key 'gh:delivery:<id>', value '1', TTL 48h). If SET returns null (already exists), short-circuit with 200 and a dedupe note.
+• Handle missing delivery ID as 400.
+• Configure Redis via REDIS_URL and implement graceful startup/teardown with health probes.
+• Place this middleware after signature verification and before invoking handlers.
+
+## 4. Integrate Probot bridge or direct event dispatch [pending]
+### Dependencies: 74.1, 74.2, 74.3
+### Description: Forward validated events to Probot in-process or to a separate worker, preserving headers and payload.
+### Details:
+• In-process option: instantiate Probot with same secret; call app.webhooks.receive({ id, name, payload }).
+• Ensure event name = X-GitHub-Event, id = X-GitHub-Delivery, payload = parsed req.body.
+• Alternative: publish to internal queue/worker or HTTP-forward to a Probot service with auth.
+• Use try/catch around handler invocation; return 2xx only on successful receipt/queueing; 5xx on failures to trigger GitHub retry.
+• Log minimal context (delivery ID, event) and surface handler errors without leaking PII.
+
+## 5. Define retry and idempotency strategy [pending]
+### Dependencies: 74.3, 74.4
+### Description: Guarantee safe reprocessing on GitHub retries and avoid double work within the system.
+### Details:
+• Only mark delivery as processed when handler completes successfully; if handler fails, do not set 'done' state so GitHub can retry.
+• Add a short-lived processing lock (SET NX EX ~300s on 'gh:delivery:<id>:lock') to prevent concurrent processing across replicas.
+• Ensure downstream handlers are idempotent (e.g., upserts vs inserts, check run updates by external_id).
+• Decide response codes: 2xx on success or when deduped; 5xx on transient failures; 4xx on validation/signature errors.
+• Document at-least-once semantics and how to safely re-run deliveries for incident recovery.
+
+## 6. Optimize performance under burst load [pending]
+### Dependencies: 74.4, 74.5
+### Description: Handle ~10 events/sec with bounded concurrency, backpressure, and observability.
+### Details:
+• Introduce a processing queue (e.g., p-queue or BullMQ) with configurable concurrency.
+• Fast-ack strategy: enqueue then respond 202 if business logic allows; otherwise keep 200 after processing—align with Probot expectations.
+• Add lightweight metrics: request rate, queue depth, processing duration, error rate; expose /health and /metrics.
+• Implement backpressure: if queue over high-water mark, respond 503 with Retry-After.
+• Load test locally to ensure median and p95 processing times meet targets at 10 rps.
+
+## 7. End-to-end tests: signed, tampered, dedupe, and burst [pending]
+### Dependencies: 74.2, 74.3, 74.4, 74.5, 74.6
+### Description: Write automated tests for signature validation, deduplication, handler integration, and burst behavior.
+### Details:
+• Use Jest + Supertest; compute valid signatures with crypto to match body bytes.
+• Cases: valid signed request -> 200/202; tampered body -> 401; missing signature -> 400; missing delivery ID -> 400; duplicate delivery ID -> second call returns 200 with dedupe.
+• Inject a stub Probot app/handler to assert receipt of event name/id and payload.
+• Burst test: fire >=10 signed events/sec and assert throughput, bounded queue, and acceptable latency.
+• Verify logs do not leak secrets or payloads and that Redis keys are set with TTLs.
+

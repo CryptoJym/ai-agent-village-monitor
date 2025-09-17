@@ -1,0 +1,175 @@
+# Task ID: 42
+# Title: Backend Scaffold with Express + TypeScript
+# Status: done
+# Dependencies: 41
+# Priority: medium
+# Description: Create Express server with TypeScript, modular routing, error handling, and configuration loader.
+# Details:
+Implement server/src/index.ts with graceful shutdown.
+- Middleware: cors, helmet, morgan (dev), compression, json parser
+- Error handler returning {error, code}
+- Config: PORT, DATABASE_URL, REDIS_URL, GITHUB_OAUTH keys, JWT_SECRET
+- Health endpoints: GET /healthz, /readyz
+Pseudo-code:
+const app = express();
+app.use(helmet(), cors(), compression(), express.json());
+app.get('/healthz', (_,res)=>res.send('ok'));
+app.use('/auth', authRouter);
+app.use(notFound, errorHandler);
+app.listen(PORT);
+
+
+# Test Strategy:
+Supertest integration: /healthz returns 200, JSON parsing works, error handler returns JSON. Static type check passes. Run server and verify start/stop without unhandled rejections.
+
+# Subtasks:
+## 1. Project structure and tooling setup [done]
+### Dependencies: None
+### Description: Initialize TypeScript Express project layout, scripts, and dependencies for the backend scaffold.
+### Details:
+Deliverables:
+- Package and tooling:
+  - package.json scripts: dev (ts-node-dev), build (tsc), start (node dist/index.js), test (jest)
+  - Dependencies: express, cors, helmet, compression, morgan, dotenv, zod
+  - Dev deps: types for node/express/cors/helmet/compression/morgan, typescript, ts-node-dev, jest, ts-jest, @types/jest, supertest, @types/supertest
+  - tsconfig.json: strict true, target ES2020, module commonjs, rootDir src, outDir dist, esModuleInterop, skipLibCheck, resolveJsonModule, sourceMap
+  - .gitignore and .env.example with required variables
+- Directory structure (server/src):
+  - index.ts (bootstrap)
+  - app.ts (createApp factory)
+  - config/index.ts (typed config loader)
+  - routes/auth/index.ts (stub router)
+  - routes/health.ts
+  - middleware/notFound.ts
+  - middleware/error.ts
+  - types/global.d.ts (optional globals like RequestId)
+- Coding conventions: enable strict TS, add basic ESLint config (optional)
+- Add README snippet on how to run dev server
+<info added on 2025-09-15T14:36:52.749Z>
+- Testing stack updated to Vitest + Supertest:
+  - Dev deps: vitest, @vitest/coverage-v8, supertest, @types/supertest
+  - package.json scripts: test: "vitest run", test:watch: "vitest", test:coverage: "vitest run --coverage"
+  - Remove Jest-related deps and config (jest, ts-jest, @types/jest)
+  - Add vitest.config.ts with:
+    - test: { environment: "node", globals: true, setupFiles: ["src/tests/setup.ts"] }
+    - coverage: { provider: "v8", reporter: ["text", "lcov"] }
+    - resolve.alias: { "@shared": path.resolve(__dirname, "src/shared") }
+- TypeScript path alias for shared code:
+  - tsconfig.json compilerOptions.paths: { "@shared/*": ["src/shared/*"] }
+  - Include "types": ["vitest/globals"] for TS ambient types
+- Refactor server bootstrap for testability:
+  - app.ts exports createApp() returning an Express instance without starting the listener
+  - index.ts imports createApp() and starts the server only when executed directly (no side effects on import)
+- Testing scaffolding:
+  - Add src/tests/setup.ts for test env initialization (e.g., load .env, set NODE_ENV, mock globals)
+  - Example integration test location: src/routes/__tests__/health.test.ts using supertest(createApp()) to assert /healthz returns 200
+- Update README run instructions: use Vitest for tests (npm run test / test:watch / test:coverage) and note app factory usage in tests
+</info added on 2025-09-15T14:36:52.749Z>
+
+## 2. Typed configuration loader with env validation [done]
+### Dependencies: 42.1
+### Description: Implement a type-safe configuration loader that validates required environment variables and provides sensible defaults.
+### Details:
+Implement server/src/config/index.ts:
+- Use dotenv (load in non-production) and zod for validation
+- Schema keys:
+  - NODE_ENV: 'development' | 'test' | 'production'
+  - PORT: number (default 3000)
+  - DATABASE_URL: string (required)
+  - REDIS_URL: string (required)
+  - GITHUB_OAUTH_CLIENT_ID: string (required)
+  - GITHUB_OAUTH_CLIENT_SECRET: string (required)
+  - GITHUB_OAUTH_CALLBACK_URL: string (required)
+  - JWT_SECRET: string (required)
+- Export: type Config and const config (validated at import) plus a getConfig() helper
+- Fail fast with clear error messages if validation fails
+- .env.example updated with all keys
+<info added on 2025-09-15T14:37:51.982Z>
+- Implementation resides in src/config.ts (single file).
+- Zod schema extended to include GITHUB_TOKENS: string.
+- dotenv loads .env from both the package directory and the repository root (supports monorepo layouts).
+- Export type Env and a getEnv() function that validates and returns the typed env on demand.
+- Update .env.example to include GITHUB_TOKENS.
+</info added on 2025-09-15T14:37:51.982Z>
+<info added on 2025-09-15T14:38:58.471Z>
+Added typed env loader in src/config.ts using Zod for NODE_ENV, PORT, DATABASE_URL, REDIS_URL, GITHUB_OAUTH_* keys, JWT_SECRET, and GITHUB_TOKENS. dotenv loads .env from both the package directory and the repo root. Exported getEnv() validates and returns a typed Env.
+</info added on 2025-09-15T14:38:58.471Z>
+
+## 3. Express app and middleware wiring [done]
+### Dependencies: 42.1, 42.2
+### Description: Create the Express app factory and wire core middleware: helmet, cors, compression, JSON parser, and morgan in development.
+### Details:
+Implement server/src/app.ts:
+- export function createApp(config: Config): Express
+- app.set('trust proxy', 1)
+- app.use(helmet(), cors(), compression(), express.json({ limit: '1mb' }))
+- Conditionally enable morgan('dev') when NODE_ENV !== 'test'
+- Mount stub router: app.use('/auth', authRouter)
+- Leave error/404 handlers to a later step
+- Add routes/auth/index.ts with Router() and a placeholder GET '/' returning 200
+Notes:
+- Keep middleware ordering: security -> CORS -> compression -> parsers -> logging (dev)
+- Ensure types imported from express for strong typing
+<info added on 2025-09-15T14:39:51.901Z>
+- Add GitHub client middleware:
+  - Create server/src/middleware/githubClient.ts exporting function githubClient(config: Config): RequestHandler that constructs a typed Octokit instance using config.github (token preferred; support optional baseUrl for GitHub Enterprise) and attaches it to req.github.
+  - Add Express type augmentation in server/src/types/express.d.ts: declare global namespace Express { interface Request { github: Octokit } }.
+  - Wire in app.ts after parsers and before routers: app.use(githubClient(config)).
+  - Keep construction side-effect free to preserve createApp(config) as a pure factory for composition and testing.
+</info added on 2025-09-15T14:39:51.901Z>
+
+## 4. Health and readiness endpoints [done]
+### Dependencies: 42.3
+### Description: Implement GET /healthz and GET /readyz endpoints to expose liveness and readiness status.
+### Details:
+Implement server/src/routes/health.ts and mount in app:
+- GET /healthz: return 200 with text 'ok' (matches pseudo-code)
+- GET /readyz: return 200 JSON { ready: true } for now; structure to support pluggable checks later (DB/Redis)
+- In app.ts, app.get('/healthz', healthz), app.get('/readyz', readyz)
+- Expose a way to toggle readiness (e.g., app.locals.readiness = true by default)
+<info added on 2025-09-15T14:40:24.837Z>
+Updated: both /healthz and /readyz return JSON payload { status, timestamp }. Readiness is now controlled via app.setReady exposed from server/src/index.ts; /readyz responds 503 (Service Unavailable) until setReady(true) is called, then 200 when ready. Replaces app.locals.readiness toggle.
+</info added on 2025-09-15T14:40:24.837Z>
+
+## 5. JSON error and 404 handlers [done]
+### Dependencies: 42.3, 42.4
+### Description: Add not-found and error-handling middleware returning consistent JSON shape: { error, code }.
+### Details:
+Implement server/src/middleware/notFound.ts:
+- For unmatched routes, respond 404 with { error: 'Not Found', code: 'NOT_FOUND' }
+Implement server/src/middleware/error.ts:
+- Express error handler signature (err, req, res, next)
+- Map common errors:
+  - Body parser SyntaxError -> 400, { error: 'Invalid JSON', code: 'BAD_REQUEST' }
+  - ZodError -> 400, { error: 'Validation failed', code: 'VALIDATION_ERROR' }
+  - Default -> 500, { error: 'Internal Server Error', code: 'INTERNAL_ERROR' }
+- Do not leak stack in production
+Wire-up in app.ts (after routes): app.use(notFound); app.use(errorHandler)
+<info added on 2025-09-15T14:41:17.021Z>
+- Update notFound to return { error: 'NotFound', code: 'NOT_FOUND' }.
+- Centralize error handling: derive status from err.status (default 500), code from err.code (default 'INTERNAL_ERROR'), and error from err.message (default 'Internal Server Error'); always respond with JSON { error, code }.
+- Replace special-case mappings (e.g., body-parser SyntaxError, ZodError) with the generic status/code/message mapping while still avoiding leaking stack traces in production.
+</info added on 2025-09-15T14:41:17.021Z>
+
+## 6. Graceful startup/shutdown and Supertest smoke [done]
+### Dependencies: 42.2, 42.3, 42.4, 42.5
+### Description: Implement server bootstrap with graceful shutdown handlers and add minimal Supertest smoke tests.
+### Details:
+Implement server/src/index.ts:
+- Import config and createApp(config)
+- Start HTTP server on config.PORT; log startup
+- Track readiness: set app.locals.readiness = true after listen
+- Handle SIGINT/SIGTERM: set readiness false, server.close(), exit process when closed
+- Handle unhandledRejection/uncaughtException: log, attempt graceful shutdown with non-zero exit
+- Export start() and stop() helpers for tests
+Add smoke tests (e.g., server/test/smoke.test.ts) using Supertest:
+- GET /healthz returns 200 and 'ok'
+- POST /non-existent with header application/json and invalid body triggers error handler returning JSON with code BAD_REQUEST
+- GET /non-existent returns 404 with { error, code }
+- Ensure app can be instantiated and closed without unhandled rejections
+Jest minimal setup (jest.config.ts): ts-jest preset, testMatch, testEnvironment 'node'.
+<info added on 2025-09-15T14:42:06.632Z>
+- Expose setReady(isReady: boolean) on the app to toggle readiness; /readyz reads app.locals.readiness and returns 503 when false and 200 when true. Initialize readiness to false before listen, call setReady(true) in the listen callback, and call setReady(false) on SIGINT/SIGTERM before closing.
+- Expand Supertest smoke tests: verify /readyz returns 503 when setReady(false) then 200 after setReady(true); keep /healthz 200; verify 404 returns JSON with { error, code: 'NOT_FOUND' }. Ensure start()/stop() and setReady do not produce unhandled rejections.
+</info added on 2025-09-15T14:42:06.632Z>
+

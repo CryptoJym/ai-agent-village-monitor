@@ -1,0 +1,66 @@
+{
+  "name": "ai-agent-village-monitor",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.12.1",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:strict": "eslint packages/frontend/src packages/server/src packages/shared --ext .ts,.tsx,.js,.jsx --max-warnings=0",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "prepare": "husky",
+    "prisma:generate": "pnpm -C packages/server prisma:generate",
+    "prisma:migrate:dev": "pnpm -C packages/server db:migrate",
+    "db:migrate": "pnpm -C packages/server db:migrate",
+    "db:push": "pnpm -C packages/server db:push",
+    "db:reset": "pnpm -C packages/server db:reset",
+    "db:studio": "pnpm -C packages/server prisma:studio",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm -r test",
+    "test:integration": "pnpm -C packages/server test:int",
+    "test:e2e": "playwright test",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:preview": "PW_WEB_SERVER='node scripts/preview-and-wait.mjs' PW_BASE_URL='http://localhost:4173' playwright test --reporter=dot",
+    "omnara:auto": "scripts/omnara-auto.sh",
+    "oa": "scripts/omnara-auto.sh",
+    "omnara:hard": "scripts/omnara-hard.sh",
+    "oh": "scripts/omnara-hard.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/supertest": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "pidusage": "^4.0.1",
+    "prettier": "^3.6.2",
+    "prisma": "^6.16.1",
+    "socket.io-client": "^4.8.1",
+    "supertest": "^7.1.4",
+    "typescript": "^5.6.2",
+    "vitest": "^3.2.4"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx,js,jsx,css,md,json}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.1",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "zod": "^3.23.8"
+  }
+}

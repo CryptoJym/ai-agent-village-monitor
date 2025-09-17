@@ -1,0 +1,67 @@
+# Task ID: 82
+# Title: Backend Integration Tests (Supertest + Testcontainers)
+# Status: pending
+# Dependencies: 42
+# Priority: medium
+# Description: Spin ephemeral Postgres and Redis to test REST endpoints end-to-end.
+# Details:
+Use testcontainers-node to run Postgres and Redis. Seed minimal data. Supertest to call /auth/me, /api/villages, /api/... endpoints. Assert DB records and WS side-effects via a test WS client if needed.
+
+# Test Strategy:
+CI runs integration tests in parallel. Ensure migrations run on container DB. Verify isolation between tests and proper teardown.
+
+# Subtasks:
+## 1. Configure Testcontainers for Postgres and Redis [pending]
+### Dependencies: None
+### Description: Provision ephemeral Postgres and Redis for integration tests using testcontainers-node.
+### Details:
+Add testcontainers as a dev dependency. Implement test/utils/containers.ts to start Postgres and Redis containers with appropriate versions, environment, and wait strategies. Expose connection URIs via process.env (DATABASE_URL, REDIS_URL). Provide startInfra() and stopInfra() helpers and ensure compatibility in CI (e.g., socket access).
+
+## 2. Migration runner for containerized Postgres [pending]
+### Dependencies: 82.1
+### Description: Run DB migrations against the ephemeral Postgres before tests execute.
+### Details:
+Create test/utils/migrate.ts with runMigrations(DATABASE_URL) that invokes the project's migration tool/CLI. Ensure idempotency and proper error reporting. Wire into Jest globalSetup or per-suite beforeAll to guarantee schema is up to date.
+
+## 3. Seed data utilities [pending]
+### Dependencies: 82.2
+### Description: Provide reusable seeding helpers to insert minimal test data into Postgres and Redis.
+### Details:
+Implement test/utils/seed.ts with factory-style functions (e.g., createUser, createVillage) and deterministic IDs. Include cleanup helpers (truncate/reset) and optional transactional wrappers to reset state between tests.
+
+## 4. JWT/auth fixtures [pending]
+### Dependencies: 82.2, 82.3
+### Description: Create helpers to mint valid/expired JWTs and Authorization headers for tests.
+### Details:
+Implement test/utils/auth.ts with signJwt(payload, options), authHeaderFor(user), and helpers for invalid/expired tokens. Use the same JWT_SECRET as the app. If sessions are stored in Redis, add helpers to seed/clear session records.
+
+## 5. Supertest suites for key REST endpoints [pending]
+### Dependencies: 82.1, 82.2, 82.3, 82.4
+### Description: Write end-to-end tests for /auth/me, /api/villages, and representative /api endpoints using Supertest.
+### Details:
+Boot the Express app configured to use container URIs. Use seeds and JWT fixtures to cover happy paths and error cases. Assert HTTP status, response shape, and DB side-effects (create/update). Organize tests under tests/integration and tag them appropriately.
+
+## 6. WebSocket test client for side-effects [pending]
+### Dependencies: 82.1, 82.2, 82.3, 82.4, 82.5
+### Description: Implement a test WS client to verify events emitted as side-effects of REST actions.
+### Details:
+Create test/utils/wsClient.ts using the project's WS protocol (ws or socket.io-client). Provide connect, subscribe, waitForEvent with timeouts, and teardown helpers. In tests, trigger REST calls and assert expected WS messages were received.
+
+## 7. Isolation and teardown strategy [pending]
+### Dependencies: 82.1, 82.2, 82.3
+### Description: Ensure clean state between tests and proper teardown of app, DB, Redis, WS, and containers.
+### Details:
+Implement per-test isolation via transactions with rollback, schema truncation, or per-worker schemas (using JEST_WORKER_ID). Reset Redis keys between tests. Add Jest lifecycle hooks to close clients, servers, and stop containers reliably after the test run.
+
+## 8. CI parallelization configuration [pending]
+### Dependencies: 82.1, 82.2, 82.7
+### Description: Configure CI to run integration tests in parallel with Testcontainers compatibility.
+### Details:
+Add a CI workflow that provisions Docker, installs dependencies, and runs jest with maxWorkers. Ensure each worker uses isolated DB/schema and Redis namespaces. Configure any required Testcontainers env (e.g., DOCKER_HOST) and cache Node modules. Collect and upload test reports.
+
+## 9. Developer docs for running locally [pending]
+### Dependencies: 82.1, 82.2, 82.3, 82.4, 82.5, 82.6, 82.7, 82.8
+### Description: Document how to run and debug integration tests locally with Docker.
+### Details:
+Add docs covering prerequisites (Docker, Node), environment variables, commands (run all tests, a single file, verbose, watch), viewing container logs, troubleshooting (Docker permissions, port conflicts), and notes on WS tests and parallel runs.
+

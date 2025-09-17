@@ -1,0 +1,84 @@
+# Task ID: 75
+# Title: GitHub Actions from Dialogue UI
+# Status: pending
+# Dependencies: 56, 57
+# Priority: medium
+# Description: Add UI to trigger GitHub Actions workflows and show build status on houses.
+# Details:
+ControlTab: dropdown of workflows (list via API), trigger dispatch, and listen for check_run events to reflect status (chimney smoke for builds). Show last run status badge on house tooltip.
+
+# Test Strategy:
+Trigger a dummy workflow on a test repo and verify visual indicators update via webhook. UI shows success/failure states and disables during in-flight.
+
+# Subtasks:
+## 1. Workflows list API integration and UI dropdown [pending]
+### Dependencies: None
+### Description: Populate ControlTab with a dropdown of available GitHub Actions workflows for the selected house/repo.
+### Details:
+- Call backend endpoint to list workflows for a repo (e.g., GET /api/github/workflows?repo_id=:id)
+- Display workflow names, ids, and default branches; support search if >10 items
+- Show loading and empty states; cache per repo for session to reduce API calls
+- Acceptance: Selecting a repo shows a populated, accessible dropdown with workflows
+
+## 2. Trigger workflow dispatch from ControlTab [pending]
+### Dependencies: 75.1
+### Description: Wire the trigger button to dispatch a selected workflow on a target ref/branch with optional inputs.
+### Details:
+- POST to /api/github/dispatch with {repo_id, event_type (e.g., workflow_dispatch), workflow_id, ref, inputs}
+- Validate required fields; prefill ref with default branch; allow editing
+- On 2xx, show confirmation (toast) and emit local event; listen for 'action_triggered' WS ack if provided
+
+## 3. In-flight disabled states and progress indicators [pending]
+### Dependencies: 75.2
+### Description: Prevent duplicate submissions and communicate progress during workflow dispatch.
+### Details:
+- Disable dropdown and trigger button while request is in-flight; show spinner in button
+- Re-enable on success/error or WS ack (whichever comes first with a timeout fallback)
+- Add ARIA-busy and proper focus management; keyboard/enter activation respected
+- Acceptance: Double-clicks do not produce multiple dispatches; UI clearly shows progress
+
+## 4. Status stream subscription and local state model [pending]
+### Dependencies: None
+### Description: Subscribe to server-sent status events and maintain per-repo/workflow run state.
+### Details:
+- Connect to WS and handle events: check_run, workflow_run, action_triggered
+- Normalize payloads to {repo_id, workflow_id, run_id, status, conclusion, started_at, completed_at, html_url}
+- Store latest run per workflow per repo; handle reconnect with backfill request (e.g., GET /api/github/runs/latest)
+- Acceptance: Incoming events update a shared store observable by UI components
+
+## 5. Map build statuses to visual indicators (chimney smoke) [pending]
+### Dependencies: 75.4
+### Description: Define and implement status-to-visual mapping for houses.
+### Details:
+- Map statuses: queued (light grey pulsing), in_progress (blue pulsing smoke), success (green steady puff), failure (red intermittent bursts), cancelled (grey steady), timed_out (orange blinking)
+- Implement renderer on House component; update visuals reactively from store
+- Provide reduced-motion fallback and high-contrast variants
+- Acceptance: Visuals change within 1s of status updates and match mapping spec
+
+## 6. Last run status badge and tooltip on houses [pending]
+### Dependencies: 75.4, 75.5
+### Description: Show last run summary in a badge and detailed tooltip for each house.
+### Details:
+- On load, fetch last run per workflow or the primary workflow for each repo (GET /api/github/runs/latest)
+- Badge: compact icon/color reflecting last conclusion; Tooltip: workflow name, branch/ref, status/conclusion, time ago, link to run
+- Update badge/tooltip in real-time via store updates
+- Accessibility: keyboard focusable, ARIA labels; truncate long names with title attribute
+- Acceptance: Hover/focus displays accurate, up-to-date info and external link opens run
+
+## 7. Robust error handling and resiliency [pending]
+### Dependencies: 75.1, 75.2, 75.4
+### Description: Handle API/WS errors, permission issues, and rate limits with clear user feedback.
+### Details:
+- Surface errors via non-blocking toasts and inline messages (403: missing scopes/access; 404: no workflows; 429: rate limited with retry-after)
+- Retry strategy for transient failures; exponential backoff for WS reconnect
+- Graceful empty states and fallbacks when data unavailable; log telemetry for failures
+- Acceptance: User receives actionable messages; UI remains responsive under failures
+
+## 8. End-to-end validation on test repository [pending]
+### Dependencies: 75.1, 75.2, 75.3, 75.4, 75.5, 75.6, 75.7
+### Description: Validate listing, triggering, streaming, visuals, and tooltips against a test repo with a dummy workflow.
+### Details:
+- Prepare test repo with workflow_dispatch workflow that sleeps and alternates success/failure via input
+- Test cases: list workflows; trigger on branch; verify in-flight states; receive WS events; observe visuals update; tooltip reflects final status
+- Automate via Playwright/Cypress; record run URLs and screenshots; document results and issues
+

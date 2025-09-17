@@ -1,0 +1,204 @@
+# Task ID: 46
+# Title: GitHub OAuth 2.0 Flow
+# Status: in-progress
+# Dependencies: 42
+# Priority: medium
+# Description: Implement OAuth login with GitHub, 30s target completion, storing user and hashed token reference.
+# Details:
+Use OAuth App or GitHub App OAuth; for user auth use OAuth App.
+Endpoints:
+- GET /auth/login -> redirect to GitHub with scopes: read:org, repo (if private), workflow
+- POST /auth/github/callback -> exchange code, fetch user, store github_id, username, avatar_url. Store access token encrypted/hashed (e.g., AES-256-GCM with KMS key) or hashed reference for token exchange via GitHub App if used.
+- GET /auth/me returns user + accessible villages
+- POST /auth/logout invalidates JWT
+Issue JWT (HS256) with 1h exp + refresh token rotation.
+
+
+# Test Strategy:
+Run end-to-end OAuth in GitHub test org. Verify new user row created, JWT issued, me returns profile. Security: token not stored in plaintext; review logs for PII leaks. Logout revokes refresh token.
+
+# Subtasks:
+## 1. Configure GitHub OAuth App and environment [in-progress]
+### Dependencies: None
+### Description: Register OAuth App, set callback, scopes, and secrets in env.
+### Details:
+- Register a GitHub OAuth App with callback URL: https://<host>/auth/github/callback.
+- Scopes: read:org, workflow, repo (include repo only if private repo access is required; make configurable).
+- Create env vars: GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, OAUTH_REDIRECT_URI, OAUTH_SCOPES, JWT_SECRET, COOKIE_DOMAIN, NODE_ENV.
+- Provision KMS key (or equivalent) for AES-256-GCM envelope encryption; env vars: KMS_KEY_ID.
+- Document dev vs prod settings and allowed callback URLs.
+- Acceptance: OAuth App exists; secrets stored securely; env validated at boot.
+<info added on 2025-09-15T15:12:38.837Z>
+- Documentation: Added GitHub OAuth setup guide at packages/server/docs/GITHUB_OAUTH_SETUP.md covering app registration steps, scopes, dev/prod settings, and allowed callback URLs.
+- Environment: Updated .env.example to include and describe all required OAuth-related env vars.
+- Callback: Confirmed standard callback path /auth/github/callback (examples use https://<host>/auth/github/callback).
+- Acceptance addendum: Setup guide exists and is referenced; .env.example contains all required keys.
+</info added on 2025-09-15T15:12:38.837Z>
+<info added on 2025-09-15T15:13:01.885Z>
+- Added GitHub OAuth setup guide at packages/server/docs/GITHUB_OAUTH_SETUP.md.
+- Documented all required OAuth environment variables in .env.example.
+- Confirmed standard callback path: /auth/github/callback (e.g., https://<host>/auth/github/callback).
+</info added on 2025-09-15T15:13:01.885Z>
+
+## 2. Implement GET /auth/login redirect with state and PKCE [done]
+### Dependencies: 46.1
+### Description: Generate state/PKCE, persist nonce, and redirect to GitHub authorization URL.
+### Details:
+- Generate cryptographically random state and PKCE verifier+challenge (S256).
+- Persist {state, pkce_verifier_hash, ip, ua, created_at} in Redis with 10 min TTL.
+- Build https://github.com/login/oauth/authorize with client_id, redirect_uri, scope, state, code_challenge, code_challenge_method=S256.
+- Return 302 redirect.
+- Rate-limit endpoint and never log raw state/verifier.
+- Acceptance: Browser hits /auth/login and is redirected to GitHub with correct params; state stored with TTL.
+<info added on 2025-09-15T15:02:24.471Z>
+Set a signed, HttpOnly, Secure, SameSite=Lax state cookie (name: gh_oauth_state) containing only the opaque state ID; cookie TTL set to 10 minutes to match Redis and cleared on mismatch/expiry. Redirect now requests scopes: read:user, read:org, repo, workflow. Acceptance: GET /auth/login sets the state cookie and returns a 302 to GitHub with client_id, redirect_uri, state, code_challenge, code_challenge_method=S256, and the above scopes.
+</info added on 2025-09-15T15:02:24.471Z>
+<info added on 2025-09-15T15:05:37.199Z>
+Implementation complete and verified. GET /auth/login sets a signed, HttpOnly, Secure, SameSite=Lax gh_oauth_state cookie (10-minute TTL), persists state/PKCE with matching TTL, and 302-redirects to GitHub authorize with scopes: read:user, read:org, repo, workflow. Rate limiting applied; raw state and verifier are never logged. Acceptance: Manual test confirms cookie set, nonce stored in Redis, and redirect Location includes client_id, redirect_uri, state, code_challenge, code_challenge_method=S256, and the specified scopes.
+</info added on 2025-09-15T15:05:37.199Z>
+<info added on 2025-09-15T15:12:07.708Z>
+Implemented in packages/server/src/auth/routes.ts using config-driven scopes (config.OAUTH_SCOPES). redirect_uri is derived from PUBLIC_SERVER_URL or OAUTH_REDIRECT_URI, with aliasing and validation verified in packages/server/src/config.ts. The handler sets temporary HttpOnly, SameSite=Lax cookies oauth_state and oauth_verifier (Secure in production) with a 10-minute TTL to match Redis, then 302-redirects to the GitHub authorize URL. Acceptance: modifying OAUTH_SCOPES updates the scopes in the redirect; configuring PUBLIC_SERVER_URL or OAUTH_REDIRECT_URI produces the expected redirect_uri; response includes both cookies with the specified attributes.
+</info added on 2025-09-15T15:12:07.708Z>
+
+## 3. Implement POST /auth/github/callback code exchange [done]
+### Dependencies: 46.1, 46.2
+### Description: Validate state/PKCE and exchange code for access token.
+### Details:
+- Validate incoming state against Redis entry; if missing/expired, return 400 and clear entry.
+- Verify PKCE using stored verifier hash if included.
+- Exchange code at https://github.com/login/oauth/access_token (Accept: application/json).
+- Handle errors: access_denied, bad_verification_code, expired_token; do not log code or token.
+- Receive access_token, token_type, scope; normalize scopes.
+- Delete used state entry to prevent reuse.
+- Acceptance: Valid callback returns token payload in memory for next steps; invalid state/code returns safe error.
+<info added on 2025-09-15T15:03:03.113Z>
+- Endpoint implemented as GET /auth/github/callback (OAuth redirect destination).
+- Include PKCE code_verifier in the token exchange when present.
+- On upstream token exchange failure (non-200, error response, or network error), respond with 502 Bad Gateway and a generic error message; do not log or expose the authorization code, verifier, or token.
+</info added on 2025-09-15T15:03:03.113Z>
+
+## 4. Fetch GitHub user and persist user record [done]
+### Dependencies: 46.3
+### Description: Call GitHub API to get user profile and upsert in DB.
+### Details:
+- Use token to call GET /user; fields: id, login, avatar_url, name, email (may be null).
+- Optionally GET /user/orgs to confirm org visibility (read:org scope).
+- Upsert users table by github_id; store github_id, username (login), avatar_url, name, email (nullable), last_login_at.
+- Do not store PII beyond required fields; mask on logs.
+- Acceptance: New or existing user is persisted/updated; no token stored yet; unit test upsert idempotency.
+
+## 5. Secure token storage (encrypt or hashed reference) [in-progress]
+### Dependencies: 46.3, 46.4
+### Description: Encrypt access token with AES-256-GCM (KMS) or store hashed reference.
+### Details:
+- Create oauth_tokens table: id, user_id, provider='github', scopes, enc_ciphertext, enc_iv, enc_tag, created_at, last_used_at, version; OR hashed_ref if using exchange pattern.
+- Implement envelope encryption: generate data key via KMS, encrypt token with AES-256-GCM; store ciphertext, iv, auth tag; never log plaintext.
+- Provide helper: saveToken(user_id, token, scopes), getToken(user_id) with strict audit logging and access controls.
+- If choosing hashed reference: store SHA-256(salt||token) and never retrievable plaintext; document how GitHub App exchanges will occur instead.
+- Acceptance: Tokens at rest are not in plaintext; crypto unit tests: encrypt/decrypt round-trip; failure paths return safe errors.
+
+## 6. JWT access/refresh issuance and rotation [done]
+### Dependencies: 46.4, 46.5
+### Description: Issue HS256 access JWT (1h) and rotating refresh tokens; add POST /auth/refresh.
+### Details:
+- On successful callback, create access JWT (HS256) with exp=1h and claims: sub=user_id, gh_id, username, iat, jti.
+- Create opaque refresh token (256-bit random); store hashed (Argon2id or bcrypt) with user_id, jti, family_id, expires_at (e.g., 30d), rotated_at, revoked flags.
+- Set cookies: access_token (HttpOnly, Secure, SameSite=Lax, Path=/), refresh_token (HttpOnly, Secure, SameSite=Strict/Lax, Path=/auth).
+- Implement POST /auth/refresh: validate refresh token, rotate (invalidate old, issue new), detect reuse and revoke family.
+- Maintain optional access-token denylist by jti in Redis on logout (see subtask 7) until exp.
+- Acceptance: After callback, client receives cookies; /auth/refresh returns new access+refresh and rotates; invalid/expired returns 401 without PII.
+<info added on 2025-09-15T15:16:20.727Z>
+- POST /auth/refresh implemented in packages/server/src/auth/routes.ts; validates the refresh_token cookie via verifyRefreshToken.
+- In-memory refreshStore uses a salted SHA-256 hash of the refresh token to map and verify jti/family; reuse is detected and the entire family is cleared, returning 401 without PII.
+- On valid requests, rotates tokens: issues new access JWT and new opaque refresh token with a new jti, updates cookies, and sets Cache-Control: no-store.
+- Cookies are configured as HttpOnly and SameSite=Lax, with Secure enabled in production.
+</info added on 2025-09-15T15:16:20.727Z>
+<info added on 2025-09-15T15:16:49.365Z>
+- On OAuth callback, set access_token cookie (1h) and refresh_token cookie (30d).
+- /auth/refresh validates both token type and jti against the hashed in-memory refresh store; on reuse, the entire family is revoked and a 401 is returned without PII.
+- Cookie domain is configurable via COOKIE_DOMAIN; Secure is enforced in production; all auth cookies are HttpOnly.
+- JWT_SECRET is required; production config validation enforces its presence/strength and aborts startup if missing.
+</info added on 2025-09-15T15:16:49.365Z>
+
+## 7. Implement GET /auth/me and POST /auth/logout [done]
+### Dependencies: 46.6
+### Description: Return authenticated profile and invalidate session on logout.
+### Details:
+- GET /auth/me: verify access JWT from cookie or Authorization header; fetch user; return {id, github_id, username, avatar_url, accessible_villages: [...]} (pull from DB/service, default []).
+- POST /auth/logout: require access or refresh token; revoke current refresh token (and optionally entire family), add access jti to denylist until exp, clear cookies.
+- Consistent JSON response shapes; 401 if missing/invalid.
+- Acceptance: me returns sanitized profile; logout clears cookies and prevents further refresh; accessing with logged-out tokens fails.
+
+## 8. Harden cookies, CORS, CSRF/state, and security headers [done]
+### Dependencies: 46.2, 46.6
+### Description: Apply secure cookie flags, CORS rules, CSRF protections, and headers.
+### Details:
+- Cookies: HttpOnly, Secure, SameSite (Lax for access, Strict/Lax for refresh), domain/path scoped; set __Host- prefix when possible.
+- CORS: restrict origins to allowed list; allow credentials only for trusted UI; restrict methods/headers.
+- CSRF: use SameSite plus double-submit CSRF token for state-changing endpoints if cookies are used cross-origin.
+- OAuth state already implemented (subtask 2); ensure not reused.
+- Headers: HSTS (preload for prod), X-Content-Type-Options, X-Frame-Options=DENY, Referrer-Policy, Content-Security-Policy (at least default-src 'self').
+- Rate-limit auth routes and add IP-based abuse protections.
+- Acceptance: Security scanners show correct headers; cookies have expected attributes; CSRF token required for POST logout/refresh when applicable.
+<info added on 2025-09-15T15:13:33.470Z>
+- CORS locked to PUBLIC_APP_URL (from env) with credentials enabled only for that origin; include Vary: Origin and restrict preflight methods/headers accordingly.
+- Auth cookies set HttpOnly and Secure in production with SameSite=Lax; cookie domain sourced from COOKIE_DOMAIN. When COOKIE_DOMAIN is unset (e.g., local), use __Host- prefix with path=/ to maximize security.
+- Added Cache-Control: no-store on all auth endpoints (login, callback, me, refresh, logout) to prevent sensitive response caching.
+- PKCE (S256) enforced alongside OAuth state; invalid/missing code_verifier or mismatched state is rejected and state is one-time-use.
+- Documentation updated for secure env configuration: COOKIE_DOMAIN and PUBLIC_APP_URL must be set to HTTPS origins in production and aligned with CORS and cookie scoping.
+- Acceptance additions: responses from auth routes include Cache-Control: no-store; CORS only echoes PUBLIC_APP_URL with Access-Control-Allow-Credentials: true and Vary: Origin; cookies carry HttpOnly, Secure (in prod), SameSite=Lax, and correct domain/__Host- usage; PKCE verification is exercised in tests.
+</info added on 2025-09-15T15:13:33.470Z>
+<info added on 2025-09-15T15:18:30.656Z>
+Enabled Helmet middleware and set Content-Security-Policy via Helmet with default-src 'self' applied to auth routes. Updated README and .env.example to document PUBLIC_APP_URL and optional COOKIE_DOMAIN configuration (HTTPS in production, local dev guidance). Acceptance: CSP header is present (from Helmet) on auth responses; README and .env.example include the security env guidance.
+</info added on 2025-09-15T15:18:30.656Z>
+
+## 9. Error handling, auditing, and PII/token sanitization [done]
+### Dependencies: 46.2, 46.3, 46.4, 46.6
+### Description: Centralize auth errors, sanitize logs, and add audit trails.
+### Details:
+- Central error middleware: map known OAuth errors to 4xx; mask messages; never include tokens, codes, emails, or state in logs or responses.
+- Structured logging with redaction of Authorization, Set-Cookie, query/code params.
+- Audit events: login_success, login_failure, token_rotated, token_reuse_detected, logout, refresh_revoked with user_id (if known), ip, ua, timestamps.
+- Health metrics and alerts for elevated failure rates.
+- Acceptance: Logs contain no secrets; errors return stable JSON {error, message, code}; audit entries written for key flows.
+<info added on 2025-09-15T15:14:17.739Z>
+- Enforce no plaintext tokens: never emit access_token, refresh_token, authorization code, state, or scopes in logs, audit trails, or API responses. Persist tokens only encrypted/hashed; if a token identifier is needed for correlation, store a salted hash and last 4 characters only.
+- Minimal sanitized audit on login_success: write only {event, user_id (internal), provider:"github", request_id, ip_truncated (/24 for IPv4, /48 for IPv6) or ip_hash (salted), ua_hash (salted), ts}. Explicitly exclude username, email, token/code/state/scopes, repo/org names, and full IP/UA strings. For login_failure, include reason_code (e.g., invalid_code, invalid_token, state_mismatch) without raw upstream messages.
+- Consistent auth failure semantics: all authentication failures (missing/invalid/expired JWT, OAuth callback denial/invalid code) return 401 with stable JSON {error, message, code} and a WWW-Authenticate: Bearer error="invalid_token" header. Use 403 only for authorization failures after a valid identity is established.
+- Response hygiene: success responses must not include GitHub access tokens; issue session/JWT only via HttpOnly, Secure, SameSite=Strict cookies. Error responses must be generic and contain no PII or secrets. Ensure server log redaction covers Authorization, Set-Cookie, cookies, query/body fields containing code, state, token, email, username.
+- Guidance docs added:
+  - docs/security/auth-error-handling.md: mapping of errors to 401/403, header and JSON formats, examples.
+  - docs/security/audit-logging.md: audit event schemas, field definitions, hashing/truncation strategies, sampling/retention guidance.
+  - docs/runbooks/oauth-setup-and-verification.md: environment variable setup, enabling logger redaction, manual and automated checks to verify 401 behavior, sanitized responses, and audit entries.
+- Acceptance additions:
+  - No plaintext tokens or codes are present in DB, logs, or audit tables.
+  - login_success audit events contain only the minimal sanitized fields defined above.
+  - All auth failures return 401 with WWW-Authenticate; authorization denials return 403.
+  - API responses contain no sensitive data; logs show redacted headers/params.
+  - Runbook steps allow a reviewer to set up, test, and verify the above behaviors end-to-end.
+</info added on 2025-09-15T15:14:17.739Z>
+<info added on 2025-09-15T15:21:04.105Z>
+- Hardened error middleware: all 5xx return a generic JSON error with code=INTERNAL and no sensitive details; 401 responses include WWW-Authenticate: Bearer error="invalid_token".
+- All auth endpoints now set Cache-Control: no-store.
+- Added sanitized console.info audit events in /auth/refresh for token_rotated and token_reuse_detected; payload contains user_id only and excludes tokens, codes, state, scopes, emails, IP, and UA. Existing login_success audit preserved.
+- Verified no logging of codes/tokens/state in auth routes.
+- Implementation: packages/server/src/middleware/error.ts and packages/server/src/auth/routes.ts.
+
+Acceptance updates:
+- 5xx responses are generic with code=INTERNAL and no stack or upstream details in the body.
+- All /auth* responses include Cache-Control: no-store.
+- token_rotated and token_reuse_detected audit events are emitted with only user_id and no PII or token material.
+- Route-level logs show no leakage of code/state/token fields.
+</info added on 2025-09-15T15:21:04.105Z>
+
+## 10. End-to-end flow test in GitHub test org [pending]
+### Dependencies: 46.1, 46.2, 46.3, 46.4, 46.5, 46.6, 46.7, 46.8, 46.9
+### Description: Run complete OAuth flow and verify DB, tokens, endpoints, and security.
+### Details:
+- Manual + automated E2E: start at /auth/login, approve OAuth in test org, complete callback.
+- Assert DB: user row created/updated; oauth token encrypted (no plaintext present); refresh token family created.
+- Assert cookies: access/refresh set with correct flags; /auth/me returns profile and accessible_villages; /auth/refresh rotates; /auth/logout revokes refresh and denies further refresh.
+- Negative tests: invalid state, reused code, expired refresh, token reuse detection, CORS/CSRF violations.
+- Review logs for PII/token leakage; run security headers check.
+- Acceptance: All assertions pass in CI; documented test checklist and fixtures.
+

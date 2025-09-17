@@ -1,0 +1,110 @@
+# Task ID: 93
+# Title: Activity Indicators from GitHub Events
+# Status: done
+# Dependencies: None
+# Priority: medium
+# Description: Update house visuals based on commits, PRs, and CI status in near real-time.
+# Details:
+Webhooks map to house activity: push -> window lights, pull_request opened -> banner, check_run in_progress -> smoke. Expire indicators after timeout or resolution.
+
+# Test Strategy:
+Emit synthetic webhooks and validate correct indicators appear and clear. Multiple concurrent indicators displayed without flicker.
+
+# Subtasks:
+## 1. Map GitHub webhook events to activity states [pending]
+### Dependencies: None
+### Description: Define and implement mapping from GitHub webhooks to internal house activity states.
+### Details:
+- Define internal activity state schema (per house): indicators.lights, indicators.banner, indicators.smoke with fields: active, source, contextIds, startedAt
+- Map events:
+  - push -> lights:on (context: repo_id, branch)
+  - pull_request opened -> banner:on (context: repo_id, pr_number)
+  - pull_request closed/merged -> banner:off (resolution)
+  - check_run created/in_progress -> smoke:on (context: repo_id, run_id)
+  - check_run completed -> smoke:off (resolution)
+- Include edge cases: pull_request synchronize (no flicker), check_run rerequested -> smoke:on
+- Implement parser functions to normalize webhook payloads into internal Transition objects
+- Document payload fields used and unsupported events
+- Acceptance: unit tests for payload-to-transition mapping across event types
+
+## 2. Implement state store with TTL/expiry [pending]
+### Dependencies: 93.1
+### Description: Create in-memory state store and expiry mechanics for indicators.
+### Details:
+- State store keyed by houseId (repo) with indicator states and timestamps
+- Expiry rules (defaults; override via config):
+  - lights: auto-expire after 90s since last push
+  - smoke: expire on check_run completed or hard-timeout 10m
+  - banner: expire on PR closed/merged; optional hard-timeout 24h
+- Schedule expirations with timers; cancel/reschedule on new events
+- Provide atomic update API with compare-and-swap versioning to avoid races
+- Produce state diffs (before vs after) for broadcasting
+- Acceptance: unit tests for timer scheduling, cancellation, and resolution-driven expiry
+
+## 3. Debounce and flicker prevention [pending]
+### Dependencies: 93.2
+### Description: Add debouncing, throttling, and minimum display durations to avoid UI flicker.
+### Details:
+- Minimum display durations:
+  - lights: min 3s visible after turn-on
+  - smoke: min 5s visible after turn-on
+  - banner: min 2s visible after turn-on
+- Coalesce rapid repeats: extend expiry instead of toggling off/on
+- Throttle state broadcasts to a max frequency (e.g., 20 Hz) with 50ms coalescing window
+- Ignore redundant transitions (no change)
+- Implement trailing-edge debounce for off transitions to respect min durations
+- Acceptance: unit tests simulating rapid events to verify no flicker and minDuration honored
+
+## 4. Concurrency and layering of indicators [pending]
+### Dependencies: 93.2, 93.3
+### Description: Support multiple indicators simultaneously with clear composition and priority rules.
+### Details:
+- Allow independent lifecycles for lights, banner, and smoke
+- Define visual layering and z-index guidance: smoke (back), lights (middle), banner (front)
+- Conflict rules: none are mutually exclusive; do not suppress others
+- Compose a single aggregate state per house with per-indicator metadata (minRemainingMs)
+- Ensure updates are atomic across indicators to avoid partial frames
+- Acceptance: unit tests asserting concurrent indicators persist and compose correctly
+
+## 5. WebSocket broadcast integration [pending]
+### Dependencies: 93.1, 93.2, 93.3, 93.4
+### Description: Broadcast activity state diffs to clients in near real-time.
+### Details:
+- Define message schema: type=house.activity, houseId, indicators, version, ts
+- Send on change, on expiry/resolution, and on client subscribe (initial snapshot)
+- Scope subscriptions by village/org or repo to limit fanout
+- Implement auth checks and rate limiting; backpressure with buffered queues
+- Batch multiple house updates within 50ms windows to reduce chatter
+- Acceptance: integration tests asserting clients receive correct snapshots and diffs
+
+## 6. Implement visuals: lights, banner, and smoke [pending]
+### Dependencies: 93.1, 93.5
+### Description: Create client-side components and animations driven by activity state.
+### Details:
+- Components: WindowLights, PRBanner, ChimneySmoke with props reflecting indicator state
+- Subscribe to WebSocket, maintain local min-duration timers consistent with server
+- CSS/SVG animations: pulsing window glow, banner unfurl, chimney smoke puffs
+- Layering per guidance; responsive scaling across house sizes
+- Accessibility: ARIA live regions for status changes; reduced motion support
+- Acceptance: storybook examples and unit tests verifying prop-to-visual mapping
+
+## 7. Synthetic event test harness [pending]
+### Dependencies: 93.1, 93.5
+### Description: Provide tools to emit synthetic GitHub events and internal transitions for testing.
+### Details:
+- Dev-only endpoint: POST /api/dev/github/webhooks/simulate {event, payloadTemplate, repoId, prNumber, runId}
+- Prebuilt scenarios: push burst, PR open/close, check_run start/complete, overlapping events
+- CLI script to stream scenarios and observe WS messages
+- Option to bypass signature verification in dev; ensure disabled in production
+- Acceptance: e2e smoke test proving scenario triggers correct WS messages and state changes
+
+## 8. Visual validation and acceptance tests [pending]
+### Dependencies: 93.6, 93.7
+### Description: Automate visual and behavioral validation for indicators and expiry.
+### Details:
+- End-to-end tests (Playwright/Cypress) driven by synthetic harness
+- Assertions: indicators appear, co-exist, and clear as expected; no flicker per debounce rules
+- Visual snapshots/video frames to compare CSS classes and keyframes at timestamps
+- Multi-indicator scenarios and rapid event bursts
+- Define acceptance criteria and thresholds for timing tolerances
+- CI integration to run headless visual tests and produce artifacts
