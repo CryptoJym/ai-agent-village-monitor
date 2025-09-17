@@ -27,7 +27,9 @@ export class CameraNavigator {
     const { cx, cy } = this.clampToBounds(x, y, cam);
     try {
       cam.pan(cx, cy, duration, ease);
-    } catch {}
+    } catch (e) {
+      void e;
+    }
   }
 
   teleportTo(x: number, y: number) {
@@ -36,7 +38,9 @@ export class CameraNavigator {
     // Center camera instantly
     try {
       cam.centerOn(cx, cy);
-    } catch {
+    } catch (e) {
+      // Fallback: adjust scroll manually
+      void e;
       // Fallback: adjust scroll manually
       const halfW = (cam.width / cam.zoom) * 0.5;
       const halfH = (cam.height / cam.zoom) * 0.5;
@@ -79,7 +83,9 @@ export class CameraNavigator {
       } else {
         cam.zoomTo(next, duration);
       }
-    } catch {}
+    } catch (e) {
+      void e;
+    }
   }
 
   private clampToBounds(x: number, y: number, cam: Phaser.Cameras.Scene2D.Camera) {

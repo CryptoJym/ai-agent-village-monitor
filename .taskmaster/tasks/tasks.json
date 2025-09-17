@@ -3658,7 +3658,7 @@
         "testStrategy": "Pen-test basic vulnerabilities: SQL injection prevented, invalid JSON rejected with 400, rate limit kicks in on rapid calls. Verify audit log entries for commands. CSP doesn't break assets.",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3747,8 +3747,8 @@
               "73.7",
               "73.9"
             ],
-            "details": "Author checklist covering: input validation failures (400), invalid JSON (400), SQL injection attempts blocked, rate limits trigger (429), CORS denies unknown origins, HTTPS redirect and HSTS present, CSP blocks disallowed inline/eval while not breaking Phaser/WS, headers sanity (X-Content-Type-Options, X-Frame-Options via CSP), log redaction verified. Implement Supertest cases and manual WS checks. Record findings and remediation tasks.",
-            "status": "pending",
+            "details": "Author checklist covering: input validation failures (400), invalid JSON (400), SQL injection attempts blocked, rate limits trigger (429), CORS denies unknown origins, HTTPS redirect and HSTS present, CSP blocks disallowed inline/eval while not breaking Phaser/WS, headers sanity (X-Content-Type-Options, X-Frame-Options via CSP), log redaction verified. Implement Supertest cases and manual WS checks. Record findings and remediation tasks.\n<info added on 2025-09-16T20:24:36.497Z>\n- Added automated tests:\n  - CORS allow-list positive case verifies Access-Control-Allow-Origin echoes the configured dev origin.\n  - Request logger scrubs sensitive fields; Authorization and Cookie are redacted in structured JSON logs.\n- Tests located at packages/server/src/__tests__/security.cors_and_logging.test.ts.\n- Existing suite coverage includes HSTS/CSP headers, unified error envelopes, rate limiting, and webhook HMAC/deduplication.\n- Recommend periodic staging runbook validation (CORS origins, security headers) and integrating OWASP ZAP scanning in CI.\n- Marking 73.8 implemented.\n</info added on 2025-09-16T20:24:36.497Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -3776,7 +3776,7 @@
               "73.9"
             ],
             "details": "Document: how to add endpoints with Zod and error shapes, updating CORS origins and WS constraints, tuning CSP for Phaser assets and WS, enforcing/validating HTTPS/HSTS behind proxies, rate-limit tuning and exemptions, secret rotation procedures, audit log access/retention, pen-test steps and acceptance criteria, incident response for suspected leaks or abuse. Include checklists and examples.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -3789,7 +3789,7 @@
         "testStrategy": "Send signed and tampered payloads; only signed accepted. Duplicate deliveries ignored. Measure processing time under burst (10 events/sec).",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -3996,7 +3996,7 @@
           "57",
           "60"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4090,8 +4090,8 @@
               "76.6",
               "76.7"
             ],
-            "details": "Unit: coordinate transforms, clamping, URL hash parse/serialize. Integration: viewport overlay accuracy, click-to-world mapping, cameraSettled events, UI state survives teleports. E2E: teleport between regions retains selected agent and Dialogue tab; mini-map reflects viewport. Performance: assert travel <2s. A11y: axe checks and keyboard flows.",
-            "status": "in-progress",
+            "details": "Unit: coordinate transforms, clamping, URL hash parse/serialize. Integration: viewport overlay accuracy, click-to-world mapping, cameraSettled events, UI state survives teleports. E2E: teleport between regions retains selected agent and Dialogue tab; mini-map reflects viewport. Performance: assert travel <2s. A11y: axe checks and keyboard flows.\n<info added on 2025-09-16T19:43:02.329Z>\n- Implemented unit tests for URL hash parse/serialize of uiState with round-trip and edge-case coverage (empty/malformed hash, default tab).\n- Implemented unit tests for mini-map coordinate transforms using scene stubs: world-to-mini and mini-to-world mapping, clamping at bounds, scaling factors, and time-based camera settle handling.\n- Added integration test verifying Dialogue tab persistence via URL hash during teleports; waits for cameraSettled and asserts tab remains selected across regions.\n- Updated test stubs/mocks for interactive events, text measurement, timers, and device scale to stabilize results.\n- Fixed duplicate import/state initialization in App to prevent double uiState sources.\n- All frontend tests passing. Files: frontend/test/utils/ui-state.test.ts, frontend/test/overlays/minimap.mapping.test.ts, frontend/test/integration/minimap.teleport.test.tsx\n</info added on 2025-09-16T19:43:02.329Z>",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -4625,7 +4625,7 @@
         "dependencies": [
           "42"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -4740,7 +4740,7 @@
               "82.8"
             ],
             "details": "Add docs covering prerequisites (Docker, Node), environment variables, commands (run all tests, a single file, verbose, watch), viewing container logs, troubleshooting (Docker permissions, port conflicts), and notes on WS tests and parallel runs.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -4958,7 +4958,7 @@
         "dependencies": [
           "45"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5184,7 +5184,7 @@
         "testStrategy": "Smoke test production endpoints and WS connectivity. Validate SSL and HSTS headers. Database backup/restore dry run. Verify scaling events keep WS sticky sessions or use stateless rooms.",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -5457,7 +5457,7 @@
         "testStrategy": "Auto layout for 100 repos avoids overlap and appears grid-aligned. Agents can path between houses without clipping. Performance acceptable for multiple agents moving.",
         "priority": "medium",
         "dependencies": [],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -6251,7 +6251,7 @@
           "43",
           "44"
         ],
-        "status": "in-progress",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -6752,7 +6752,7 @@
     ],
     "metadata": {
       "created": "2025-09-14T14:46:03.477Z",
-      "updated": "2025-09-16T19:35:10.942Z",
+      "updated": "2025-09-16T20:25:19.806Z",
       "description": "Tasks for mvp context"
     }
   }

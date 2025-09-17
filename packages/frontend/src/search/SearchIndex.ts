@@ -1,6 +1,25 @@
-export type AgentEntity = { type: 'agent'; id: string; name: string; status?: string };
-export type HouseEntity = { type: 'house'; id: string; name: string; location?: string };
-export type ActionEntity = { type: 'action'; id: string; label: string };
+export type AgentEntity = {
+  type: 'agent';
+  id: string;
+  name: string;
+  status?: string;
+  houseId?: string;
+  houseName?: string;
+};
+export type HouseEntity = {
+  type: 'house';
+  id: string;
+  name: string;
+  location?: string;
+  components?: string[];
+};
+export type ActionEntity = {
+  type: 'action';
+  id: string;
+  label: string;
+  actionId?: string;
+  payload?: any;
+};
 
 export type Entity = AgentEntity | HouseEntity | ActionEntity;
 
@@ -43,26 +62,30 @@ export function search(query: string): NormalizedResult[] {
   const push = (r: NormalizedResult) => res.push(r);
 
   for (const a of state.agents) {
-    const s = matchScore(`${a.name} ${a.status ?? ''}`, query);
+    const haystack = `${a.name} ${a.status ?? ''} ${a.houseName ?? ''} ${a.houseId ?? ''}`;
+    const s = matchScore(haystack, query);
     if (s >= 0)
       push({
         type: 'agent',
         id: a.id,
-        label: `${a.name}${a.status ? ` (${a.status})` : ''}`,
-        meta: { status: a.status },
+        label: `${a.name}${
+          a.status || a.houseName ? ` (${[a.status, a.houseName].filter(Boolean).join(' • ')})` : ''
+        }`,
+        meta: { status: a.status, house: a.houseName, houseId: a.houseId },
         actionRef: { actionId: 'startAgent', payload: { agentId: a.id } },
         score: s,
       });
   }
 
   for (const h of state.houses) {
-    const s = matchScore(`${h.name} ${h.location ?? ''}`, query);
+    const extra = Array.isArray(h.components) ? h.components.join(' ') : '';
+    const s = matchScore(`${h.name} ${h.location ?? ''} ${extra}`, query);
     if (s >= 0)
       push({
         type: 'house',
         id: h.id,
         label: `${h.name}${h.location ? ` (${h.location})` : ''}`,
-        meta: { location: h.location },
+        meta: { location: h.location, components: h.components },
         actionRef: { actionId: 'navigateToHouse', payload: { houseId: h.id } },
         score: s,
       });
@@ -75,7 +98,7 @@ export function search(query: string): NormalizedResult[] {
         type: 'action',
         id: a.id,
         label: a.label,
-        actionRef: { actionId: a.id, payload: {} },
+        actionRef: { actionId: a.actionId ?? a.id, payload: a.payload ?? {} },
         score: s,
       });
   }

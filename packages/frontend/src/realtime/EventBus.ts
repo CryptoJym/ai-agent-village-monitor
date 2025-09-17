@@ -20,6 +20,20 @@ type Events = {
   bug_bot_resolved: { id: string };
   bug_bot_assign_request: { id: string };
   agent_drop: { x: number; y: number };
+  agent_assignment: { agentId: string; houseId?: string };
+  agent_identity: { agentId: string; name?: string };
+  house_focus: { houseId: string; source?: string };
+  house_dashboard_request: { houseId: string; source?: string };
+  house_dashboard: {
+    houseId: string;
+    name: string;
+    language?: string;
+    components?: string[];
+    issues?: number;
+    agents?: Array<{ id: string; name: string }>;
+    stars?: number;
+    buildStatus?: string;
+  };
   connection_status: { status: 'connecting' | 'connected' | 'disconnected' };
   latency: { rttMs: number };
   toast: { type: 'success' | 'error' | 'info'; message: string };

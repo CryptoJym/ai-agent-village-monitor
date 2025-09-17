@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom/vitest';
+import { afterEach } from 'vitest';
 import '../src/i18n';
 
 // Provide a requestAnimationFrame fallback for tests that batch events on RAF
@@ -7,6 +8,12 @@ if (!(globalThis as any).requestAnimationFrame) {
   (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) =>
     setTimeout(cb, 0) as unknown as number;
 }
+
+// Ensure any pending micro/macro tasks (e.g., deferred dynamic imports) settle between tests
+afterEach(async () => {
+  await Promise.resolve();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+});
 
 // jsdom: provide a minimal CanvasRenderingContext2D stub to satisfy Phaser feature checks
 try {

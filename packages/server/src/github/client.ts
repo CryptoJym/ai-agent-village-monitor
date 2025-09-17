@@ -224,6 +224,21 @@ export class GitHubClient {
     return res.data;
   }
 
+  async listRepoWorkflows(owner: string, repo: string) {
+    if (!this._octokit) throw new Error('Octokit not available');
+    const res = await this.withRetry(() =>
+      (this._octokit as any).actions.listRepoWorkflows({ owner, repo, per_page: 100 }),
+    );
+    this.trackRate((res as any)?.headers);
+    const items = (res as any)?.data?.workflows || [];
+    return items.map((w: any) => ({
+      id: String(w.id),
+      name: w.name,
+      path: w.path,
+      state: w.state,
+    }));
+  }
+
   async listMyOrgs() {
     if (!this._octokit) throw new Error('Octokit not available');
     const res = await this.withRetry(() =>

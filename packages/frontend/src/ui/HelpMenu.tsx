@@ -8,10 +8,15 @@ export function HelpMenu({
   onOpenLegend?: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [hover, setHover] = React.useState(false);
+  const [hintSeen, setHintSeen] = React.useState(false);
   const btnRef = React.useRef<HTMLButtonElement | null>(null);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
+    try {
+      setHintSeen(!!localStorage.getItem('help_hint_seen_v1'));
+    } catch {}
     function onDoc(e: MouseEvent) {
       if (!open) return;
       const t = e.target as Node;
@@ -36,6 +41,8 @@ export function HelpMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
         style={{
           padding: '8px 12px',
           background: '#0b1220',
@@ -43,9 +50,29 @@ export function HelpMenu({
           border: '1px solid #334155',
           borderRadius: 8,
           cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
         }}
       >
-        Help
+        <span>Help</span>
+        {hintSeen && (
+          <span
+            aria-hidden
+            style={{
+              opacity: hover ? 1 : 0,
+              transition: 'opacity 150ms ease',
+              background: '#111827',
+              color: '#e5e7eb',
+              border: '1px solid #374151',
+              borderRadius: 8,
+              fontSize: 10,
+              padding: '2px 6px',
+            }}
+          >
+            ?
+          </span>
+        )}
       </button>
       {open && (
         <div

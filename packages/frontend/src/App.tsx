@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { nowIso } from '@shared';
 import { useParams } from 'react-router-dom';
 // Scenes loaded lazily to avoid importing Phaser in tests
@@ -10,24 +10,28 @@ import { GlobalErrorHooks } from './ui/GlobalErrorHooks';
 import { ConnectionOverlay } from './ui/ConnectionOverlay';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { GameCanvas, GameProvider } from './game';
-import { SettingsPermissions } from './ui/SettingsPermissions';
-import { FeedbackModal } from './ui/FeedbackModal';
-import { SettingsPreferences } from './ui/SettingsPreferences';
+import { PreloaderScene } from './scenes/PreloaderScene';
+import { WorldMapScene } from './scenes/WorldMapScene';
+import { MainScene } from './scenes/MainScene';
 import { track, flushBeacon } from './analytics/client';
-import { LegendOverlay } from './ui/LegendOverlay';
-import { LegendOverlay } from './ui/LegendOverlay';
 import { readUIHash, writeUIHash, onHashChange, type UIHashState } from './state/uiState';
 import { eventBus } from './realtime/EventBus';
 import * as perf from './metrics/perf';
 import { PerformanceOverlay } from './ui/PerformanceOverlay';
-import { SyncHealth } from './ui/SyncHealth';
 import { LocaleSwitcher } from './ui/LocaleSwitcher';
-import { HelpMenu } from './ui/HelpMenu';
-
 import { EventToastBridge } from './ui/EventToastBridge';
 import { EngineBadge } from './ui/EngineBadge';
 import { initSentry } from './observability/sentry';
 import { AnalyticsConsentBanner } from './ui/AnalyticsConsentBanner';
+import { HouseDashboardPanel, type HouseDashboardData } from './ui/HouseDashboardPanel';
+import { SettingsPermissions } from './ui/SettingsPermissions';
+import { SettingsPreferences } from './ui/SettingsPreferences';
+import { FeedbackModal } from './ui/FeedbackModal';
+import { LegendOverlay } from './ui/LegendOverlay';
+import { SyncHealth } from './ui/SyncHealth';
+import { FastTravelMetrics } from './ui/FastTravelMetrics';
+import { HelpMenu } from './ui/HelpMenu';
+import { HelpHint } from './ui/HelpHint';
 import { CommandPalette } from './ui/CommandPalette';
 
 export default function App() {
@@ -42,12 +46,13 @@ export default function App() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<string>('demo-agent');
+  const [selectedAgent, setSelectedAgent] = useState<string>('agent-placeholder');
   const [dialogueTab, setDialogueTab] = useState<'thread' | 'control' | 'info'>('thread');
   const [viewerRole, setViewerRole] = useState<'owner' | 'member' | 'visitor' | 'none'>('none');
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
-  const [legendOpen, setLegendOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [houseDashboard, setHouseDashboard] = useState<HouseDashboardData | null>(null);
   // High contrast mode
   const [highContrast, setHighContrast] = useState(false);
   const sessionStartRef = useRef<number | null>(null);
@@ -65,17 +70,54 @@ export default function App() {
     return () => off();
   }, []);
 
+  useEffect(() => {
+    const onIdentity = (p: { agentId: string; name?: string }) => setSelectedAgent(p.agentId);
+    eventBus.on('agent_identity', onIdentity);
+    return () => eventBus.off('agent_identity', onIdentity);
+  }, []);
+
+  useEffect(() => {
+    const onDashboard = (payload: HouseDashboardData) => setHouseDashboard(payload);
+    eventBus.on('house_dashboard', onDashboard);
+    return () => eventBus.off('house_dashboard', onDashboard);
+  }, []);
+
+  useEffect(() => {
+    if (!houseDashboard?.houseId) return;
+    if (houseDashboard.metrics) return;
+    let ignore = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/internal/kpi/houses?houseId=${encodeURIComponent(houseDashboard.houseId)}`,
+          { credentials: 'include' },
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (ignore) return;
+        if (data?.house) {
+          setHouseDashboard((prev) =>
+            prev && prev.houseId === houseDashboard.houseId
+              ? { ...prev, metrics: data.house }
+              : prev,
+          );
+        }
+      } catch (e) {
+        void e;
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, [houseDashboard?.houseId, houseDashboard?.metrics]);
+
   // Keep URL hash in sync with camera on cameraSettled
   useEffect(() => {
     const onSettle = (p: { x: number; y: number; zoom: number }) => {
       writeUIHash({
         cam: { x: Math.round(p.x), y: Math.round(p.y), z: Number(p.zoom.toFixed(2)) },
       });
-      const dur = perf.endTravel();
-      if (typeof dur === 'number') {
-         
-        console.info('[perf] travel_ms', Math.round(dur));
-      }
+      perf.endTravel();
     };
     eventBus.on('cameraSettled', onSettle);
     return () => eventBus.off('cameraSettled', onSettle as any);
@@ -122,12 +164,23 @@ export default function App() {
       }
       if (e.key === '?' || (e.key === '/' && e.shiftKey) || e.key === 'F1') {
         e.preventDefault();
-        setLegendOpen((v) => !v);
+        setHelpOpen((v) => !v);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [villageId]);
+
+  // Mark legend as seen when opened (enables subtle '?' hint next to Help)
+  useEffect(() => {
+    if (helpOpen) {
+      try {
+        localStorage.setItem('help_hint_seen_v1', '1');
+      } catch {
+        // ignore storage failures
+      }
+    }
+  }, [helpOpen]);
 
   // Track app mount as session_start and first village view when known
   useEffect(() => {
@@ -215,16 +268,7 @@ export default function App() {
                 const isJsdom =
                   typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
                 if (isJsdom) return [];
-                try {
-                  const { PreloaderScene } = require('./scenes/PreloaderScene');
-
-                  const { WorldMapScene } = require('./scenes/WorldMapScene');
-
-                  const { MainScene } = require('./scenes/MainScene');
-                  return [PreloaderScene, WorldMapScene, MainScene];
-                } catch {
-                  return [];
-                }
+                return [PreloaderScene, WorldMapScene, MainScene];
               })(),
             }}
           >
@@ -235,10 +279,14 @@ export default function App() {
           <ConnectionOverlay />
           <PerformanceOverlay />
           <EngineBadge />
-          <LegendOverlay open={legendOpen} onClose={() => setLegendOpen(false)} />
-          {villageId && (
+          <Suspense fallback={null}>
+            <LegendOverlay open={legendOpen} onClose={() => setLegendOpen(false)} />
+          </Suspense>
+          {villageId && viewerRole === 'owner' && (
             // Lightweight admin widget for sync health; endpoint enforces access
-            <SyncHealth villageId={villageId} />
+            <Suspense fallback={null}>
+              <SyncHealth villageId={villageId} />
+            </Suspense>
           )}
           {villageId && (
             <button
@@ -289,6 +337,11 @@ export default function App() {
               Reset Layout
             </button>
           )}
+          {villageId && viewerRole === 'owner' && (
+            <Suspense fallback={null}>
+              <FastTravelMetrics />
+            </Suspense>
+          )}
           <button
             type="button"
             onClick={() => setFeedbackOpen(true)}
@@ -306,9 +359,20 @@ export default function App() {
           >
             Feedback
           </button>
-          <HelpMenu
-            onOpenFeedback={() => setFeedbackOpen(true)}
-            onOpenLegend={() => setLegendOpen(true)}
+          <Suspense fallback={null}>
+            <HelpMenu
+              onOpenFeedback={() => setFeedbackOpen(true)}
+              onOpenLegend={() => setHelpOpen(true)}
+            />
+          </Suspense>
+          <Suspense fallback={null}>
+            <HelpHint onOpen={() => setHelpOpen(true)} />
+          </Suspense>
+          <HouseDashboardPanel
+            open={houseDashboard != null}
+            data={houseDashboard}
+            onClose={() => setHouseDashboard(null)}
+            viewerRole={viewerRole}
           />
           <button
             type="button"
@@ -373,7 +437,7 @@ export default function App() {
             style={{
               position: 'absolute',
               left: 12,
-              top: 12,
+              top: 52,
               padding: '8px 12px',
               background: '#1f2937',
               color: '#e5e7eb',
@@ -409,16 +473,26 @@ export default function App() {
           initialTab={dialogueTab}
           onTabChange={(t) => setDialogueTab(t)}
         />
-        <SettingsPermissions
-          open={settingsOpen}
-          onClose={() => setSettingsOpen(false)}
-          villageId={villageId}
-        />
-        <SettingsPreferences open={prefsOpen} onClose={() => setPrefsOpen(false)} />
-        <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
-        <LegendOverlay open={legendOpen} onClose={() => setLegendOpen(false)} />
+        <Suspense fallback={null}>
+          <SettingsPermissions
+            open={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            villageId={villageId}
+          />
+        </Suspense>
+        <Suspense fallback={null}>
+          <SettingsPreferences open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <LegendOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
+        </Suspense>
         {/* Global command palette overlay (Ctrl/Cmd+K) */}
-        <CommandPalette />
+        <Suspense fallback={null}>
+          <CommandPalette />
+        </Suspense>
       </div>
       <AnalyticsConsentBanner />
     </ToastProvider>

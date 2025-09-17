@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
+import type { MainScene } from '../scenes/MainScene';
 import { AGENT_STATE_COLORS, type AgentConfig, type AgentState } from './types';
 import { hashTint } from '../assets/AssetManager';
+import { executeAction } from '../actions/ActionRegistry';
 
 export class Agent extends Phaser.GameObjects.Container {
   public readonly nameText: Phaser.GameObjects.Text;
@@ -9,19 +11,25 @@ export class Agent extends Phaser.GameObjects.Container {
   private tooltip?: Phaser.GameObjects.Container;
   private contextMenu?: Phaser.GameObjects.Container;
   private dialog?: Phaser.GameObjects.Container;
+  private highlightTween?: Phaser.Tweens.Tween;
   private currentState: AgentState = 'idle';
+  private agentId: string;
+  private assignedHouseId?: string;
 
   constructor(scene: Phaser.Scene, x: number, y: number, config: AgentConfig) {
     super(scene, x, y);
     scene.add.existing(this);
 
+    this.agentId = String(config.id ?? `agent-${Phaser.Math.RND.uuid().slice(0, 8)}`);
+    if (config.houseId) this.assignedHouseId = config.houseId;
+
     // Base body (agent)
-    const tint = hashTint(config.name || 'agent');
+    const tint = hashTint(String(config.id ?? config.name ?? 'agent'));
     this.circle = scene.add.circle(0, 0, 14, tint);
     this.ring = scene.add.circle(0, 0, 18);
     this.ring.setStrokeStyle(3, AGENT_STATE_COLORS['idle'], 1);
 
-    this.nameText = scene.add.text(0, 20, config.name, {
+    this.nameText = scene.add.text(0, 20, config.name ?? this.agentId, {
       color: '#cbd5e1',
       fontFamily: 'monospace',
       fontSize: '10px',
@@ -61,6 +69,46 @@ export class Agent extends Phaser.GameObjects.Container {
 
   get agentState(): AgentState {
     return this.currentState;
+  }
+
+  get id(): string {
+    return this.agentId;
+  }
+
+  get houseId(): string | undefined {
+    return this.assignedHouseId;
+  }
+
+  setIdentity(next: { id?: string; name?: string }) {
+    if (next.id && next.id !== this.agentId) {
+      this.agentId = next.id;
+      const tint = hashTint(String(next.id));
+      this.circle.setFillStyle(tint, 1);
+    }
+    if (typeof next.name === 'string' && next.name.length > 0) {
+      this.nameText.setText(next.name);
+    }
+  }
+
+  setHouseAssignment(houseId?: string) {
+    this.assignedHouseId = houseId;
+    this.flashHighlight();
+  }
+
+  private flashHighlight() {
+    this.highlightTween?.stop();
+    this.highlightTween = this.scene.tweens.add({
+      targets: this.ring,
+      alpha: { from: 1, to: 0.2 },
+      duration: 220,
+      yoyo: true,
+      repeat: 2,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        this.ring.setAlpha(1);
+        this.highlightTween = undefined;
+      },
+    });
   }
 
   setAgentState(next: AgentState) {
@@ -166,7 +214,9 @@ export class Agent extends Phaser.GameObjects.Container {
     const bg = this.scene.add.rectangle(0, -28, 110, 20, 0x0b1220, 0.9);
     bg.setStrokeStyle(1, 0x334155, 1);
     bg.setOrigin(0.5);
-    const text = this.scene.add.text(0, -28, `${this.nameText.text} • ${this.currentState}`, {
+    const parts = [`${this.nameText.text}`, `${this.currentState}`];
+    if (this.assignedHouseId) parts.push(`house: ${this.assignedHouseId}`);
+    const text = this.scene.add.text(0, -28, parts.join(' • '), {
       color: '#e2e8f0',
       fontFamily: 'monospace',
       fontSize: '10px',
@@ -184,7 +234,6 @@ export class Agent extends Phaser.GameObjects.Container {
   }
 
   private toggleContextMenu(worldX: number, worldY: number) {
-    // Close if open
     if (this.contextMenu) {
       this.contextMenu.destroy();
       this.contextMenu = undefined;
@@ -192,27 +241,103 @@ export class Agent extends Phaser.GameObjects.Container {
     }
     const scene = this.scene;
     const menu = scene.add.container(worldX, worldY);
-    const bg = scene.add.rectangle(0, 0, 140, 80, 0x0f172a, 0.95).setOrigin(0);
+    const entries: Array<{
+      label: string;
+      onClick: () => void;
+      enabled?: boolean;
+    }> = [];
+    const isIdle = this.currentState === 'idle';
+    entries.push({
+      label: isIdle ? 'Start Agent' : 'Stop Agent',
+      onClick: () => {
+        if (isIdle) {
+          try {
+            executeAction('startAgent', { agentId: this.agentId } as any);
+          } catch {}
+          this.setAgentState('working');
+        } else {
+          try {
+            executeAction('stopAgent', { agentId: this.agentId } as any);
+          } catch {}
+          this.setAgentState('idle');
+        }
+      },
+    });
+    entries.push({
+      label: 'Run Recent Tool',
+      onClick: () => {
+        try {
+          executeAction('runRecentTool', { agentId: this.agentId, toolId: 'last' } as any);
+        } catch {}
+      },
+    });
+    entries.push({
+      label: "Go to Agent's House",
+      enabled: !!this.assignedHouseId,
+      onClick: () => this.assignedHouseId && this.focusOnHouse(this.assignedHouseId),
+    });
+    if (this.assignedHouseId) {
+      entries.push({
+        label: 'Open House Dashboard',
+        onClick: () => this.openHouseDashboard(this.assignedHouseId!),
+      });
+    }
+    entries.push({
+      label: 'Assign to House…',
+      onClick: () => this.requestAssignToHouse(),
+    });
+
+    const height = entries.length * 24 + 16;
+    const bg = scene.add.rectangle(0, 0, 160, height, 0x0f172a, 0.95).setOrigin(0);
     bg.setStrokeStyle(1, 0x334155, 1);
-    const mkItem = (label: string, y: number, onClick: () => void) => {
-      const t = scene.add.text(8, y, label, {
-        color: '#e2e8f0',
+    menu.add(bg);
+
+    entries.forEach((entry, idx) => {
+      const y = 8 + idx * 24;
+      const label = scene.add.text(10, y, entry.label, {
+        color: entry.enabled === false ? '#475569' : '#e2e8f0',
         fontFamily: 'monospace',
         fontSize: '12px',
       });
-      t.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-        onClick();
-        menu.destroy();
-        this.contextMenu = undefined;
-      });
-      return t;
-    };
-    const i1 = mkItem('Start working', 6, () => this.setAgentState('working'));
-    const i2 = mkItem('Start debugging', 26, () => this.setAgentState('debugging'));
-    const i3 = mkItem('Stop (idle)', 46, () => this.setAgentState('idle'));
-    menu.add([bg, i1, i2, i3]);
+      if (entry.enabled !== false) {
+        label.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+          entry.onClick();
+          menu.destroy();
+          this.contextMenu = undefined;
+        });
+      }
+      menu.add(label);
+    });
+
     scene.add.existing(menu);
     this.contextMenu = menu;
+  }
+
+  private focusOnHouse(houseId: string) {
+    const scene = this.scene as MainScene;
+    if (scene && typeof scene.focusHouseById === 'function') {
+      scene.focusHouseById(houseId, { agentId: this.agentId });
+    } else {
+      try {
+        executeAction('navigateToHouse', { houseId } as any);
+      } catch {}
+    }
+  }
+
+  private openHouseDashboard(houseId: string) {
+    const scene = this.scene as MainScene;
+    if (scene && typeof scene.openHouseDashboard === 'function') {
+      scene.openHouseDashboard(houseId, { source: 'agent_context' });
+    } else {
+      executeAction('openHouseDashboard', { houseId } as any);
+    }
+  }
+
+  private requestAssignToHouse() {
+    const scene = this.scene as MainScene;
+    if (scene && typeof scene.promptAgentHouseAssignment === 'function') {
+      scene.promptAgentHouseAssignment(this);
+    }
   }
 
   private openDialog() {

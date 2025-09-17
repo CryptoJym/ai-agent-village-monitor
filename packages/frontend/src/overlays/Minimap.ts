@@ -69,7 +69,9 @@ export class Minimap {
       if (this.teleportHandler) this.teleportHandler(world);
       try {
         announce('Traveling to selected location');
-      } catch {}
+      } catch (e) {
+        void e;
+      }
     });
     this.title?.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
       this.setUpdateMode(this.mode === 'interval' ? 'camera' : 'interval');
@@ -84,7 +86,9 @@ export class Minimap {
       const hiDpr =
         typeof window !== 'undefined' && window.devicePixelRatio && window.devicePixelRatio >= 2;
       if (lowCpu || hiDpr) this.refreshDelayMs = 400;
-    } catch {}
+    } catch (e) {
+      void e;
+    }
     // Update cadence: default interval mode (adjusted by refreshDelayMs)
     this.setUpdateMode('interval');
 
@@ -106,13 +110,17 @@ export class Minimap {
         this.updateFocusMarker();
         try {
           announce('Minimap focus enabled. Use arrow keys to move, Enter to travel.');
-        } catch {}
+        } catch (e) {
+          void e;
+        }
       } else {
         this.focusMarker?.destroy();
         this.focusMarker = undefined;
         try {
           announce('Minimap focus disabled.');
-        } catch {}
+        } catch (e) {
+          void e;
+        }
       }
     });
     const move = (dx: number, dy: number) => {
@@ -160,7 +168,9 @@ export class Minimap {
       if (this.teleportHandler) this.teleportHandler(world);
       try {
         announce('Traveling to focused location');
-      } catch {}
+      } catch (e) {
+        void e;
+      }
     };
     kb?.on('keydown-ENTER', activate);
     kb?.on('keydown-SPACE', (e: KeyboardEvent) => {
@@ -196,10 +206,11 @@ export class Minimap {
     this.rt.y = this.padding + (innerH - srcH * s) * 0.5;
     // Draw the current game canvas into the RT
     try {
-       
       const canvas = (this.scene.game as any).canvas as HTMLCanvasElement;
       if (canvas) this.rt.draw(canvas, 0, 0);
-    } catch {}
+    } catch (e) {
+      void e;
+    }
   }
 
   private updateFocusMarker() {

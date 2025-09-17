@@ -1,9 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef } from 'react';
-// Lazy import phaser; in unit tests (jsdom), avoid initializing a real game
-import type PhaserType from 'phaser';
-
-const Phaser: typeof PhaserType | undefined =
-  typeof window !== 'undefined' && !(globalThis as any).VITEST ? require('phaser') : undefined;
+import Phaser from 'phaser';
 
 type GameContextValue = {
   gameRef: React.MutableRefObject<Phaser.Game | null>;
@@ -25,7 +21,7 @@ export type GameProviderProps = {
 
 export function GameProvider({ config, children }: GameProviderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const gameRef = useRef<PhaserType.Game | null>(null);
+  const gameRef = useRef<Phaser.Game | null>(null);
 
   // Memoize config but always ensure parent is current container
   const resolvedConfig = useMemo(
@@ -40,7 +36,7 @@ export function GameProvider({ config, children }: GameProviderProps) {
     if (!containerRef.current || gameRef.current) return;
     // Skip real game init in Vitest/jsdom
     const isJsdom = typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
-    if (!Phaser || isJsdom) return;
+    if (isJsdom) return;
     const game = new Phaser.Game({ ...resolvedConfig, parent: containerRef.current });
     gameRef.current = game;
     // Expose for smoke/E2E checks and log engine version once

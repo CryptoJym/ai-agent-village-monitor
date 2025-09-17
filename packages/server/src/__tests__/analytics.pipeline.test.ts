@@ -50,9 +50,12 @@ describe('analytics pipeline validations', () => {
   });
 
   it('KPI summary responds when Redis not configured', async () => {
-    const res = await request(app).get('/api/internal/kpi/summary');
+    const res = await request(app)
+      .get('/api/internal/kpi/summary')
+      .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body).toBeTruthy();
+    expect(res.body.ok).toBe(true);
   });
 
   it('ingests 1000 events within an acceptable budget', async () => {

@@ -19,7 +19,7 @@ type TabKey = 'thread' | 'control' | 'info';
 export function DialogueUI({
   open,
   onClose,
-  agentId = 'demo-agent',
+  agentId = 'agent-placeholder',
   initialTab,
   onTabChange,
 }: DialogueUIProps) {
@@ -34,7 +34,9 @@ export function DialogueUI({
       ) {
         return st.dialogueTab as any;
       }
-    } catch {}
+    } catch (e) {
+      void e;
+    }
     return 'thread';
   });
   const [heightPct, setHeightPct] = useState(0.3);
@@ -96,7 +98,9 @@ export function DialogueUI({
   useEffect(() => {
     try {
       setUIState({ dialogueTab: tab as any });
-    } catch {}
+    } catch (e) {
+      void e;
+    }
   }, [tab]);
 
   // Reflect prop changes to initialTab (e.g., hash hydration)

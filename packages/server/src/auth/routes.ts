@@ -20,7 +20,7 @@ function cookieOptions(days = 30) {
   return {
     httpOnly: true as const,
     secure: isProd,
-    sameSite: ('lax' as const),
+    sameSite: 'lax' as const,
     maxAge,
     path: '/',
     // Use domain if provided to allow cross-subdomain cookies in prod
@@ -47,7 +47,11 @@ router.get('/auth/login', async (req, res) => {
 
   // Set temporary cookies for state and verifier
   res.cookie('oauth_state', state, { ...cookieOptions(1), maxAge: 10 * 60 * 1000, signed: true });
-  res.cookie('oauth_verifier', codeVerifier, { ...cookieOptions(1), maxAge: 10 * 60 * 1000, signed: true });
+  res.cookie('oauth_verifier', codeVerifier, {
+    ...cookieOptions(1),
+    maxAge: 10 * 60 * 1000,
+    signed: true,
+  });
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -70,8 +74,14 @@ router.get('/auth/github/callback', async (req, res, next) => {
 
     const code = String(req.query.code || '');
     const state = String(req.query.state || '');
-    const cookieState = String((req.signedCookies?.oauth_state as string) || (req.cookies?.oauth_state as string) || '');
-    const verifier = String((req.signedCookies?.oauth_verifier as string) || (req.cookies?.oauth_verifier as string) || '');
+    const cookieState = String(
+      (req.signedCookies?.oauth_state as string) || (req.cookies?.oauth_state as string) || '',
+    );
+    const verifier = String(
+      (req.signedCookies?.oauth_verifier as string) ||
+        (req.cookies?.oauth_verifier as string) ||
+        '',
+    );
     if (!code || !state || !cookieState || state !== cookieState) {
       return res.status(400).json({ error: 'Invalid OAuth state' });
     }
@@ -92,7 +102,11 @@ router.get('/auth/github/callback', async (req, res, next) => {
       // Do not leak upstream response details
       return res.status(502).json({ error: 'Token exchange failed' });
     }
-    const tokenJson = (await tokenRes.json()) as { access_token?: string; token_type?: string; scope?: string };
+    const tokenJson = (await tokenRes.json()) as {
+      access_token?: string;
+      token_type?: string;
+      scope?: string;
+    };
     const ghToken = tokenJson.access_token;
     if (!ghToken) return res.status(502).json({ error: 'No access token returned' });
 
@@ -119,7 +133,14 @@ router.get('/auth/github/callback', async (req, res, next) => {
     });
 
     // Securely persist provider token (encrypted if TOKEN_ENCRYPTION_KEY is set, otherwise as hashed reference)
-    try { await saveProviderToken({ userKey: username, provider: 'github', token: ghToken, scopes: tokenJson.scope || undefined }); } catch {}
+    try {
+      await saveProviderToken({
+        userKey: username,
+        provider: 'github',
+        token: ghToken,
+        scopes: tokenJson.scope || undefined,
+      });
+    } catch {}
 
     // Issue JWTs and set cookies
     const access = signAccessToken(dbUser.id, dbUser.username);
@@ -127,7 +148,11 @@ router.get('/auth/github/callback', async (req, res, next) => {
     const refresh = signRefreshToken(dbUser.id, dbUser.username, refreshId);
     refreshStore.set(String(dbUser.id), sha256Hex(refreshId));
 
-    res.cookie('access_token', access, { ...cookieOptions(1), maxAge: 60 * 60 * 1000, signed: true });
+    res.cookie('access_token', access, {
+      ...cookieOptions(1),
+      maxAge: 60 * 60 * 1000,
+      signed: true,
+    });
     res.cookie('refresh_token', refresh, { ...cookieOptions(30), signed: true });
 
     // Audit (no PII beyond stable username/id)
@@ -148,15 +173,23 @@ router.get('/auth/github/callback', async (req, res, next) => {
 });
 
 router.get('/auth/me', async (req, res) => {
-  const raw = (req.signedCookies?.access_token as string) || (req.cookies?.access_token as string) || '';
-  if (!raw) return res.status(401).json({ error: 'unauthorized' });
+  const raw =
+    (req.signedCookies?.access_token as string) || (req.cookies?.access_token as string) || '';
+  if (!raw) {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(401).json({ error: 'unauthorized' });
+  }
   try {
     const payload = verifyAccessToken(raw);
     const user = await prisma.user.findUnique({ where: { id: Number(payload.sub) } });
-    if (!user) return res.status(401).json({ error: 'unauthorized' });
+    if (!user || typeof (user as any).id !== 'number') {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(401).json({ error: 'unauthorized' });
+    }
     res.setHeader('Cache-Control', 'no-store');
     return res.json({ id: user.id, username: user.username, avatarUrl: user.avatarUrl });
   } catch {
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(401).json({ error: 'unauthorized' });
   }
 });
@@ -164,7 +197,8 @@ router.get('/auth/me', async (req, res) => {
 // Refresh endpoint: rotate refresh token and issue new access token
 router.post('/auth/refresh', async (req, res) => {
   try {
-    const raw = (req.signedCookies?.refresh_token as string) || (req.cookies?.refresh_token as string) || '';
+    const raw =
+      (req.signedCookies?.refresh_token as string) || (req.cookies?.refresh_token as string) || '';
     if (!raw) return res.status(401).json({ error: 'unauthorized' });
 
     // Validate refresh token and detect reuse via jti check
@@ -178,7 +212,7 @@ router.post('/auth/refresh', async (req, res) => {
     if (currentHash !== sha256Hex(providedJti)) {
       // Reuse detected: revoke family by clearing current entry
       refreshStore.delete(userId);
-      // eslint-disable-next-line no-console
+       
       console.info('[auth] token_reuse_detected', { userId });
       return res.status(401).json({ error: 'unauthorized' });
     }
@@ -192,7 +226,11 @@ router.post('/auth/refresh', async (req, res) => {
     const newRefresh = signRefreshToken(user.id, user.username, newJti);
     refreshStore.set(userId, sha256Hex(newJti));
 
-    res.cookie('access_token', newAccess, { ...cookieOptions(1), maxAge: 60 * 60 * 1000, signed: true });
+    res.cookie('access_token', newAccess, {
+      ...cookieOptions(1),
+      maxAge: 60 * 60 * 1000,
+      signed: true,
+    });
     res.cookie('refresh_token', newRefresh, { ...cookieOptions(30), signed: true });
     audit.log('auth.refresh.rotate', { actorId: userId });
     res.setHeader('Cache-Control', 'no-store');
@@ -214,7 +252,9 @@ router.post('/auth/logout', async (req, res) => {
   res.clearCookie('access_token');
   res.clearCookie('refresh_token');
   try {
-    const parts = raw ? (JSON.parse(Buffer.from(raw.split('.')[1], 'base64').toString('utf-8')) as any) : null;
+    const parts = raw
+      ? (JSON.parse(Buffer.from(raw.split('.')[1], 'base64').toString('utf-8')) as any)
+      : null;
     const actorId = parts?.sub ? String(parts.sub) : undefined;
     audit.log('auth.logout', { actorId });
   } catch {}
@@ -225,7 +265,8 @@ router.post('/auth/logout', async (req, res) => {
 // Rotate refresh token and issue a new access token
 router.post('/auth/refresh', async (req, res) => {
   try {
-    const raw = (req.signedCookies?.refresh_token as string) || (req.cookies?.refresh_token as string) || '';
+    const raw =
+      (req.signedCookies?.refresh_token as string) || (req.cookies?.refresh_token as string) || '';
     if (!raw) return res.status(401).json({ error: 'unauthorized' });
 
     const payload = verifyRefreshToken(raw);
@@ -251,7 +292,11 @@ router.post('/auth/refresh', async (req, res) => {
     const refresh = signRefreshToken(Number(userId), '', newRefreshId);
     refreshStore.set(userId, sha256Hex(newRefreshId));
 
-    res.cookie('access_token', access, { ...cookieOptions(1), maxAge: 60 * 60 * 1000, signed: true });
+    res.cookie('access_token', access, {
+      ...cookieOptions(1),
+      maxAge: 60 * 60 * 1000,
+      signed: true,
+    });
     res.cookie('refresh_token', refresh, { ...cookieOptions(30), signed: true });
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ status: 'rotated' });

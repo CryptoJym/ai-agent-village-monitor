@@ -158,36 +158,6 @@ export function createApp(): Express {
     }
   });
 
-  // Public KPI summary (analytics) before auth for lightweight health dashboards/tests
-  try {
-    const { getRedis } = require('./queue/redis') as typeof import('./queue/redis');
-    const dayKey = (d = new Date()) => d.toISOString().slice(0, 10);
-    app.get('/api/internal/kpi/summary', async (_req, res) => {
-      try {
-        const r = getRedis();
-        const today = dayKey();
-        if (!r) return res.json({ ok: true, info: 'redis not configured' });
-        const [villages, dialogue, commands, sessionMs] = await Promise.all([
-          r.scard(`kpi:day:${today}:villages`),
-          r.get(`kpi:day:${today}:dialogue_opens`).then((v: any) => Number(v || 0)),
-          r.get(`kpi:day:${today}:commands`).then((v: any) => Number(v || 0)),
-          r.get(`kpi:day:${today}:session_ms`).then((v: any) => Number(v || 0)),
-        ]);
-        const avgSessionSec =
-          villages > 0 ? Math.round(sessionMs / 1000 / Math.max(1, Number(villages))) : 0;
-        return res.json({
-          ok: true,
-          daily_active_villages: Number(villages),
-          dialogue_opens: dialogue,
-          commands_executed: commands,
-          avg_session_sec: avgSessionSec,
-        });
-      } catch {
-        return res.status(500).json({ error: 'internal_error' });
-      }
-    });
-  } catch {}
-
   // Backup heartbeat (to be called by backup scripts). Secured via token.
   app.post('/internal/backup/heartbeat', (req, res) => {
     const token = String(req.header('x-backup-token') || req.query.token || '');
@@ -283,6 +253,27 @@ export function createApp(): Express {
   // GitHub webhooks (minimal MVP) and public repo reconcile endpoint (used in tests)
   app.post('/api/webhooks/github', githubWebhook);
 
+  // GitHub Actions: list workflows in a repository (Task 75.1)
+  app.get('/api/github/workflows', async (req, res) => {
+    try {
+      const owner = String(req.query.owner || '').trim();
+      const repo = String(req.query.repo || '').trim();
+      if (!owner || !repo)
+        return res
+          .status(400)
+          .json({ error: { code: 'BAD_REQUEST', message: 'owner and repo are required' } });
+      const { createGitHubClientFromEnv } =
+        require('./github/client') as typeof import('./github/client');
+      const gh = createGitHubClientFromEnv();
+      const items = await gh.listRepoWorkflows(owner, repo);
+      return res.json({ items });
+    } catch (e: any) {
+      return res
+        .status(502)
+        .json({ error: { code: 'UPSTREAM', message: e?.message || 'failed to list workflows' } });
+    }
+  });
+
   // Dev-only: simulate GitHub webhooks to drive activity indicators
   app.post('/api/dev/github/webhooks/simulate', async (req, res) => {
     if (config.NODE_ENV === 'production') return res.status(403).json({ error: 'forbidden' });
@@ -317,7 +308,6 @@ export function createApp(): Express {
         const raw = require('express').raw;
         app.use('/api/webhooks/probot', raw({ type: '*/*' }), mw);
       } catch (e) {
-         
         console.warn('[probot] not mounted:', (e as any)?.message || e);
       }
     })();
@@ -351,6 +341,9 @@ export function createApp(): Express {
     res.send(html);
   });
 
+  // Mount analytics routes before auth so the collector remains public
+  app.use('/api', analyticsRouter);
+
   // Protect API routes with auth (exclude webhooks/reconcile which are public)
   app.use('/api', requireAuth);
 
@@ -358,12 +351,11 @@ export function createApp(): Express {
   try {
     const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
     const maxReq = Number(process.env.RATE_LIMIT_MAX || 30);
-     
+
     const rateLimit = require('express-rate-limit');
     let store: any = undefined;
     if (process.env.REDIS_URL) {
       try {
-         
         const { RedisStore } = require('rate-limit-redis');
         const { getRedis } = require('./queue/redis');
         const r = getRedis();
@@ -382,7 +374,7 @@ export function createApp(): Express {
   } catch {}
 
   // GitHub Actions: workflow_dispatch bridge (Task 56/75)
-  app.post('/api/github/dispatch', async (req, res) => {
+  app.post('/api/github/workflows/dispatch', async (req, res) => {
     try {
       const body = req.body ?? {};
       const { sanitizeIdentifier } =
@@ -400,21 +392,17 @@ export function createApp(): Express {
       }
       if (!owner || !repo || !workflowId) {
         const requestId = (req as any).id;
-        return res
-          .status(400)
-          .json({
-            error: { code: 'BAD_REQUEST', message: 'owner, repo, workflowId required' },
-            requestId,
-          });
+        return res.status(400).json({
+          error: { code: 'BAD_REQUEST', message: 'owner, repo, workflowId required' },
+          requestId,
+        });
       }
       if (!req.github) {
         const requestId = (req as any).id;
-        return res
-          .status(503)
-          .json({
-            error: { code: 'UNAVAILABLE', message: 'GitHub client unavailable' },
-            requestId,
-          });
+        return res.status(503).json({
+          error: { code: 'UNAVAILABLE', message: 'GitHub client unavailable' },
+          requestId,
+        });
       }
       await req.github.triggerDispatch(owner, repo, workflowId, ref, inputs).catch((e: any) => {
         const msg = e?.message || 'dispatch failed';
@@ -431,7 +419,6 @@ export function createApp(): Express {
 
   // Admin endpoints (auth required) — tolerate absence in minimal builds
   try {
-     
     const admin = require('./admin/router').adminRouter;
     app.use('/api/admin', requireAuth, admin);
   } catch {
@@ -446,8 +433,7 @@ export function createApp(): Express {
   app.use('/api', agentsRouter);
   // Queue inspection endpoints (protected)
   app.use('/api', queuesRouter);
-  // Analytics collector and KPIs (protected collector, internal summary)
-  app.use('/api', analyticsRouter);
+  // (analytics router mounted earlier to allow public collector & KPI)
 
   // Bug bot endpoints (protected)
   app.use('/api', bugRouter);
@@ -721,14 +707,12 @@ export function createApp(): Express {
         command: (cmd as any).command || (cmd as any).type,
         args: cmd,
       });
-      return res
-        .status(202)
-        .json({
-          status: 'enqueued',
-          agentId: id,
-          jobId: (result as any).jobId ?? null,
-          timestamp: nowIso(),
-        });
+      return res.status(202).json({
+        status: 'enqueued',
+        agentId: id,
+        jobId: (result as any).jobId ?? null,
+        timestamp: nowIso(),
+      });
     },
   );
 
@@ -755,15 +739,13 @@ export function createApp(): Express {
         res.setHeader('Idempotency-Key', String((result as any).jobId));
         res.setHeader('Idempotency-Status', (result as any).enqueued === false ? 'reused' : 'new');
       }
-      return res
-        .status(202)
-        .json({
-          status: 'enqueued',
-          agentId: id,
-          jobId: (result as any).jobId ?? null,
-          timestamp: nowIso(),
-          restart,
-        });
+      return res.status(202).json({
+        status: 'enqueued',
+        agentId: id,
+        jobId: (result as any).jobId ?? null,
+        timestamp: nowIso(),
+        restart,
+      });
     },
   );
 
@@ -789,14 +771,12 @@ export function createApp(): Express {
         res.setHeader('Idempotency-Key', String((result as any).jobId));
         res.setHeader('Idempotency-Status', (result as any).enqueued === false ? 'reused' : 'new');
       }
-      return res
-        .status(202)
-        .json({
-          status: 'enqueued',
-          agentId: id,
-          jobId: (result as any).jobId ?? null,
-          timestamp: nowIso(),
-        });
+      return res.status(202).json({
+        status: 'enqueued',
+        agentId: id,
+        jobId: (result as any).jobId ?? null,
+        timestamp: nowIso(),
+      });
     },
   );
 
@@ -812,7 +792,7 @@ export function createApp(): Express {
   app.use(errorHandler);
 
   // Provide a handle to set readiness from the outside when using the app directly
-   
+
   (app as any).setReady = (ready: boolean) => {
     isReady = ready;
   };

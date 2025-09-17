@@ -167,7 +167,7 @@ export function createSocketServer(server: HttpServer) {
       try {
         socket.timeout(2000).emit('server_ping', () => {
           const rtt = Date.now() - start;
-           
+
           console.debug?.(`[ws] rtt=${rtt}ms socket=${socket.id}`);
           try {
             inc('ws.ping');
@@ -256,11 +256,11 @@ export function createSocketServer(server: HttpServer) {
     const interval = setInterval(() => {
       const now = Date.now();
       socket.emit('work_stream', {
-        agentId: 'demo-agent',
+        agentId: 'agent-placeholder',
         message: `demo activity at ${new Date(now).toLocaleTimeString()}`,
         ts: now,
       });
-      socket.emit('agent_update', { agentId: 'demo-agent', status: 'idle', ts: now });
+      socket.emit('agent_update', { agentId: 'agent-placeholder', status: 'idle', ts: now });
       if (Math.random() < 0.33)
         socket.emit('bug_bot_spawn', { id: `bug-${Math.floor(Math.random() * 1000)}` });
       if (Math.random() < 0.2)

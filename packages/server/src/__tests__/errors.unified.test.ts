@@ -15,7 +15,7 @@ describe('Unified error shapes and sanitization', () => {
 
   it('returns unified envelope on malformed JSON', async () => {
     const res = await request(app)
-      .post('/api/github/dispatch')
+      .post('/api/github/workflows/dispatch')
       .set('Authorization', `Bearer ${token}`)
       .set('Content-Type', 'application/json')
       .send('{"owner": "a"  invalid');
@@ -26,9 +26,9 @@ describe('Unified error shapes and sanitization', () => {
     expect(res.body?.requestId).toBeTruthy();
   });
 
-  it('strips/normalizes identifiers for /api/github/dispatch', async () => {
+  it('strips/normalizes identifiers for /api/github/workflows/dispatch', async () => {
     const res = await request(app)
-      .post('/api/github/dispatch')
+      .post('/api/github/workflows/dispatch')
       .set('Authorization', `Bearer ${token}`)
       .send({
         owner: ' Org ',

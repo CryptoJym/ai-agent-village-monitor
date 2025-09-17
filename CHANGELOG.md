@@ -1,38 +1,48 @@
-﻿# Changelog
+# Changelog
 
-All notable changes to this project will be documented in this file.
+## v0.1.0
 
-The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
+### Features
 
-## [0.1.0-rc1] - 2025-09-16
+- Mini‑map overlay with scaled render texture, viewport bounds, and click‑to‑teleport fast travel.
+- Auto layout and pathfinding utilities (grid + A\*, obstacle map, path smoothing) wired into agent movement.
+- Feedback modal + Help menu: in‑app feedback with honeypot/tts checks; pluggable sinks (Redis/Slack/GitHub).
+- Analytics pipeline: privacy‑aware collector, Redis KPIs, and internal dashboard endpoints.
 
-### Added
+### Security
 
-- CI/CD workflows:
-  - `.github/workflows/ci.yml` for lint, typecheck, unit/integration/e2e tests with pnpm caching.
-  - `.github/workflows/deploy-frontend.yml` for Vercel preview/prod deploys.
-  - `.github/workflows/deploy-backend.yml` for Railway/Fly deploys and migrations.
-- Feedback & Help Center:
-  - `packages/frontend/src/ui/FeedbackModal.tsx` with validation, NPS (optional), draft persistence.
-  - `packages/frontend/src/ui/HelpMenu.tsx` with links (Docs, Discord, Discussions) and Submit Feedback.
-  - `packages/server/src/app.ts` feedback endpoint: schema validation, Redis-backed rate limits, Slack/GitHub forwarding.
-  - Test: `packages/frontend/test/ui/feedback.modal.test.tsx`.
-- Launch documentation:
-  - `docs/launch/runbook.md`, `rollback-migrations.md`, `observability.md`, `incident-response.md`, `demo.md`, `comms-plan.md`.
-  - Linked from README; operations `docs/operations/ci-cd.md` added previously.
+- Helmet headers incl. CSP (prod tuned) and HSTS (prod).
+- Strict CORS allowlist and credential handling.
+- Auth/401 semantics with `WWW-Authenticate: Bearer`; auth responses use `Cache-Control: no-store`.
+- Privacy controls: DNT/GPC and per‑user preferences; hashed identifiers in analytics.
+- Pen‑test checklist and automated header/CORS/privacy tests.
 
-### Changed
+### DR/Backups
 
-- Server tests: enforce coverage thresholds in CI via `packages/server/vitest.config.ts` (80% lines/functions/statements, 70% branches).
-- Request logging: metrics gated on DNT and both `Sec-GPC`/`GPC` headers.
+- Backup heartbeat endpoint with metrics (`backup_last_seconds`) for Postgres/Redis.
+- Disaster Recovery runbook with restore verification and alert guidance.
 
-### Security / Privacy
+### Testing/DevX
 
-- Token handling:
-  - AES-256-GCM encryption at rest when `TOKEN_ENCRYPTION_KEY` is set; salted hash fallback when absent (no plaintext persisted).
-- Account deletion:
-  - `DELETE /api/account` anonymizes user and revokes provider tokens.
-- Redaction:
-  - Structured logging scrubs sensitive headers/fields; long values truncated; email masking.
+- Developer guide for integration tests (Testcontainers and Docker Compose).
+- Mini‑map and camera navigator unit tests; E2E/UI tests passing locally.
+- Backend integration testing guide and tests (Supertest + Testcontainers).
 
-[0.1.0-rc1]: https://example.com/releases/v0.1.0-rc1
+### Docs
+
+- Security hardening runbook and pen‑test checklist.
+- DR runbook, deployment guides (Vercel/Railway), staging/load testing playbooks.
+- Integration testing developer guide.
+
+### Post‑release monitoring
+
+- Metrics: HTTP latency p95; 4xx/5xx rates; backup heartbeat freshness; WS connect success and event throughput.
+- Logs: confirm no PII/secret leakage; audit log sampling for agent commands.
+- Security: verify CSP/HSTS/CORS in prod; re‑run pen‑test checklist periodically.
+- Performance: mini‑map/pathfinding CPU budget; client FPS overlay and server WS RTT p95 under load.
+
+### Next steps
+
+- Tag release `v0.1.0` and publish release notes.
+- Schedule a restore drill in staging; document RTO/RPO measurements.
+- Optional: expand automated security tests for HSTS in prod‑like env and WS handshake auth in CI.

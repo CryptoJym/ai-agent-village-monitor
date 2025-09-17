@@ -25,7 +25,7 @@ export function loadEnv() {
 }
 
 const EnvSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.string().url().optional(),
   REDIS_URL: z.string().url().optional(),
@@ -57,6 +57,9 @@ const EnvSchema = z.object({
   WEBHOOK_SECRET: z.string().optional(),
   // Comma-separated list of allowed WS/CORS origins (overrides PUBLIC_APP_URL if provided)
   WS_ALLOWED_ORIGINS: z.string().optional(),
+  INTERNAL_METRICS_ALLOWLIST: z.string().optional(),
+  ALERT_SLACK_WEBHOOK: z.string().optional(),
+  ALERT_EMAIL_RECIPIENTS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
@@ -76,9 +79,12 @@ export function getEnv(): Env {
     if (!env.GITHUB_OAUTH_CLIENT_SECRET) missing.push('GITHUB_OAUTH_CLIENT_SECRET');
     if (!env.JWT_SECRET) missing.push('JWT_SECRET');
     // Require either explicit redirect or a server URL to derive it from
-    if (!env.OAUTH_REDIRECT_URI && !env.PUBLIC_SERVER_URL) missing.push('OAUTH_REDIRECT_URI or PUBLIC_SERVER_URL');
+    if (!env.OAUTH_REDIRECT_URI && !env.PUBLIC_SERVER_URL)
+      missing.push('OAUTH_REDIRECT_URI or PUBLIC_SERVER_URL');
     if (missing.length) {
-      throw new Error(`Missing required environment variables in production: ${missing.join(', ')}`);
+      throw new Error(
+        `Missing required environment variables in production: ${missing.join(', ')}`,
+      );
     }
   }
 

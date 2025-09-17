@@ -16,6 +16,23 @@ export default defineConfig({
       '@sentry/browser': path.resolve(__dirname, 'src/observability/sentry.browser.stub.ts'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('phaser')) return 'vendor-phaser';
+            if (id.match(/react|scheduler|react-dom/)) return 'vendor-react';
+            if (id.includes('zustand') || id.includes('mitt') || id.includes('zod'))
+              return 'vendor-utils';
+            return 'vendor';
+          }
+          if (id.includes(`${path.sep}src${path.sep}scenes${path.sep}`)) return 'scene-chunk';
+        },
+      },
+    },
+  },
   server: {
     fs: {
       // Allow serving files from the project root

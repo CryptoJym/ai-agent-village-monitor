@@ -39,11 +39,22 @@ export const VillageViewEvent = z.object({
   villageId: z.string().min(1),
 });
 
+export const HouseCommandEvent = z.object({
+  type: z.literal('house_command'),
+  ts: z.number().finite(),
+  houseId: z.string().min(1),
+  command: z.string().min(1).max(64).optional(),
+  status: z.enum(['queued', 'success', 'error', 'failed']).optional(),
+  latencyMs: z.number().int().nonnegative().optional(),
+  villageId: z.string().min(1).optional(),
+});
+
 export const AnalyticsEventSchema = z.union([
   SessionStartEvent,
   SessionEndEvent,
   DialogueOpenEvent,
   CommandExecutedEvent,
+  HouseCommandEvent,
   VillageViewEvent,
 ]);
 

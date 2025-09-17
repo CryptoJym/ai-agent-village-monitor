@@ -1,12 +1,25 @@
 import { eventBus } from '../realtime/EventBus';
+import { track } from '../analytics/client';
 
-export type ActionId = 'startAgent' | 'stopAgent' | 'runRecentTool' | 'navigateToHouse';
+export type ActionId =
+  | 'startAgent'
+  | 'stopAgent'
+  | 'runRecentTool'
+  | 'navigateToHouse'
+  | 'assignAgentToHouse'
+  | 'openHouseDashboard'
+  | 'startHouseAgents'
+  | 'runHouseChecks';
 
 export type ActionPayloads = {
   startAgent: { agentId: string };
   stopAgent: { agentId: string };
   runRecentTool: { agentId: string; toolId: string };
   navigateToHouse: { houseId: string };
+  assignAgentToHouse: { agentId: string; houseId: string };
+  openHouseDashboard: { houseId: string };
+  startHouseAgents: { houseId: string };
+  runHouseChecks: { houseId: string };
 };
 
 export type AnyAction = {
@@ -14,7 +27,7 @@ export type AnyAction = {
   payload: any; // kept loose for flexibility at call sites
 };
 
-type Impl<T extends ActionId> = (payload: ActionPayloads[T]) => Promise<void>;
+type Impl<T extends ActionId> = (payload: ActionPayloads[T]) => Promise<void | false>;
 
 const registry: Partial<{ [K in ActionId]: Impl<K> }> = {};
 
@@ -41,9 +54,24 @@ export async function executeAction<T extends ActionId>(id: T, payload: ActionPa
     return;
   }
   try {
-    await impl(payload);
-    eventBus.emit('toast', { type: 'success', message: `Action '${id}' executed` });
+    const result = await impl(payload);
+    if (result !== false)
+      eventBus.emit('toast', { type: 'success', message: `Action '${id}' executed` });
   } catch {
+    try {
+      const houseId = (payload as any)?.houseId;
+      if (houseId) {
+        track({
+          type: 'house_command',
+          ts: Date.now(),
+          houseId: String(houseId),
+          command: id,
+          status: 'error',
+        });
+      }
+    } catch (err) {
+      void err;
+    }
     eventBus.emit('toast', { type: 'error', message: `Action '${id}' failed` });
   }
 }
@@ -66,6 +94,31 @@ registerAction('runRecentTool', async ({ agentId, toolId }) => {
 });
 
 registerAction('navigateToHouse', async ({ houseId }) => {
-  // In a complete wiring, this would trigger route or scene navigation
-  void houseId; // noop
+  eventBus.emit('house_focus', { houseId, source: 'action' });
+});
+
+registerAction('assignAgentToHouse', async ({ agentId, houseId }) => {
+  eventBus.emit('agent_assignment', { agentId, houseId });
+  return false;
+});
+
+registerAction('openHouseDashboard', async ({ houseId }) => {
+  eventBus.emit('house_dashboard_request', { houseId, source: 'action' });
+  return false;
+});
+
+registerAction('startHouseAgents', async ({ houseId }) => {
+  eventBus.emit('toast', {
+    type: 'info',
+    message: `Starting agents for ${houseId}`,
+  });
+  return false;
+});
+
+registerAction('runHouseChecks', async ({ houseId }) => {
+  eventBus.emit('toast', {
+    type: 'info',
+    message: `Queued repository checks for ${houseId}`,
+  });
+  return false;
 });

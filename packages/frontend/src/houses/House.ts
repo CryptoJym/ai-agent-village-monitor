@@ -2,6 +2,7 @@
 import PhaserLib from 'phaser';
 import { AssetManager } from '../assets/AssetManager';
 import { getLanguageStyle } from './styles';
+import { eventBus } from '../realtime/EventBus';
 
 export type HouseProps = {
   id: string;
@@ -76,7 +77,15 @@ export class House extends PhaserLib.GameObjects.Container {
   }
 
   onClickZoom(panTo: (x: number, y: number) => void) {
-    this.on('pointerdown', () => panTo(this.x, this.y));
+    this.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const isRightClick =
+        pointer && typeof pointer.rightButtonDown === 'function' && pointer.rightButtonDown();
+      if (isRightClick) {
+        eventBus.emit('house_dashboard_request', { houseId: this.id, source: 'right_click' });
+        return;
+      }
+      panTo(this.x, this.y);
+    });
     return this;
   }
 
@@ -220,6 +229,20 @@ export class House extends PhaserLib.GameObjects.Container {
     } else {
       this.sprite.clearTint();
     }
+  }
+
+  pulseHighlight() {
+    const baseRadius = 42;
+    const ring = this.scene.add.circle(0, -18, baseRadius, 0x38bdf8, 0.18).setOrigin(0.5, 1);
+    this.addAt(ring, 0);
+    this.scene.tweens.add({
+      targets: ring,
+      scale: { from: 0.8, to: 1.35 },
+      alpha: { from: 0.6, to: 0 },
+      duration: 360,
+      ease: 'Sine.easeOut',
+      onComplete: () => ring.destroy(),
+    });
   }
 
   private showTooltip(props: HouseProps, pointer?: Phaser.Input.Pointer) {

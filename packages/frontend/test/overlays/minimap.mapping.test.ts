@@ -27,21 +27,41 @@ describe('Minimap coordinate transforms', () => {
     scene.cameras = {
       main: { worldView: { x: 0, y: 0, width: 800, height: 600 }, zoom: 1 },
     } as any;
+    // @ts-ignore time
+    scene.time = { addEvent: vi.fn(() => ({ remove: vi.fn() })) } as any;
     // @ts-ignore input
     scene.input = { keyboard: { on: vi.fn() } } as any;
     // @ts-ignore add
     scene.add = {
-      rectangle: vi.fn(() => ({ setOrigin: () => ({ setStrokeStyle: () => ({}) }) })),
+      rectangle: vi.fn(() => {
+        const obj: any = {};
+        obj.setOrigin = () => obj;
+        obj.setStrokeStyle = () => obj;
+        obj.setFillStyle = () => obj;
+        obj.setInteractive = () => ({ on: vi.fn() });
+        return obj;
+      }),
       renderTexture: vi.fn(() => ({ setOrigin: () => ({}), setAlpha: () => ({}) })),
-      container: vi.fn(() => ({
-        setScrollFactor: () => ({
-          setDepth: () => ({ setName: () => ({ setPosition: vi.fn() }) }),
-        }),
-      })),
+      container: vi.fn(() => {
+        const chain: any = {};
+        chain.setScrollFactor = () => chain;
+        chain.setDepth = () => chain;
+        chain.setName = () => chain;
+        chain.setPosition = vi.fn();
+        return chain;
+      }),
       circle: vi.fn(() => ({})),
-      text: vi.fn(() => ({ setInteractive: () => ({ on: vi.fn() }) })),
+      text: vi.fn(() => {
+        const obj: any = {};
+        obj.setInteractive = () => ({ on: vi.fn() });
+        obj.setText = vi.fn();
+        return obj;
+      }),
     } as any;
 
+    // Ensure Scale.Events exists for listeners
+    // @ts-ignore
+    (Phaser as any).Scale = (Phaser as any).Scale || { Events: { RESIZE: 'resize' } };
     const m = new Minimap(scene as any, { width: 200, height: 120, world: { w: 1600, h: 1200 } });
     // @ts-ignore access private
     const toMini = (m as any).toMini.bind(m);

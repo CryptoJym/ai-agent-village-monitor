@@ -13,7 +13,20 @@ import { LayoutOffload } from '../services/LayoutOffload';
 import { SpatialHash } from '../utils/spatial';
 import { Minimap } from '../overlays/Minimap';
 import { track } from '../analytics/client';
+import * as SearchIndex from '../search/SearchIndex';
 import { CameraNavigator } from '../camera/CameraNavigator';
+import { startTravel } from '../metrics/perf';
+
+type HouseMeta = {
+  name: string;
+  language?: string;
+  stars?: number;
+  issues?: number;
+  components?: string[];
+  agents?: Array<{ id: string; name: string }>;
+  buildStatus?: string;
+  lastCommitAt?: number;
+};
 
 export class MainScene extends Phaser.Scene {
   private agent?: Agent;
@@ -63,6 +76,11 @@ export class MainScene extends Phaser.Scene {
   private minimap?: Minimap;
   private camNav?: CameraNavigator;
   private travelStartAt?: number;
+  private layoutVersion = 0;
+  private houseMetadata: Map<string, HouseMeta> = new Map();
+  private houseAssignMenu?: Phaser.GameObjects.Container;
+  private houseAssignInputHandler?: (pointer: Phaser.Input.Pointer, objects: any[]) => void;
+
   constructor() {
     super('MainScene');
   }
@@ -94,7 +112,9 @@ export class MainScene extends Phaser.Scene {
     // Update minimap viewport each frame
     try {
       this.minimap?.setViewport(view as any);
-    } catch {}
+    } catch (e) {
+      void e;
+    }
   }
 
   create(data?: { villageId?: string }) {
@@ -110,19 +130,46 @@ export class MainScene extends Phaser.Scene {
     const prior = loadVillageState(villageId);
     const startX = prior?.agent?.x ?? 200;
     const startY = prior?.agent?.y ?? 180;
-    this.agent = new Agent(this, startX, startY, { name: 'Claude' });
+    this.agent = new Agent(this, startX, startY, { name: 'Claude', id: 'agent-placeholder' });
+    eventBus.emit('agent_identity', {
+      agentId: this.agent.id,
+      name: this.agent.nameText.text,
+    });
     this.fetchLayout(villageId)
       .then((layout) => {
         try {
-          const a = layout?.agents?.[0];
-          if (a && typeof a.positionX === 'number' && typeof a.positionY === 'number') {
-            this.agent?.setPosition(a.positionX, a.positionY);
+          if (layout && typeof layout.version === 'number') this.layoutVersion = layout.version;
+          const agentRows = Array.isArray(layout?.agents) ? layout?.agents : [];
+          if (agentRows.length > 0) {
+            const row = agentRows[0];
+            const id = String(row.id ?? this.agent?.id ?? 'agent-placeholder');
+            const name = String(row.name ?? row.id ?? 'Agent');
+            const status = (row.currentStatus as AgentState) ?? 'idle';
+            const cfg = this.parseSpriteConfig(row.spriteConfig);
+            const houseId = typeof cfg.houseId === 'string' ? cfg.houseId : cfg.house_id;
+            this.agent?.setIdentity({ id, name });
+            eventBus.emit('agent_identity', { agentId: id, name });
+            this.agent?.setAgentState(status);
+            if (typeof row.positionX === 'number' && typeof row.positionY === 'number') {
+              this.agent?.setPosition(row.positionX, row.positionY);
+              try {
+                this.minimap?.setAgentPosition({ x: row.positionX, y: row.positionY });
+              } catch {}
+            }
+            if (houseId) {
+              this.agent?.setHouseAssignment(String(houseId));
+              const agentInfo = { id, name };
+              this.updateHouseAgentMembership(undefined, String(houseId), agentInfo);
+            }
           }
         } catch (e) {
           void e;
         }
+        this.syncSearchIndex();
       })
-      .catch(() => {});
+      .catch(() => {
+        this.syncSearchIndex();
+      });
 
     // Group for bug bots (for layering/management)
     this.bugBotsGroup = this.add.group();
@@ -206,6 +253,22 @@ export class MainScene extends Phaser.Scene {
       }
     });
 
+    const onAgentAssignment = ({ agentId, houseId }: { agentId: string; houseId?: string }) => {
+      if (!this.agent || agentId !== this.agent.id || !houseId) return;
+      this.assignAgentToHouse(houseId, { source: 'action' });
+    };
+    eventBus.on('agent_assignment', onAgentAssignment);
+
+    const onHouseFocus = ({ houseId, source }: { houseId: string; source?: string }) => {
+      this.focusHouseById(houseId, { source: source || 'event' });
+    };
+    eventBus.on('house_focus', onHouseFocus);
+
+    const onHouseDashboardRequest = ({ houseId, source }: { houseId: string; source?: string }) => {
+      this.openHouseDashboard(houseId, { source: source || 'request' });
+    };
+    eventBus.on('house_dashboard_request', onHouseDashboardRequest);
+
     eventBus.on('bug_bot_spawn', (p) => this.enqueueSpawn(p));
 
     eventBus.on('bug_bot_progress', (p) => {
@@ -254,10 +317,14 @@ export class MainScene extends Phaser.Scene {
 
     // Handle agent drop → nearest bug assignment
     eventBus.on('agent_drop', ({ x, y }) => {
+      const house = this.findNearestHouse(x, y, 96);
+      if (house && this.agent) {
+        this.assignAgentToHouse(house.id, { source: 'drag' });
+        return;
+      }
       const nearest = this.findNearestBug(x, y, 40);
       if (nearest) {
         this.assignBug(nearest.id);
-        // Dim to indicate progress
         this.tweens.add({ targets: nearest, alpha: 0.6, duration: 200 });
       }
       this.queueSaveLayout();
@@ -365,7 +432,15 @@ export class MainScene extends Phaser.Scene {
       this.add.existing(house);
       this.registerHouse(s.id, x, y, 18);
       this.houseObjects.set(s.id, house);
+      this.houseMetadata.set(s.id, {
+        name: s.name,
+        language: s.lang,
+        issues: s.issues,
+        stars: s.stars,
+        components: this.deriveComponents(s.lang),
+      });
     }
+    this.syncSearchIndex();
 
     // Start repo mock harness to drive house visuals
     this.startRepoEventHarness();
@@ -429,6 +504,10 @@ export class MainScene extends Phaser.Scene {
 
     // Persist state on shutdown
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
+      eventBus.off('agent_assignment', onAgentAssignment as any);
+      eventBus.off('house_focus', onHouseFocus as any);
+      eventBus.off('house_dashboard_request', onHouseDashboardRequest as any);
+      this.destroyHouseAssignMenu();
       saveVillageState(villageId, {
         agent: this.agent ? { x: this.agent.x, y: this.agent.y } : undefined,
         camera: {
@@ -569,10 +648,12 @@ export class MainScene extends Phaser.Scene {
   // Allow registering houses later (e.g., from a future layout loader)
   private registerHouse(houseId: string, x: number, y: number, radius?: number) {
     this.houses.set(houseId, { x, y, radius });
+    if (!this.houseMetadata.has(houseId)) this.houseMetadata.set(houseId, { name: houseId });
     this.flushPendingForHouse(houseId);
     try {
       this.minimap?.setHouse(houseId, { x, y });
     } catch {}
+    this.syncSearchIndex();
   }
 
   private startRepoEventHarness() {
@@ -594,6 +675,13 @@ export class MainScene extends Phaser.Scene {
           buildStatus: 'idle',
         };
         applyRepoStateToHouse(h, st, Date.now());
+        this.patchHouseMeta(
+          id,
+          { issues: st.openIssues, buildStatus: st.buildStatus, language: st.primaryLanguage },
+          false,
+        );
+        this.patchHouseMeta(id, { lastCommitAt: Date.now() }, false);
+        this.syncSearchIndex();
       },
     });
 
@@ -612,6 +700,16 @@ export class MainScene extends Phaser.Scene {
           buildStatus: 'in_progress',
         };
         applyRepoStateToHouse(h, start, Date.now());
+        this.patchHouseMeta(
+          id,
+          {
+            issues: start.openIssues,
+            buildStatus: start.buildStatus,
+            language: start.primaryLanguage,
+          },
+          false,
+        );
+        this.syncSearchIndex();
         // Complete later
         this.time.delayedCall(1600, () => {
           const finish: HouseState = {
@@ -621,6 +719,16 @@ export class MainScene extends Phaser.Scene {
             buildStatus: Phaser.Math.Between(0, 1) === 0 ? 'passed' : 'failed',
           };
           applyRepoStateToHouse(h, finish, Date.now());
+          this.patchHouseMeta(
+            id,
+            {
+              issues: finish.openIssues,
+              buildStatus: finish.buildStatus,
+              language: finish.primaryLanguage,
+            },
+            false,
+          );
+          this.syncSearchIndex();
         });
       },
     });
@@ -752,7 +860,7 @@ export class MainScene extends Phaser.Scene {
       const res = await fetch(`/api/bugs/${encodeURIComponent(id)}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentId: 'demo-agent' }),
+        body: JSON.stringify({ agentId: this.agent?.id ?? 'agent-placeholder' }),
       });
       if (!res.ok) throw new Error(`assign failed: ${res.status}`);
       eventBus.emit('toast', { type: 'success', message: `Assigned bug ${id}` });
@@ -871,14 +979,25 @@ export class MainScene extends Phaser.Scene {
     const villageId = (this as any).villageId as string | undefined;
     if (!villageId) return;
     try {
-      await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout`, {
+      const payload: any = { version: this.layoutVersion };
+      if (this.agent) {
+        payload.agents = [
+          {
+            id: this.agent.id,
+            x: this.agent.x,
+            y: this.agent.y,
+            status: this.agent.agentState,
+            spriteConfig: { houseId: this.agent.houseId },
+          },
+        ];
+      }
+      const res = await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          agents: [{ id: 'demo-agent', x: this.agent?.x, y: this.agent?.y }],
-        }),
+        body: JSON.stringify(payload),
       });
+      if (res.ok) this.layoutVersion += 1;
     } catch (e) {
       void e;
     }
@@ -1015,17 +1134,299 @@ export class MainScene extends Phaser.Scene {
     });
   }
 
-  private findNearestHouse(x: number, y: number, maxDist = 120): { x: number; y: number } | null {
-    let best: { x: number; y: number } | null = null;
+  private findNearestHouse(
+    x: number,
+    y: number,
+    maxDist = 120,
+  ): { id: string; x: number; y: number } | null {
+    let best: { id: string; x: number; y: number } | null = null;
     let bestD = Number.POSITIVE_INFINITY;
-    for (const h of this.houses.values()) {
+    for (const [id, h] of this.houses) {
       const d = Phaser.Math.Distance.Between(x, y, h.x, h.y);
       if (d < bestD && d <= maxDist) {
         bestD = d;
-        best = { x: h.x, y: h.y };
+        best = { id, x: h.x, y: h.y };
       }
     }
     return best;
+  }
+
+  private syncSearchIndex() {
+    try {
+      const agents = this.agent
+        ? [
+            {
+              type: 'agent' as const,
+              id: this.agent.id,
+              name: this.agent.nameText.text || this.agent.id,
+              status: this.agent.agentState,
+              houseId: this.agent.houseId,
+              houseName: this.agent.houseId
+                ? (this.houseMetadata.get(this.agent.houseId)?.name ?? this.agent.houseId)
+                : undefined,
+            },
+          ]
+        : [];
+      const houses = Array.from(this.houseObjects.entries()).map(([id, house]) => {
+        const meta = this.houseMetadata.get(id);
+        return {
+          type: 'house' as const,
+          id,
+          name: meta?.name ?? (house as any).name ?? id,
+          location: meta?.language,
+          components: meta?.components,
+        };
+      });
+      const actions: Array<{
+        type: 'action';
+        id: string;
+        label: string;
+        actionId?: string;
+        payload?: any;
+      }> = [];
+      if (this.agent) {
+        const agentId = this.agent.id;
+        const agentLabel = this.agent.nameText.text || agentId;
+        actions.push({
+          type: 'action',
+          id: `start:${agentId}`,
+          label: `Start ${agentLabel}`,
+          actionId: 'startAgent',
+          payload: { agentId },
+        });
+        actions.push({
+          type: 'action',
+          id: `stop:${agentId}`,
+          label: `Stop ${agentLabel}`,
+          actionId: 'stopAgent',
+          payload: { agentId },
+        });
+        actions.push({
+          type: 'action',
+          id: `runTool:${agentId}`,
+          label: `Run recent tool on ${agentLabel}`,
+          actionId: 'runRecentTool',
+          payload: { agentId, toolId: 'last' },
+        });
+        for (const [id, meta] of this.houseMetadata) {
+          actions.push({
+            type: 'action',
+            id: `assign:${agentId}:${id}`,
+            label: `Assign ${agentLabel} to ${meta.name || id}`,
+            actionId: 'assignAgentToHouse',
+            payload: { agentId, houseId: id },
+          });
+          actions.push({
+            type: 'action',
+            id: `goto:${id}`,
+            label: `Go to ${meta.name || id}`,
+            actionId: 'navigateToHouse',
+            payload: { houseId: id },
+          });
+          actions.push({
+            type: 'action',
+            id: `dashboard:${id}`,
+            label: `Open dashboard for ${meta.name || id}`,
+            actionId: 'openHouseDashboard',
+            payload: { houseId: id },
+          });
+        }
+      }
+      SearchIndex.setData({ agents, houses, actions });
+    } catch (e) {
+      void e;
+    }
+  }
+
+  private assignAgentToHouse(houseId: string, _opts?: { source?: string }) {
+    if (!this.agent) return;
+    if (!this.houseMetadata.has(houseId)) this.houseMetadata.set(houseId, { name: houseId });
+    const prevHouseId = this.agent.houseId;
+    this.destroyHouseAssignMenu();
+    if (prevHouseId === houseId) {
+      this.highlightHouse(houseId);
+      return;
+    }
+    this.agent.setHouseAssignment(houseId);
+    const loc = this.houses.get(houseId);
+    if (loc) {
+      this.agent.walkTo(loc.x, loc.y);
+      try {
+        this.minimap?.setAgentPosition({ x: loc.x, y: loc.y });
+      } catch {}
+    }
+    const agentInfo = {
+      id: this.agent.id,
+      name: this.agent.nameText.text || this.agent.id,
+    };
+    this.updateHouseAgentMembership(prevHouseId, houseId, agentInfo);
+    this.highlightHouse(houseId);
+    this.syncSearchIndex();
+    const houseName = this.houseMetadata.get(houseId)?.name ?? houseId;
+    eventBus.emit('toast', {
+      type: 'success',
+      message: `Assigned ${agentInfo.name} to ${houseName}`,
+    });
+    track({
+      type: 'house_command',
+      ts: Date.now(),
+      houseId,
+      command: 'assign_agent',
+      status: 'success',
+    });
+    this.queueSaveLayout();
+  }
+
+  public focusHouseById(houseId: string, opts?: { source?: string; agentId?: string }) {
+    const loc = this.houses.get(houseId);
+    if (!loc) return;
+    this.beginTravelPerf(opts?.source || 'house_focus');
+    this.camNav?.panTo(loc.x, loc.y, 220);
+    this.highlightHouse(houseId);
+  }
+
+  public openHouseDashboard(houseId: string, opts?: { source?: string }) {
+    const meta = this.houseMetadata.get(houseId);
+    const payload = {
+      houseId,
+      name: meta?.name ?? houseId,
+      language: meta?.language,
+      components: meta?.components ?? this.deriveComponents(meta?.language),
+      issues: meta?.issues,
+      agents: meta?.agents ?? [],
+      stars: meta?.stars,
+      buildStatus: meta?.buildStatus ?? 'idle',
+      source: opts?.source,
+    };
+    eventBus.emit('house_dashboard', payload);
+    this.highlightHouse(houseId);
+  }
+
+  public promptAgentHouseAssignment(agent: Agent) {
+    const entries = Array.from(this.houseMetadata.entries());
+    if (entries.length === 0) {
+      eventBus.emit('toast', { type: 'error', message: 'No houses available' });
+      return;
+    }
+    this.destroyHouseAssignMenu();
+    const width = 200;
+    const height = entries.length * 26 + 20;
+    const menu = this.add.container(agent.x + 24, agent.y - height / 2);
+    menu.setDepth(3000);
+    const bg = this.add.rectangle(0, 0, width, height, 0x0f172a, 0.96).setOrigin(0, 0);
+    bg.setStrokeStyle(1, 0x334155, 1);
+    menu.add(bg);
+    entries.forEach(([id, meta], idx) => {
+      const text = this.add.text(12, 10 + idx * 26, meta.name || id, {
+        color: '#e2e8f0',
+        fontFamily: 'monospace',
+        fontSize: '12px',
+      });
+      text
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          pointer.event?.stopPropagation?.();
+          this.assignAgentToHouse(id, { source: 'menu' });
+          this.destroyHouseAssignMenu();
+        });
+      menu.add(text);
+    });
+    this.houseAssignMenu = menu;
+    const handler = (pointer: Phaser.Input.Pointer, objects: any[]) => {
+      if (!this.houseAssignMenu) return;
+      const within = objects.some((obj) => {
+        if (!obj) return false;
+        if (obj === this.houseAssignMenu) return true;
+        if (Array.isArray((this.houseAssignMenu as any).list))
+          return (this.houseAssignMenu as any).list.includes(obj);
+        return false;
+      });
+      if (!within) this.destroyHouseAssignMenu();
+    };
+    this.houseAssignInputHandler = handler;
+    this.input.on('pointerdown', handler);
+  }
+
+  private destroyHouseAssignMenu() {
+    if (this.houseAssignMenu) {
+      this.houseAssignMenu.destroy(true);
+      this.houseAssignMenu = undefined;
+    }
+    if (this.houseAssignInputHandler) {
+      this.input.off('pointerdown', this.houseAssignInputHandler);
+      this.houseAssignInputHandler = undefined;
+    }
+  }
+
+  private highlightHouse(houseId: string) {
+    const house = this.houseObjects.get(houseId);
+    if (house && typeof (house as any).pulseHighlight === 'function') {
+      (house as any).pulseHighlight();
+      return;
+    }
+    const info = this.houses.get(houseId);
+    if (info) {
+      const ring = this.add.circle(info.x, info.y, (info.radius ?? 24) * 2, 0x38bdf8, 0.18);
+      ring.setDepth(2000);
+      this.tweens.add({
+        targets: ring,
+        scale: { from: 0.7, to: 1.2 },
+        alpha: { from: 0.6, to: 0 },
+        duration: 360,
+        ease: 'Sine.easeOut',
+        onComplete: () => ring.destroy(),
+      });
+    }
+  }
+
+  private deriveComponents(language?: string): string[] {
+    const map: Record<string, string[]> = {
+      ts: ['Node SDK', 'React UI', 'Vitest'],
+      js: ['Node SDK', 'React UI'],
+      py: ['FastAPI', 'Celery', 'pytest'],
+      go: ['Go Worker', 'gRPC'],
+      rb: ['Rails', 'Sidekiq'],
+    };
+    if (!language) return ['Docs', 'CLI'];
+    return map[language] ? [...map[language]] : ['Docs', 'CI'];
+  }
+
+  private updateHouseAgentMembership(
+    prevHouseId: string | undefined,
+    nextHouseId: string,
+    agent: { id: string; name: string },
+  ) {
+    if (prevHouseId && prevHouseId !== nextHouseId) {
+      const prevMeta = this.houseMetadata.get(prevHouseId);
+      if (prevMeta?.agents) {
+        prevMeta.agents = prevMeta.agents.filter((a) => a.id !== agent.id);
+        this.houseMetadata.set(prevHouseId, prevMeta);
+      }
+    }
+    const meta = this.houseMetadata.get(nextHouseId) ?? { name: nextHouseId };
+    const list = meta.agents ? [...meta.agents] : [];
+    if (!list.some((a) => a.id === agent.id)) list.push(agent);
+    meta.agents = list;
+    this.houseMetadata.set(nextHouseId, meta);
+  }
+
+  private patchHouseMeta(houseId: string, patch: Partial<HouseMeta>, resync = true) {
+    const meta = this.houseMetadata.get(houseId) ?? { name: houseId };
+    this.houseMetadata.set(houseId, { ...meta, ...patch });
+    if (resync) this.syncSearchIndex();
+  }
+
+  private parseSpriteConfig(raw: any): Record<string, any> {
+    if (!raw) return {};
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return {};
+      }
+    }
+    if (typeof raw === 'object') return raw as Record<string, any>;
+    return {};
   }
 
   private flushProgress() {
@@ -1104,6 +1505,7 @@ export class MainScene extends Phaser.Scene {
   }
 
   private beginTravelPerf(source: string) {
+    startTravel();
     this.travelStartAt = performance.now();
     const cam = this.cameras.main;
     const onDone = () => {

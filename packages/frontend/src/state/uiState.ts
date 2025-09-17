@@ -50,7 +50,8 @@ export function writeUIHash(next: Partial<UIHashState>) {
   const url = newHash ? `${base}#${newHash}` : base;
   try {
     window.history.replaceState(null, '', url);
-  } catch {
+  } catch (e) {
+    void e;
     window.location.hash = newHash;
   }
 }
@@ -68,7 +69,9 @@ export function getUIState(): { dialogueTab?: TabKey; agentId?: string } {
       const j = JSON.parse(raw) as { dialogueTab?: TabKey; agentId?: string };
       return { dialogueTab: j.dialogueTab, agentId: j.agentId };
     }
-  } catch {}
+  } catch (e) {
+    void e;
+  }
   const h = readUIHash();
   return { dialogueTab: h.tab, agentId: h.agent };
 }
@@ -90,5 +93,7 @@ export function setUIState(st: {
     if (st.dialogueTab) (updated as any).dialogueTab = st.dialogueTab;
     if (st.agentId) (updated as any).agentId = st.agentId;
     localStorage.setItem('ui_state_v1', JSON.stringify(updated));
-  } catch {}
+  } catch (e) {
+    void e;
+  }
 }

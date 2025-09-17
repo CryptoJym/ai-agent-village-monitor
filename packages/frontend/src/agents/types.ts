@@ -11,4 +11,5 @@ export type AgentConfig = {
   name: string;
   state?: AgentState;
   id?: string | number; // used for deterministic tint variations
+  houseId?: string;
 };

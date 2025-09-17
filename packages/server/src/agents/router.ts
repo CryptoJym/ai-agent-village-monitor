@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client';
-import { requireAuth } from '../auth/middleware';
+import { requireAuth, getUserVillageRole } from '../auth/middleware';
 import { toEventDTO, toEventDTOs } from '../events/dto';
 
 export const agentsRouter = Router();
@@ -15,16 +15,18 @@ const StreamQuery = z.object({
 
 agentsRouter.get('/agents/:id/stream', requireAuth, async (req, res, next) => {
   try {
-    const id = String(req.params.id);
-    const agent = await prisma.agent.findUnique({ where: { id } });
+    const idParam = String(req.params.id);
+    const whereId: any = Number.isFinite(Number(idParam)) ? Number(idParam) : idParam;
+    const agent = await prisma.agent.findUnique({ where: { id: whereId } });
     if (!agent) return res.status(404).json({ error: 'agent not found' });
 
     const q = StreamQuery.safeParse(req.query ?? {});
     if (!q.success) return res.status(400).json({ error: 'invalid query' });
     const { session, limit, before } = q.data;
 
-    const whereNew: any = { session: { agentId: id } };
-    const whereLegacy: any = { agentId: id };
+    const idStr = String(idParam);
+    const whereNew: any = { session: { agentId: idStr } };
+    const whereLegacy: any = { agentId: idStr };
     if (session) {
       whereNew.sessionId = session;
     }
@@ -133,6 +135,44 @@ const CreateAgentInput = z
 
 const UpdateAgentInput = CreateAgentInput.partial();
 
+async function userHasOwnerRole(userSub: any, villageId: any): Promise<boolean> {
+  if (villageId == null) return false;
+  try {
+    const role = await getUserVillageRole(userSub, villageId);
+    if (role === 'owner') return true;
+  } catch (e) {
+    void e;
+  }
+  try {
+    const userCandidates = new Set<any>();
+    const villageCandidates = new Set<any>();
+    const subStr = String(userSub);
+    userCandidates.add(subStr);
+    const subNum = Number(subStr);
+    if (!Number.isNaN(subNum)) userCandidates.add(subNum);
+    const villageStr = String(villageId);
+    villageCandidates.add(villageStr);
+    const villageNum = Number(villageStr);
+    if (!Number.isNaN(villageNum)) villageCandidates.add(villageNum);
+    for (const v of villageCandidates) {
+      for (const u of userCandidates) {
+        try {
+          const access = await prisma.villageAccess.findUnique({
+            where: { villageId_userId: { villageId: v as any, userId: u as any } },
+          });
+          const role = String(access?.role || '').toLowerCase();
+          if (role === 'owner') return true;
+        } catch (err) {
+          void err;
+        }
+      }
+    }
+  } catch (err) {
+    void err;
+  }
+  return false;
+}
+
 // List agents (no village relation in schema)
 agentsRouter.get('/agents', requireAuth, async (_req, res, next) => {
   try {
@@ -169,16 +209,23 @@ agentsRouter.post('/agents', requireAuth, async (req, res, next) => {
 // Update agent by id (owner-only on its village)
 agentsRouter.put('/agents/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = String(req.params.id);
+    const idParam = String(req.params.id);
+    const whereId: any = Number.isFinite(Number(idParam)) ? Number(idParam) : idParam;
     const body = UpdateAgentInput.safeParse(req.body ?? {});
     if (!body.success)
       return res
         .status(400)
         .json({ error: 'invalid body', code: 'BAD_REQUEST', details: body.error.flatten() });
-    const exists = await prisma.agent.findUnique({ where: { id } });
+    const exists = await prisma.agent.findUnique({ where: { id: whereId } });
     if (!exists) return res.status(404).json({ error: 'agent not found', code: 'NOT_FOUND' });
+    // Enforce owner role on the agent's village when available
+    const villageId = (exists as any).villageId;
+    if (villageId != null) {
+      const hasOwnerRole = await userHasOwnerRole((req as any).user?.sub, villageId);
+      if (!hasOwnerRole) return res.status(403).json({ error: 'forbidden', code: 'FORBIDDEN' });
+    }
     const updated = await prisma.agent.update({
-      where: { id },
+      where: { id: whereId },
       data: {
         name: body.data.name ?? undefined,
         spriteConfig: (body.data.spriteConfig as any) ?? undefined,
@@ -196,10 +243,16 @@ agentsRouter.put('/agents/:id', requireAuth, async (req, res, next) => {
 // Delete agent (owner-only)
 agentsRouter.delete('/agents/:id', requireAuth, async (req, res, next) => {
   try {
-    const id = String(req.params.id);
-    const exists = await prisma.agent.findUnique({ where: { id } });
+    const idParam = String(req.params.id);
+    const whereId: any = Number.isFinite(Number(idParam)) ? Number(idParam) : idParam;
+    const exists = await prisma.agent.findUnique({ where: { id: whereId } });
     if (!exists) return res.status(404).json({ error: 'agent not found', code: 'NOT_FOUND' });
-    await prisma.agent.delete({ where: { id } });
+    const villageId = (exists as any).villageId;
+    if (villageId != null) {
+      const hasOwnerRole = await userHasOwnerRole((req as any).user?.sub, villageId);
+      if (!hasOwnerRole) return res.status(403).json({ error: 'forbidden', code: 'FORBIDDEN' });
+    }
+    await prisma.agent.delete({ where: { id: whereId } });
     res.status(204).end();
   } catch (e) {
     next(e);

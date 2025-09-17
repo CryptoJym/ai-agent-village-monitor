@@ -5,6 +5,7 @@ import { enqueueVillageSync } from './sync';
 import { prisma } from '../db/client';
 import { Queue } from 'bullmq';
 import { getRedis } from '../queue/redis';
+import { sanitizeString } from '../middleware/sanitize';
 
 export const villagesRouter = Router();
 
@@ -449,15 +450,13 @@ villagesRouter.put(
         });
         const current = row?.layoutVersion ?? 0;
         if (current !== body.version) {
-          return res
-            .status(409)
-            .json({
-              error: {
-                code: 'CONFLICT',
-                message: 'layout version mismatch',
-                details: { expected: body.version, actual: current },
-              },
-            });
+          return res.status(409).json({
+            error: {
+              code: 'CONFLICT',
+              message: 'layout version mismatch',
+              details: { expected: body.version, actual: current },
+            },
+          });
         }
       }
       const updates: Array<Promise<any>> = [];
@@ -516,6 +515,42 @@ villagesRouter.post(
         await prisma.village.update({ where: { id }, data: { layoutVersion: { increment: 1 } } });
       } catch {}
       res.status(202).json({ status: 'queued' });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+// List agents for a village (owner or member)
+villagesRouter.get(
+  '/:id/agents',
+  requireAuth,
+  requireVillageRole((req) => Number(req.params.id), ['owner', 'member']),
+  async (req, res, next) => {
+    try {
+      const id = Number(req.params.id);
+      const list = await prisma.agent.findMany({ where: { villageId: id as any } as any });
+      res.json(list);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+// Create agent in a village (owner only)
+villagesRouter.post(
+  '/:id/agents',
+  requireAuth,
+  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  async (req, res, next) => {
+    try {
+      const id = Number(req.params.id);
+      const body = (req.body ?? {}) as any;
+      const name = sanitizeString(String(body.name || ''), { maxLen: 200 });
+      if (!name) return res.status(400).json({ error: 'invalid body', code: 'BAD_REQUEST' });
+      const created = await prisma.agent.create({
+        data: { name, villageId: id as any, currentStatus: 'idle' } as any,
+      });
+      res.status(201).json(created);
     } catch (e) {
       next(e);
     }
