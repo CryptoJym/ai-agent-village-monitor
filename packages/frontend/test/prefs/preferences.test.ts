@@ -1,11 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PreferencesSchema } from '../../src/api/schemas';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getPreferences, updatePreferences } from '../../src/api/user';
 
 describe('preferences', () => {
   const originalFetch = global.fetch;
   beforeEach(() => {
     vi.restoreAllMocks();
+  });
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it('parses preferences and applies defaults', async () => {

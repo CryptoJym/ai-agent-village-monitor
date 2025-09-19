@@ -153,7 +153,9 @@ export function createApp(): Express {
     } catch {
       try {
         return res.json(getMetrics());
-      } catch {}
+      } catch {
+        // Metrics registry unavailable; fall through to 204.
+      }
       return res.status(204).end();
     }
   });
@@ -360,7 +362,9 @@ export function createApp(): Express {
         const { getRedis } = require('./queue/redis');
         const r = getRedis();
         if (r) store = new RedisStore({ sendCommand: (...args: string[]) => r.call(...args) });
-      } catch {}
+      } catch {
+        // Redis-backed rate limiting is optional; fall back to memory store.
+      }
     }
     const limiter = rateLimit({
       windowMs,
@@ -371,7 +375,9 @@ export function createApp(): Express {
       ...(store ? { store } : {}),
     });
     app.use('/api/agents/:id/command', limiter);
-  } catch {}
+  } catch {
+    // Rate limiting misconfiguration should not break startup.
+  }
 
   // GitHub Actions: workflow_dispatch bridge (Task 56/75)
   app.post('/api/github/workflows/dispatch', async (req, res) => {
@@ -630,7 +636,9 @@ export function createApp(): Express {
 
     try {
       inc('feedback_total', { category: String(payload.category) });
-    } catch {}
+    } catch {
+      // Metrics emission is non-critical; continue response.
+    }
     return res.status(201).json({ id: record.ip_hash || null, ok: true });
   });
 
@@ -695,12 +703,16 @@ export function createApp(): Express {
               .status(403)
               .json({ error: { code: 'FORBIDDEN', message: 'no access to agent' } });
         }
-      } catch {}
+      } catch {
+        // Agent lookup failures default to command execution fallback.
+      }
       const cmd = parsed.data;
       try {
         const { audit } = require('./audit/logger') as typeof import('./audit/logger');
         audit.log('agent.command', { actorId, agentId: id, cmd, reqId: (req as any).id });
-      } catch {}
+      } catch {
+        // Audit logging failure should not block command dispatch.
+      }
       const result = await enqueueAgentJob({
         kind: 'command',
         agentId: id,
@@ -732,7 +744,9 @@ export function createApp(): Express {
               .status(403)
               .json({ error: { code: 'FORBIDDEN', message: 'no access to agent' } });
         }
-      } catch {}
+      } catch {
+        // Agent lookup failure defaults to permissive start; queue enforces final access.
+      }
       audit.log('agent.command', { actorId, agentId: id, cmd: 'start', restart });
       const result = await enqueueAgentJob({ kind: 'start', agentId: id, restart });
       if ((result as any).jobId) {
@@ -764,7 +778,9 @@ export function createApp(): Express {
               .status(403)
               .json({ error: { code: 'FORBIDDEN', message: 'no access to agent' } });
         }
-      } catch {}
+      } catch {
+        // Agent lookup failure defaults to permissive stop; queue enforces final access.
+      }
       audit.log('agent.command', { actorId, agentId: id, cmd: 'stop' });
       const result = await enqueueAgentJob({ kind: 'stop', agentId: id });
       if ((result as any).jobId) {

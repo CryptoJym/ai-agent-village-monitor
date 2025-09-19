@@ -17,7 +17,10 @@ vi.mock('phaser', () => {
       Game,
       AUTO: 0,
       GameObjects: { Container, Text, Arc },
-      Math: { Between: (a: number, b: number) => a, FloatBetween: (a: number, b: number) => a },
+      Math: {
+        Between: (a: number, _b: number) => a,
+        FloatBetween: (a: number, _b: number) => a,
+      },
       Utils: { Array: { GetRandom: (arr: any[]) => arr[0] } },
     },
   };

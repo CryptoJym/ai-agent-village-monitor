@@ -8,7 +8,7 @@
 ## Narrative (7–10 minutes)
 
 1. Intro (30s): problem and promise
-2. Org overview (60s): Villages as orgs, houses as repos
+2. Org overview (60s): Villages as orgs, houses as repos with language-themed sprites
 3. Real‑time agent activity (2m): WebSocket stream, work events
 4. GitHub integration (2m): list org repos, dispatch a workflow
 5. Feedback loop (1m): in‑app feedback submission
@@ -19,9 +19,13 @@
 
 1. Login to staging; open `demo‑org`
 2. Show agents streaming (work_stream)
-3. Trigger Actions dispatch via UI/API and show accepted 202
-4. Show metrics and health endpoints
-5. Open Feedback modal, submit a feature request
+3. Jump to the World Map to highlight language-themed house sprites for each village
+4. Call out the surfaced GitHub analytics (house count, total stars) for a sample org
+5. Trigger Actions dispatch via UI/API and show accepted 202
+6. Show metrics and health endpoints
+7. Open Feedback modal, submit a feature request
+
+> Rolling out to a real organisation? Follow the [beta trial checklist](./beta-trial.md) before presenting live data.
 
 ## Environment Prep
 
@@ -32,6 +36,7 @@
 ## Recording & Assets
 
 - Screen capture 1080p/60fps; capture B‑roll of map/agents
+- Grab still of world map showing language-specific houses for slides/PRD
 - Thumbnail with brand; captions and transcript
 - Export MP4 (H.264), WebM; store source project files
 

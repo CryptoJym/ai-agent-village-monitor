@@ -65,7 +65,9 @@ export function createSocketServer(server: HttpServer) {
       const sub = pub.duplicate();
       io.adapter(createAdapter(pub as any, sub as any));
     }
-  } catch {}
+  } catch {
+    // Redis adapter unavailable; continue with in-memory adapter.
+  }
 
   // JWT authentication
   io.use(socketAuth);
@@ -173,9 +175,13 @@ export function createSocketServer(server: HttpServer) {
             inc('ws.ping');
             const { observe } = require('../metrics') as typeof import('../metrics');
             observe('ws_rtt_ms', rtt);
-          } catch {}
+          } catch {
+            // Metrics pipeline optional; continue heartbeat.
+          }
         });
-      } catch {}
+      } catch {
+        // Ignore heartbeat transmission failures; socket may disconnect later.
+      }
     }, 30_000);
 
     const canJoin = () => {
@@ -201,7 +207,9 @@ export function createSocketServer(server: HttpServer) {
         await socket.join(roomVillage(villageId));
         try {
           inc('ws.join_village');
-        } catch {}
+        } catch {
+          // Metrics emission is best effort.
+        }
         return { ok: true, room: roomVillage(villageId) };
       }),
     );
@@ -221,7 +229,9 @@ export function createSocketServer(server: HttpServer) {
         await socket.join(roomAgent(agentId));
         try {
           inc('ws.join_agent');
-        } catch {}
+        } catch {
+          // Metrics emission is best effort.
+        }
         return { ok: true, room: roomAgent(agentId) };
       }),
     );
@@ -241,13 +251,17 @@ export function createSocketServer(server: HttpServer) {
         await socket.join(roomRepo(repoId));
         try {
           inc('ws.join_repo');
-        } catch {}
+        } catch {
+          // Metrics emission is best effort.
+        }
         try {
           const { getSnapshotByRepoId } =
             require('../houses/activityStore') as typeof import('../houses/activityStore');
           const snap = getSnapshotByRepoId(String(repoId));
           if (snap) socket.emit('house.activity', snap);
-        } catch {}
+        } catch {
+          // Snapshot loading is optional; ignore lookup failures.
+        }
         return { ok: true, room: roomRepo(repoId) };
       }),
     );
@@ -275,7 +289,9 @@ export function createSocketServer(server: HttpServer) {
       audit.log('ws.disconnect', { actorId: actor, socketId: socket.id });
       try {
         inc('ws.disconnect');
-      } catch {}
+      } catch {
+        // Metrics emission is best effort.
+      }
     });
   });
 

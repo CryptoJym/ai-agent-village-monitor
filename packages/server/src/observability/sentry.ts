@@ -6,7 +6,6 @@ export function initSentry() {
   const dsn = process.env.SENTRY_DSN || process.env.BACKEND_SENTRY_DSN;
   if (!dsn) return null;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = require('@sentry/node');
     Sentry.init({ dsn, tracesSampleRate: Number(process.env.SENTRY_TRACES_SAMPLE_RATE || 0.05) });
     sentryImpl = Sentry;
@@ -16,5 +15,6 @@ export function initSentry() {
   return sentryImpl;
 }
 
-export function sentry(): SentryLike { return sentryImpl; }
-
+export function sentry(): SentryLike {
+  return sentryImpl;
+}

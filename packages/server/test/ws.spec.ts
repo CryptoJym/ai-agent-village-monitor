@@ -25,7 +25,9 @@ afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
-function url() { return `http://localhost:${port}`; }
+function url() {
+  return `http://localhost:${port}`;
+}
 
 // Marked skip to avoid interference with other suites until E2E env ready
 describe('WebSocket server', () => {
@@ -48,21 +50,26 @@ describe('WebSocket server', () => {
     await new Promise<void>((resolve, reject) => {
       socket.on('connect', () => resolve());
       socket.on('connect_error', (err) => {
-        // eslint-disable-next-line no-console
         console.error('connect_error (join rooms):', err);
         reject(err);
       });
     });
     // join village
-    const resVillage = await new Promise<any>((resolve) => socket.emit('join_village', { villageId: '1' }, resolve));
+    const resVillage = await new Promise<any>((resolve) =>
+      socket.emit('join_village', { villageId: '1' }, resolve),
+    );
     expect(resVillage?.ok).toBe(true);
     expect(resVillage?.room).toBe('village:1');
     // join agent
-    const resAgent = await new Promise<any>((resolve) => socket.emit('join_agent', { agentId: 'demo' }, resolve));
+    const resAgent = await new Promise<any>((resolve) =>
+      socket.emit('join_agent', { agentId: 'demo' }, resolve),
+    );
     expect(resAgent?.ok).toBe(true);
     expect(resAgent?.room).toBe('agent:demo');
     // join repo
-    const resRepo = await new Promise<any>((resolve) => socket.emit('join_repo', { repoId: 'r1' }, resolve));
+    const resRepo = await new Promise<any>((resolve) =>
+      socket.emit('join_repo', { repoId: 'r1' }, resolve),
+    );
     expect(resRepo?.ok).toBe(true);
     expect(resRepo?.room).toBe('repo:r1');
     socket.disconnect();
@@ -73,12 +80,19 @@ describe('WebSocket server', () => {
     await new Promise<void>((resolve, reject) => {
       socket.on('connect', () => resolve());
       socket.on('connect_error', (err) => {
-        // eslint-disable-next-line no-console
         console.error('connect_error (bad payload):', err);
         reject(err);
       });
     });
-    const res = await new Promise<any>((resolve) => socket.emit('join_village', { /* missing */ }, resolve));
+    const res = await new Promise<any>((resolve) =>
+      socket.emit(
+        'join_village',
+        {
+          /* missing */
+        },
+        resolve,
+      ),
+    );
     expect(res?.ok).toBe(false);
     expect(res?.error?.code).toBe('E_BAD_PAYLOAD');
     socket.disconnect();

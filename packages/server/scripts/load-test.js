@@ -11,14 +11,20 @@
   --pingInt    Ping interval in ms (default: 1000)
   --village    Village id to join (optional)
 */
-/* eslint-disable no-console */
 const { io } = require('socket.io-client');
 
 const fs = require('node:fs');
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const out = { url: 'http://localhost:3000', clients: 25, duration: 15, pingInt: 1000, village: '', out: '' };
+  const out = {
+    url: 'http://localhost:3000',
+    clients: 25,
+    duration: 15,
+    pingInt: 1000,
+    village: '',
+    out: '',
+  };
   for (let i = 0; i < args.length; i++) {
     const k = args[i];
     const v = args[i + 1];
@@ -55,8 +61,13 @@ async function run() {
 
   const endAt = Date.now() + opts.duration * 1000;
 
-  function connectOne(i) {
-    const s = io(opts.url, { transports: ['websocket'], reconnection: true, reconnectionAttempts: 3, reconnectionDelay: 500 });
+  function connectOne() {
+    const s = io(opts.url, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 500,
+    });
     let pingTimer = null;
     let lastPingStart = 0;
 
@@ -74,11 +85,24 @@ async function run() {
       }, opts.pingInt);
     });
 
-    s.on('connect_error', () => { stats.errors++; });
-    s.on('disconnect', () => { if (pingTimer) { clearInterval(pingTimer); pingTimer = null; } });
-    s.on('work_stream', () => { stats.workStream++; });
-    s.on('bug_bot_spawn', () => { stats.spawns++; });
-    s.on('bug_bot_resolved', () => { stats.resolved++; });
+    s.on('connect_error', () => {
+      stats.errors++;
+    });
+    s.on('disconnect', () => {
+      if (pingTimer) {
+        clearInterval(pingTimer);
+        pingTimer = null;
+      }
+    });
+    s.on('work_stream', () => {
+      stats.workStream++;
+    });
+    s.on('bug_bot_spawn', () => {
+      stats.spawns++;
+    });
+    s.on('bug_bot_resolved', () => {
+      stats.resolved++;
+    });
 
     sockets.push(s);
   }
@@ -90,9 +114,19 @@ async function run() {
   if (remain > 0) await new Promise((r) => setTimeout(r, remain));
 
   // Cleanup
-  await Promise.allSettled(sockets.map((s) => new Promise((res) => { try { s.close(); } catch {} setTimeout(res, 10); })));
+  await Promise.allSettled(
+    sockets.map(
+      (s) =>
+        new Promise((res) => {
+          try {
+            s.close();
+          } catch {}
+          setTimeout(res, 10);
+        }),
+    ),
+  );
 
-  const mean = stats.pings.length ? (stats.pings.reduce((a, b) => a + b, 0) / stats.pings.length) : 0;
+  const mean = stats.pings.length ? stats.pings.reduce((a, b) => a + b, 0) / stats.pings.length : 0;
   const med = pct(stats.pings, 50);
   const p95 = pct(stats.pings, 95);
 
@@ -102,16 +136,30 @@ async function run() {
     durationSec: opts.duration,
     connected: stats.connected,
     connectErrors: stats.errors,
-    pings: { count: stats.pings.length, meanMs: Number(mean.toFixed(2)), medianMs: Number(med.toFixed(2)), p95Ms: Number(p95.toFixed(2)) },
-    events: { work_stream: stats.workStream, bug_bot_spawn: stats.spawns, bug_bot_resolved: stats.resolved },
+    pings: {
+      count: stats.pings.length,
+      meanMs: Number(mean.toFixed(2)),
+      medianMs: Number(med.toFixed(2)),
+      p95Ms: Number(p95.toFixed(2)),
+    },
+    events: {
+      work_stream: stats.workStream,
+      bug_bot_spawn: stats.spawns,
+      bug_bot_resolved: stats.resolved,
+    },
     startedAt: new Date(Date.now() - opts.duration * 1000).toISOString(),
     endedAt: new Date().toISOString(),
   };
   console.log('\n[load] results');
   console.log(JSON.stringify(result, null, 2));
   if (opts.out) {
-    try { fs.writeFileSync(opts.out, JSON.stringify(result, null, 2)); } catch {}
+    try {
+      fs.writeFileSync(opts.out, JSON.stringify(result, null, 2));
+    } catch {}
   }
 }
 
-run().catch((e) => { console.error('[load] error', e); process.exit(1); });
+run().catch((e) => {
+  console.error('[load] error', e);
+  process.exit(1);
+});

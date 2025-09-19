@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { ATLAS_MANIFEST, PRELOAD_AUDIO } from '../assets/atlases';
+import { AssetManager } from '../assets/AssetManager';
 
 export class PreloaderScene extends Phaser.Scene {
   constructor() {
@@ -28,28 +29,24 @@ export class PreloaderScene extends Phaser.Scene {
       label.setText(`Loading… ${Math.round(p * 100)}%`);
     });
 
-    // Queue assets
     for (const a of ATLAS_MANIFEST) {
-      if (a.type === 'spritesheet' && a.frameConfig)
+      if (a.type === 'spritesheet' && a.frameConfig) {
         this.load.spritesheet(a.key, a.url, a.frameConfig);
-      else if (a.type === 'atlas') this.load.atlas(a.key, a.url, a.dataUrl || '');
-      else if (a.type === 'image') this.load.image(a.key, a.url);
+      } else if (a.type === 'atlas') {
+        this.load.atlas(a.key, a.url, a.dataUrl || '');
+      } else if (a.type === 'image') {
+        this.load.image(a.key, a.url);
+      }
     }
     for (const a of PRELOAD_AUDIO) {
       this.load.audio(a.key, a.url);
     }
+
+    AssetManager.queuePixellabAssets(this);
   }
 
   create() {
-    // Define global animations
-    try {
-      const { AssetManager } =
-        require('../assets/AssetManager') as typeof import('../assets/AssetManager');
-      AssetManager.defineAnimations(this);
-    } catch (e) {
-      void e;
-    }
-    // After preload, move to WorldMap → MainScene flow; WorldMapScene is first
+    AssetManager.registerPixellabAnimations(this);
     this.scene.start('WorldMapScene');
   }
 }

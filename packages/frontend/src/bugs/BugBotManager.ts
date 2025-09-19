@@ -23,6 +23,7 @@ export class BugBotManager {
   spawn(id: string, x: number, y: number, severity: 'low' | 'medium' | 'high') {
     if (this.bots.has(id)) return this.bots.get(id)!;
     const bot = new BugBot(this.scene, id, x, y, severity);
+    bot.setVisualState('spawn');
     const enablePulse = this.activePulse < this.maxActivePulses;
     bot.setPulse(enablePulse);
     if (enablePulse) this.activePulse += 1;
@@ -33,6 +34,7 @@ export class BugBotManager {
   assign(id: string) {
     const bot = this.bots.get(id);
     if (bot) {
+      bot.setVisualState('assigned');
       this.scene.tweens.add({ targets: bot, alpha: 0.6, duration: 200 });
     }
   }
@@ -40,6 +42,7 @@ export class BugBotManager {
   resolve(id: string) {
     const bot = this.bots.get(id);
     if (bot) {
+      bot.setVisualState('resolved');
       bot.setPulse(false);
       this.activePulse = Math.max(0, this.activePulse - 1);
       bot.fadeOutAndDestroy();

@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { emitToVillage } from '../realtime/io';
-import { createBug as storeCreate, getBug, removeBug as storeRemove, listVillageBugs, assignAgent, updateStatus } from './store';
+import {
+  createBug as storeCreate,
+  removeBug as storeRemove,
+  listVillageBugs,
+  assignAgent,
+  updateStatus,
+} from './store';
 import { BugBot, BugSeverity, BugStatus, type CreateBugInput } from './types';
 import { getPrisma } from '../db';
 import { recordEvent } from '../metrics';
@@ -54,7 +60,10 @@ export async function createBugBot(input: CreateBugInput) {
   } else {
     bug = storeCreate(input);
   }
-  const payload: Pick<BugBot, 'id' | 'x' | 'y'> & { severity?: z.infer<typeof BugSeverity>; houseId?: string } = {
+  const payload: Pick<BugBot, 'id' | 'x' | 'y'> & {
+    severity?: z.infer<typeof BugSeverity>;
+    houseId?: string;
+  } = {
     id: bug.id,
     x: bug.x ?? 0,
     y: bug.y ?? 0,
@@ -71,10 +80,12 @@ export async function assignAgentToBug(bugId: string, agentId: string) {
   const prisma = getPrisma();
   let bug: any;
   if (prisma) {
-    bug = await prisma.bugBot.update({
-      where: { id: bugId },
-      data: { assignedAgentId: agentId, status: 'assigned', updatedAt: new Date() },
-    }).catch(() => undefined);
+    bug = await prisma.bugBot
+      .update({
+        where: { id: bugId },
+        data: { assignedAgentId: agentId, status: 'assigned', updatedAt: new Date() },
+      })
+      .catch(() => undefined);
   } else {
     bug = assignAgent(bugId, agentId);
   }
@@ -87,14 +98,16 @@ export async function updateBugStatus(bugId: string, status: z.infer<typeof BugS
   const prisma = getPrisma();
   let bug: any;
   if (prisma) {
-    bug = await prisma.bugBot.update({
-      where: { id: bugId },
-      data: {
-        status,
-        updatedAt: new Date(),
-        resolvedAt: status === 'resolved' ? new Date() : null,
-      },
-    }).catch(() => undefined);
+    bug = await prisma.bugBot
+      .update({
+        where: { id: bugId },
+        data: {
+          status,
+          updatedAt: new Date(),
+          resolvedAt: status === 'resolved' ? new Date() : null,
+        },
+      })
+      .catch(() => undefined);
   } else {
     bug = updateStatus(bugId, status);
   }

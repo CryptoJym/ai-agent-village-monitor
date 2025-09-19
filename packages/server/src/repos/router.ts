@@ -210,17 +210,15 @@ reposRouter.post('/github/dispatch', requireAuth, githubMiddleware(), async (req
     } catch (e: any) {
       // In test runs, accept and return 202 even if upstream is not reachable (nock may stub elsewhere)
       if (process.env.NODE_ENV === 'test') {
-        return res
-          .status(202)
-          .json({
-            status: 'accepted',
-            owner,
-            repo,
-            event_type,
-            client_payload: client_payload || {},
-            villageId,
-            repoId: repoIdStr,
-          });
+        return res.status(202).json({
+          status: 'accepted',
+          owner,
+          repo,
+          event_type,
+          client_payload: client_payload || {},
+          villageId,
+          repoId: repoIdStr,
+        });
       }
       const status = e?.status || e?.response?.status;
       if (status === 401 || status === 403 || status === 404) {
@@ -237,20 +235,20 @@ reposRouter.post('/github/dispatch', requireAuth, githubMiddleware(), async (req
           eventType: event_type,
           ts: Date.now(),
         });
-      } catch {}
+      } catch {
+        // Emission failure is non-fatal; proceed with 202 response.
+      }
     }
 
-    return res
-      .status(202)
-      .json({
-        status: 'accepted',
-        owner,
-        repo,
-        event_type,
-        client_payload: client_payload || {},
-        villageId,
-        repoId: repoIdStr,
-      });
+    return res.status(202).json({
+      status: 'accepted',
+      owner,
+      repo,
+      event_type,
+      client_payload: client_payload || {},
+      villageId,
+      repoId: repoIdStr,
+    });
   } catch (e) {
     next(e);
   }

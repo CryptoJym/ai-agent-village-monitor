@@ -42,9 +42,10 @@ beforeAll(async () => {
   process.env.REDIS_URL = `redis://:${''}@${redisHost}:${redisPort}/0`;
 
   // Migrate
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { execSync } = require('node:child_process');
-  execSync('pnpm prisma migrate deploy --schema=packages/server/prisma/schema.prisma', { stdio: 'inherit' });
+  const { execSync } = await import('node:child_process');
+  execSync('pnpm prisma migrate deploy --schema=packages/server/prisma/schema.prisma', {
+    stdio: 'inherit',
+  });
 
   const mod = await import('../app');
   app = mod.createApp();
@@ -66,17 +67,29 @@ beforeAll(async () => {
 afterAll(async () => {
   if (handles) await stopWorkers(handles);
   if (server) await new Promise<void>((resolve) => server!.close(() => resolve()));
-  try { await prisma?.$disconnect?.(); } catch {}
-  try { await pg?.stop(); } catch {}
-  try { await redis?.stop(); } catch {}
+  try {
+    await prisma?.$disconnect?.();
+  } catch {}
+  try {
+    await pg?.stop();
+  } catch {}
+  try {
+    await redis?.stop();
+  } catch {}
 }, 120_000);
 
 describe.skipIf(!USE)('WebSocket side-effects', () => {
   it('posting start enqueues and emits agent_update/work_stream to room', async () => {
     // Arrange DB rows
-    const u = await prisma.user.create({ data: { githubId: BigInt(Date.now()), username: 'wsuser' } });
-    const v = await prisma.village.create({ data: { name: 'wsv', githubOrgId: BigInt(Date.now()+1), ownerId: u.id, isPublic: true } });
-    const a = await prisma.agent.create({ data: { villageId: v.id, name: 'ws-agent', currentStatus: 'idle' } });
+    const u = await prisma.user.create({
+      data: { githubId: BigInt(Date.now()), username: 'wsuser' },
+    });
+    const v = await prisma.village.create({
+      data: { name: 'wsv', githubOrgId: BigInt(Date.now() + 1), ownerId: u.id, isPublic: true },
+    });
+    const a = await prisma.agent.create({
+      data: { villageId: v.id, name: 'ws-agent', currentStatus: 'idle' },
+    });
     const token = signAccessToken(u.id, u.username);
 
     // Connect socket and join agent room
@@ -85,16 +98,23 @@ describe.skipIf(!USE)('WebSocket side-effects', () => {
       socket.on('connect', () => resolve());
       socket.on('connect_error', reject);
     });
-    const join = await new Promise<any>((resolve) => socket.emit('join_agent', { agentId: String(a.id) }, resolve));
+    const join = await new Promise<any>((resolve) =>
+      socket.emit('join_agent', { agentId: String(a.id) }, resolve),
+    );
     expect(join?.ok).toBe(true);
 
     // Observe events
     const got = { update: false, stream: false };
-    socket.on('agent_update', (p: any) => { if (String(p?.agentId) === String(a.id)) got.update = true; });
-    socket.on('work_stream', (p: any) => { if (String(p?.agentId) === String(a.id)) got.stream = true; });
+    socket.on('agent_update', (p: any) => {
+      if (String(p?.agentId) === String(a.id)) got.update = true;
+    });
+    socket.on('work_stream', (p: any) => {
+      if (String(p?.agentId) === String(a.id)) got.stream = true;
+    });
 
     // Trigger start
-    const res = await (await import('supertest')).default(app)
+    const res = await (await import('supertest'))
+      .default(app)
       .post(`/api/agents/${a.id}/start`)
       .set('Authorization', `Bearer ${token}`)
       .send({ restart: true });
@@ -104,8 +124,10 @@ describe.skipIf(!USE)('WebSocket side-effects', () => {
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('timeout waiting for ws events')), 5000);
       const check = () => {
-        if (got.update && got.stream) { clearTimeout(timeout); resolve(); }
-        else setTimeout(check, 100);
+        if (got.update && got.stream) {
+          clearTimeout(timeout);
+          resolve();
+        } else setTimeout(check, 100);
       };
       check();
     });

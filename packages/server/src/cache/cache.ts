@@ -88,11 +88,19 @@ export async function cacheDel(key: string): Promise<boolean> {
 }
 
 // Convenience helper: wrap a fetcher with cache get/set.
-export async function withCache<T>(key: string, ttlSec: number, fetcher: () => Promise<T>): Promise<T> {
+export async function withCache<T>(
+  key: string,
+  ttlSec: number,
+  fetcher: () => Promise<T>,
+): Promise<T> {
   const hit = await cacheGetJSON<T>(key);
   if (hit !== null) return hit as T;
   const value = await fetcher();
   // Best-effort set; ignore failures
-  try { await cacheSetJSON(key, value, ttlSec); } catch {}
+  try {
+    await cacheSetJSON(key, value, ttlSec);
+  } catch {
+    // Cache write failure is non-fatal.
+  }
   return value;
 }

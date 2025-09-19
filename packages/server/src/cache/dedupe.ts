@@ -12,7 +12,9 @@ export async function isDuplicate(key: string, ttlSec = 600): Promise<boolean> {
       await client.set(key, '1', 'EX', ttlSec);
       return false;
     }
-  } catch {}
+  } catch {
+    // Redis unavailable; fall back to in-memory dedupe.
+  }
   // In-memory fallback
   // purge old
   for (const [k, ts] of memory.entries()) if (now - ts > ttlSec * 1000) memory.delete(k);
@@ -20,4 +22,3 @@ export async function isDuplicate(key: string, ttlSec = 600): Promise<boolean> {
   memory.set(key, now);
   return false;
 }
-

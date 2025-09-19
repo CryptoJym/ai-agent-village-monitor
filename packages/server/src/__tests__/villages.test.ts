@@ -9,7 +9,6 @@ const hasDb = !!process.env.DATABASE_URL && process.env.DISABLE_DB_TESTS !== 'tr
 
 describe('villages api', () => {
   const app = createApp();
-  let userId = 0;
   let token = '';
 
   beforeAll(async () => {
@@ -17,7 +16,6 @@ describe('villages api', () => {
     const u = await prisma.user.create({
       data: { githubId: BigInt(Date.now()), username: 'tester' },
     });
-    userId = u.id;
     token = signAccessToken(u.id, u.username);
   });
 

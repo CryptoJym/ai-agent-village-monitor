@@ -7,7 +7,6 @@ import { keyRepoIssues } from '../cache/keys';
 import { inc } from '../metrics';
 import { shortCircuitDuplicate } from '../webhooks/dedupe';
 import { getRedis } from '../queue/redis';
-import { createBugBot } from '../bugs/service';
 import { applyTransition } from '../houses/activityStore';
 import { mapGitHubEventToTransitions } from '../houses/githubActivityMap';
 
@@ -22,7 +21,9 @@ export async function githubWebhook(req: Request, res: Response) {
       const added = await r.set(key, '1', 'EX', 60 * 5, 'NX'); // 5 min TTL, only set if not exists
       if (added !== 'OK') return res.status(202).json({ ok: true, deduped: true });
     }
-  } catch {}
+  } catch {
+    // Redis dedupe unavailable; proceed without early exit.
+  }
   // Optional HMAC validation when WEBHOOK_SECRET is configured
   try {
     const secret = (config as any).WEBHOOK_SECRET as string | undefined;
@@ -68,7 +69,9 @@ export async function githubWebhook(req: Request, res: Response) {
         // other handlers below may also act (e.g., issues/check_run failure → bug bots)
       }
     }
-  } catch {}
+  } catch {
+    // Mapping errors should not fail webhook delivery; continue with other handlers.
+  }
 
   if (event === 'issues' && payload?.action === 'opened') {
     const issue = payload.issue;
@@ -96,7 +99,9 @@ export async function githubWebhook(req: Request, res: Response) {
         cacheDel(keyRepoIssues(repoKey, 'all')),
       ]);
       inc('cache_invalidate_webhook', { type: 'issues_opened' });
-    } catch {}
+    } catch {
+      // Cache invalidation failures are non-fatal for webhook handling.
+    }
     return res.status(202).json({ ok: true });
   }
 
@@ -113,7 +118,9 @@ export async function githubWebhook(req: Request, res: Response) {
         cacheDel(keyRepoIssues(repoKey, 'all')),
       ]);
       inc('cache_invalidate_webhook', { type: 'issues_closed' });
-    } catch {}
+    } catch {
+      // Cache invalidation failures are non-fatal for webhook handling.
+    }
     return res.status(202).json({ ok: true });
   }
 
@@ -137,7 +144,9 @@ export async function githubWebhook(req: Request, res: Response) {
       });
       try {
         inc('bug.created', { source: 'check_run_failure' });
-      } catch {}
+      } catch {
+        // Metrics emission best-effort.
+      }
       return res.status(202).json({ ok: true });
     }
   }

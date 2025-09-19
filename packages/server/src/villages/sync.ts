@@ -42,14 +42,16 @@ export async function syncVillageNow(villageId: number, org: string) {
       while (idx < needsLang.length) {
         const r = needsLang[idx++];
         try {
-          if (!r.owner) { continue; }
+          if (!r.owner) {
+            continue;
+          }
           const data = await gh.getRepoLanguages(r.owner, r.name);
           r.primaryLanguage = pickTopLanguage(data);
         } catch {
           // ignore language failure
         }
       }
-    })
+    }),
   );
 
   // Prepare positions for new houses
@@ -67,7 +69,9 @@ export async function syncVillageNow(villageId: number, org: string) {
   }
 
   // Sort for deterministic assignment of new positions
-  const sorted = [...repos].sort((a, b) => (b.stargazers - a.stargazers) || a.name.localeCompare(b.name));
+  const sorted = [...repos].sort(
+    (a, b) => b.stargazers - a.stargazers || a.name.localeCompare(b.name),
+  );
 
   let created = 0;
   let updated = 0;
@@ -81,17 +85,17 @@ export async function syncVillageNow(villageId: number, org: string) {
         create: {
           villageId,
           githubRepoId: BigInt(r.id),
-          name: r.name,
+          repoName: r.owner ? `${r.owner}/${r.name}` : r.name,
           primaryLanguage: r.primaryLanguage ?? null,
-          stars: r.stargazers,
+          stars: r.stargazers ?? null,
           positionX: pos.x,
           positionY: pos.y,
         },
         update: {
           // Should not hit for non-existing, but safe
-          name: r.name,
+          repoName: r.owner ? `${r.owner}/${r.name}` : r.name,
           primaryLanguage: r.primaryLanguage ?? null,
-          stars: r.stargazers,
+          stars: r.stargazers ?? null,
         },
       });
       created++;
@@ -99,9 +103,9 @@ export async function syncVillageNow(villageId: number, org: string) {
       await prisma.house.update({
         where: { id: exists.id },
         data: {
-          name: r.name,
+          repoName: r.owner ? `${r.owner}/${r.name}` : r.name,
           primaryLanguage: r.primaryLanguage ?? null,
-          stars: r.stargazers,
+          stars: r.stargazers ?? null,
         },
       });
       updated++;
@@ -113,7 +117,16 @@ export async function syncVillageNow(villageId: number, org: string) {
   for (const h of existing) {
     const key = String(h.githubRepoId);
     if (!repoIdSet.has(key)) {
-      await prisma.house.update({ where: { id: h.id }, data: { metadata: { ...(h.metadata as any), archived: true, archivedAt: new Date().toISOString() } } });
+      await prisma.house.update({
+        where: { id: h.id },
+        data: {
+          metadata: {
+            ...(h.metadata as any),
+            archived: true,
+            archivedAt: new Date().toISOString(),
+          },
+        },
+      });
       archived++;
     }
   }
@@ -123,22 +136,64 @@ export async function syncVillageNow(villageId: number, org: string) {
   const discrepancy = Math.max(0, archived) / Math.max(1, repos.length);
   try {
     const { cacheSetJSON } = await import('../cache/cache');
-    await cacheSetJSON(`sync:accuracy:${villageId}`, { 
-      ts: Date.now(), repos: repos.length, houses: count, created, updated, archived, discrepancy,
-    }, 3600);
-  } catch {}
+    await cacheSetJSON(
+      `sync:accuracy:${villageId}`,
+      {
+        ts: Date.now(),
+        repos: repos.length,
+        houses: count,
+        created,
+        updated,
+        archived,
+        discrepancy,
+      },
+      3600,
+    );
+  } catch {
+    // Cache write failure is non-fatal.
+  }
   try {
     const { pushSyncRun } = await import('../sync/health');
-    await pushSyncRun(villageId, { ts: Date.now(), repos: repos.length, houses: count, created, updated, archived, discrepancy });
-  } catch {}
+    await pushSyncRun(villageId, {
+      ts: Date.now(),
+      repos: repos.length,
+      houses: count,
+      created,
+      updated,
+      archived,
+      discrepancy,
+    });
+  } catch {
+    // Sync health recording is best effort.
+  }
   try {
     const { inc, observe } = await import('../metrics');
     inc('sync_run_total');
     observe('sync_discrepancy', discrepancy * 100);
-  } catch {}
-  // eslint-disable-next-line no-console
-  console.info('[sync] village repos synced', { villageId, org, repos: repos.length, created, updated, archived, houses: count, durationMs, discrepancy });
-  return { ok: true, repos: repos.length, created, updated, archived, houses: count, durationMs, discrepancy };
+  } catch {
+    // Metrics emission is best effort.
+  }
+  console.info('[sync] village repos synced', {
+    villageId,
+    org,
+    repos: repos.length,
+    created,
+    updated,
+    archived,
+    houses: count,
+    durationMs,
+    discrepancy,
+  });
+  return {
+    ok: true,
+    repos: repos.length,
+    created,
+    updated,
+    archived,
+    houses: count,
+    durationMs,
+    discrepancy,
+  };
 }
 
 export async function enqueueVillageSync(villageId: number) {

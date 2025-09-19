@@ -53,7 +53,9 @@ export async function getUserVillageRole(
     try {
       const r = await roleResolver(String(userId), String(villageId));
       if (r) return r;
-    } catch {}
+    } catch {
+      // Ignore role resolver failures; fall back to DB lookup.
+    }
   }
   const access = await prisma.villageAccess.findUnique({
     where: { villageId_userId: { villageId: String(villageId), userId: String(userId) } },

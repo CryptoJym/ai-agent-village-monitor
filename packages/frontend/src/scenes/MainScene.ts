@@ -9,6 +9,7 @@ import { isoToScreen, buildIsoGrid } from '../utils/iso';
 import { BugBot } from '../bugs/BugBot';
 import { House } from '../houses/House';
 import { applyRepoStateToHouse, type HouseState } from '../houses/state';
+import { AssetManager } from '../assets/AssetManager';
 import { LayoutOffload } from '../services/LayoutOffload';
 import { SpatialHash } from '../utils/spatial';
 import { Minimap } from '../overlays/Minimap';
@@ -50,7 +51,10 @@ export class MainScene extends Phaser.Scene {
   private readonly spawnBatchSize = 10;
 
   // Optional "houses" registry for targeted spawns and visual updates
-  private houses: Map<string, { x: number; y: number; radius?: number }> = new Map();
+  private houses: Map<
+    string,
+    { x: number; y: number; radius?: number; language?: string; textureKey: string }
+  > = new Map();
   private houseObjects: Map<string, House> = new Map();
   private pendingSpawnsByHouse: Map<string, Array<{ id: string } & Record<string, any>>> =
     new Map();
@@ -80,6 +84,19 @@ export class MainScene extends Phaser.Scene {
   private houseMetadata: Map<string, HouseMeta> = new Map();
   private houseAssignMenu?: Phaser.GameObjects.Container;
   private houseAssignInputHandler?: (pointer: Phaser.Input.Pointer, objects: any[]) => void;
+
+  private logWarning(context: string, error: unknown) {
+    if (import.meta.env?.DEV && typeof console !== 'undefined') {
+      console.warn(`[MainScene] ${context}`, error);
+    }
+  }
+
+  private resolveHouseTexture(inputLanguage?: string) {
+    const textureKey = AssetManager.getHouseTextureKey(inputLanguage ?? '');
+    const match = /^house_(.+)$/i.exec(textureKey);
+    const language = match ? match[1] : undefined;
+    return { textureKey, language };
+  }
 
   constructor() {
     super('MainScene');
@@ -112,8 +129,8 @@ export class MainScene extends Phaser.Scene {
     // Update minimap viewport each frame
     try {
       this.minimap?.setViewport(view as any);
-    } catch (e) {
-      void e;
+    } catch (error) {
+      this.logWarning('updating minimap viewport during update()', error);
     }
   }
 
@@ -154,7 +171,9 @@ export class MainScene extends Phaser.Scene {
               this.agent?.setPosition(row.positionX, row.positionY);
               try {
                 this.minimap?.setAgentPosition({ x: row.positionX, y: row.positionY });
-              } catch {}
+              } catch (error) {
+                this.logWarning('syncing minimap agent position', error);
+              }
             }
             if (houseId) {
               this.agent?.setHouseAssignment(String(houseId));
@@ -162,8 +181,8 @@ export class MainScene extends Phaser.Scene {
               this.updateHouseAgentMembership(undefined, String(houseId), agentInfo);
             }
           }
-        } catch (e) {
-          void e;
+        } catch (error) {
+          this.logWarning('processing fetched layout', error);
         }
         this.syncSearchIndex();
       })
@@ -184,8 +203,8 @@ export class MainScene extends Phaser.Scene {
     // If a villageId was provided (from WorldMapScene), join that room and show breadcrumb
     try {
       this.ws?.joinVillage?.(villageId);
-    } catch (e) {
-      void e;
+    } catch (error) {
+      this.logWarning('joining village room', error);
     }
     const back = this.add
       .text(12, this.scale.height - 20, '← World Map (M)', {
@@ -231,15 +250,21 @@ export class MainScene extends Phaser.Scene {
           this.agent.walkTo(x, y);
           try {
             this.minimap?.setAgentPosition({ x, y });
-          } catch {}
+          } catch (error) {
+            this.logWarning('teleporting agent on minimap', error);
+          }
           this.camNav?.panTo(x, y, 160);
           try {
             this.minimap?.setViewport(this.cameras.main.worldView as any);
-          } catch {}
+          } catch (error) {
+            this.logWarning('updating minimap viewport after teleport', error);
+          }
           this.queueSaveLayout(true);
         }
       });
-    } catch {}
+    } catch (error) {
+      this.logWarning('initializing minimap', error);
+    }
 
     // Wire event bus → scene
     eventBus.on('agent_update', (p) => {
@@ -249,7 +274,9 @@ export class MainScene extends Phaser.Scene {
         this.agent.walkTo(p.x, p.y);
         try {
           this.minimap?.setAgentPosition({ x: p.x, y: p.y });
-        } catch {}
+        } catch (error) {
+          this.logWarning('updating minimap from agent_update', error);
+        }
       }
     });
 
@@ -295,6 +322,9 @@ export class MainScene extends Phaser.Scene {
 
       // Trigger celebration visuals (confetti + optional sparkle)
       this.celebrate(bot.x, bot.y);
+
+      bot.setVisualState('resolved');
+      bot.setProgress(1);
 
       // Fade bot, then remove both sprite and registry within <= 2s
       const _oldX = bot.x,
@@ -396,7 +426,9 @@ export class MainScene extends Phaser.Scene {
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
         window.removeEventListener('hashchange', onHash);
       });
-    } catch {}
+    } catch (error) {
+      this.logWarning('initializing hash-based camera sync', error);
+    }
 
     // Ground grid (lightweight isometric-like diamonds)
     this.buildGroundGrid();
@@ -430,9 +462,9 @@ export class MainScene extends Phaser.Scene {
       house.onClickZoom((tx, ty) => this.panAndZoomTo(tx, ty, 1.15));
       house.setHealth(s.issues);
       this.add.existing(house);
-      this.registerHouse(s.id, x, y, 18);
+      this.registerHouse(s.id, x, y, 18, s.lang);
       this.houseObjects.set(s.id, house);
-      this.houseMetadata.set(s.id, {
+      this.patchHouseMeta(s.id, {
         name: s.name,
         language: s.lang,
         issues: s.issues,
@@ -559,7 +591,9 @@ export class MainScene extends Phaser.Scene {
       cam.once('camerapancomplete' as any, () => {
         try {
           this.minimap?.setViewport(cam.worldView as any);
-        } catch {}
+        } catch (error) {
+          this.logWarning('syncing minimap during camera pan', error);
+        }
         eventBus.emit('cameraSettled', { x: cx, y: cy, zoom: cam.zoom });
       });
       cam.pan(cx, cy, dur, 'Sine.easeInOut');
@@ -567,7 +601,9 @@ export class MainScene extends Phaser.Scene {
       cam.centerOn(cx, cy);
       try {
         this.minimap?.setViewport(cam.worldView as any);
-      } catch {}
+      } catch (error) {
+        this.logWarning('syncing minimap after camera teleport', error);
+      }
       eventBus.emit('cameraSettled', { x: cx, y: cy, zoom: cam.zoom });
     }
   }
@@ -583,7 +619,8 @@ export class MainScene extends Phaser.Scene {
       const label = role.charAt(0).toUpperCase() + role.slice(1);
       this.roleText?.setText(`Role: ${label}`);
       this.canAssign = role === 'owner' || role === 'member';
-    } catch {
+    } catch (error) {
+      this.logWarning('fetching village role', error);
       this.roleText?.setText('Role: Visitor');
       this.canAssign = false;
     }
@@ -646,13 +683,25 @@ export class MainScene extends Phaser.Scene {
   }
 
   // Allow registering houses later (e.g., from a future layout loader)
-  private registerHouse(houseId: string, x: number, y: number, radius?: number) {
-    this.houses.set(houseId, { x, y, radius });
-    if (!this.houseMetadata.has(houseId)) this.houseMetadata.set(houseId, { name: houseId });
+  private registerHouse(houseId: string, x: number, y: number, radius?: number, language?: string) {
+    const { textureKey, language: resolvedLanguage } = this.resolveHouseTexture(language);
+    this.houses.set(houseId, { x, y, radius, language: resolvedLanguage, textureKey });
+
+    const meta = this.houseMetadata.get(houseId);
+    if (meta) {
+      if (resolvedLanguage && meta.language !== resolvedLanguage) {
+        this.houseMetadata.set(houseId, { ...meta, language: resolvedLanguage });
+      }
+    } else {
+      this.houseMetadata.set(houseId, { name: houseId, language: resolvedLanguage });
+    }
+
     this.flushPendingForHouse(houseId);
     try {
-      this.minimap?.setHouse(houseId, { x, y });
-    } catch {}
+      this.minimap?.setHouse(houseId, { x, y }, textureKey);
+    } catch (error) {
+      this.logWarning('registering house on minimap', error);
+    }
     this.syncSearchIndex();
   }
 
@@ -748,6 +797,7 @@ export class MainScene extends Phaser.Scene {
       const pos = this.findNonOverlappingRingPosition(center.x, center.y, severity, 64, 128);
       if (this.bugs.has((p as any).id)) continue;
       const bot = new BugBot(this, (p as any).id, pos.x, pos.y, severity);
+      bot.setVisualState('spawn');
       this.bugs.set((p as any).id, bot);
       this.bugBotsGroup?.add(bot);
       this.bugIndex.insert({ id: (p as any).id, x: bot.x, y: bot.y });
@@ -823,6 +873,7 @@ export class MainScene extends Phaser.Scene {
         pos = this.findNonOverlappingRingPosition(x, y, severity, 64, 128);
       }
       const bot = new BugBot(this, id, pos.x, pos.y, severity);
+      bot.setVisualState('spawn');
       this.bugs.set(id, bot);
       this.bugBotsGroup?.add(bot);
       this.bugIndex.insert({ id, x: bot.x, y: bot.y });
@@ -863,6 +914,8 @@ export class MainScene extends Phaser.Scene {
         body: JSON.stringify({ agentId: this.agent?.id ?? 'agent-placeholder' }),
       });
       if (!res.ok) throw new Error(`assign failed: ${res.status}`);
+      const bot = this.bugs.get(id);
+      bot?.setVisualState('assigned');
       eventBus.emit('toast', { type: 'success', message: `Assigned bug ${id}` });
     } catch (e: any) {
       eventBus.emit('toast', { type: 'error', message: e?.message || 'Assign failed' });
@@ -914,8 +967,8 @@ export class MainScene extends Phaser.Scene {
       if (soundPref === 'on' && this.sound && this.sound.get('celebrate')) {
         this.sound.play('celebrate', { volume: 0.3 });
       }
-    } catch {
-      // ignore sound errors
+    } catch (error) {
+      this.logWarning('playing celebration sound', error);
     }
   }
 
@@ -938,7 +991,8 @@ export class MainScene extends Phaser.Scene {
       this.ws = new WebSocketService();
       this.ws.connect();
       this.ws.joinVillage('demo');
-    } catch {
+    } catch (error) {
+      this.logWarning('initializing realtime service', error);
       this.startMockTimer();
     }
   }
@@ -958,7 +1012,9 @@ export class MainScene extends Phaser.Scene {
           this.agent.walkTo(x, y);
           try {
             this.minimap?.setAgentPosition({ x, y });
-          } catch {}
+          } catch (error) {
+            this.logWarning('updating minimap during mock timer walk', error);
+          }
         }
       },
     });
@@ -1032,7 +1088,7 @@ export class MainScene extends Phaser.Scene {
     ];
     for (const h of sample) {
       const { x, y } = isoToScreen(h.r, h.c, tileW, tileH, originX, originY);
-      this.registerHouse(h.id, x, y, 16);
+      this.registerHouse(h.id, x, y, 16, this.houseMetadata.get(h.id)?.language);
     }
   }
 
@@ -1233,8 +1289,8 @@ export class MainScene extends Phaser.Scene {
         }
       }
       SearchIndex.setData({ agents, houses, actions });
-    } catch (e) {
-      void e;
+    } catch (error) {
+      this.logWarning('updating search index', error);
     }
   }
 
@@ -1253,7 +1309,9 @@ export class MainScene extends Phaser.Scene {
       this.agent.walkTo(loc.x, loc.y);
       try {
         this.minimap?.setAgentPosition({ x: loc.x, y: loc.y });
-      } catch {}
+      } catch (error) {
+        this.logWarning('updating minimap after house assignment', error);
+      }
     }
     const agentInfo = {
       id: this.agent.id,
@@ -1412,7 +1470,22 @@ export class MainScene extends Phaser.Scene {
 
   private patchHouseMeta(houseId: string, patch: Partial<HouseMeta>, resync = true) {
     const meta = this.houseMetadata.get(houseId) ?? { name: houseId };
-    this.houseMetadata.set(houseId, { ...meta, ...patch });
+    const updated = { ...meta, ...patch };
+    this.houseMetadata.set(houseId, updated);
+
+    if (patch.language) {
+      const entry = this.houses.get(houseId);
+      if (entry) {
+        const { textureKey, language: resolvedLanguage } = this.resolveHouseTexture(patch.language);
+        this.houses.set(houseId, { ...entry, textureKey, language: resolvedLanguage });
+        try {
+          this.minimap?.setHouse(houseId, { x: entry.x, y: entry.y }, textureKey);
+        } catch (error) {
+          this.logWarning('updating minimap after house language change', error);
+        }
+      }
+    }
+
     if (resync) this.syncSearchIndex();
   }
 
@@ -1513,20 +1586,18 @@ export class MainScene extends Phaser.Scene {
         const ms = Math.round(performance.now() - (this.travelStartAt || performance.now()));
         if (ms > 2000) {
           announce('Travel took longer than two seconds');
-          try {
-            eventBus.emit('toast', { type: 'info', message: `Travel took ${ms}ms` });
-          } catch {}
+          eventBus.emit('toast', { type: 'info', message: `Travel took ${ms}ms` });
         }
-        try {
-          const villageId = (this as any).villageId as string | undefined;
-          track({
-            type: 'command_executed',
-            ts: Date.now(),
-            command: `fast_travel:${ms}ms:${source}`,
-            villageId,
-          });
-        } catch {}
-      } catch {}
+        const villageId = (this as any).villageId as string | undefined;
+        track({
+          type: 'command_executed',
+          ts: Date.now(),
+          command: `fast_travel:${ms}ms:${source}`,
+          villageId,
+        });
+      } catch (error) {
+        this.logWarning('finishing travel metrics', error);
+      }
       cam.off('camerapancomplete', onDone);
     };
     cam.once('camerapancomplete', onDone);
@@ -1615,7 +1686,7 @@ export class MainScene extends Phaser.Scene {
     const { tileW, tileH, originX, originY } = this.gridTx;
     const { isoToScreen } = require('../utils/iso');
     const { x, y } = isoToScreen(r, c, tileW, tileH, originX, originY);
-    this.registerHouse(id, x, y, radius);
+    this.registerHouse(id, x, y, radius, this.houseMetadata.get(id)?.language);
   }
 
   // Navigate agent to nearest house using grid A* pathfinding

@@ -1,5 +1,11 @@
 import React from 'react';
 
+const logHelpMenuWarning = (context: string, error: unknown) => {
+  if (import.meta.env?.DEV && typeof console !== 'undefined') {
+    console.warn(`[HelpMenu] ${context}`, error);
+  }
+};
+
 export function HelpMenu({
   onOpenFeedback,
   onOpenLegend,
@@ -16,7 +22,9 @@ export function HelpMenu({
   React.useEffect(() => {
     try {
       setHintSeen(!!localStorage.getItem('help_hint_seen_v1'));
-    } catch {}
+    } catch (error) {
+      logHelpMenuWarning('reading hint flag', error);
+    }
     function onDoc(e: MouseEvent) {
       if (!open) return;
       const t = e.target as Node;

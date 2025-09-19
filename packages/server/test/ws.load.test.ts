@@ -30,7 +30,9 @@ describe.skipIf(SKIP)('WebSocket load/latency harness', () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   });
 
-  function url() { return `http://localhost:${port}`; }
+  function url() {
+    return `http://localhost:${port}`;
+  }
 
   it('connects N clients, joins room, receives broadcast within budget', async () => {
     const N = Number(process.env.WS_LOAD_N || 25);
@@ -38,17 +40,26 @@ describe.skipIf(SKIP)('WebSocket load/latency harness', () => {
     const clients: Socket[] = [];
     const joinAcks: Promise<any>[] = [];
 
-    const connectOne = () => new Promise<Socket>((resolve, reject) => {
-      const socket: Socket = Client(url(), { transports: ['polling'], auth: { token }, reconnection: false });
-      const t = setTimeout(() => reject(new Error('connect timeout')), 5000);
-      socket.once('connect', () => { clearTimeout(t); resolve(socket); });
-    });
+    const connectOne = () =>
+      new Promise<Socket>((resolve, reject) => {
+        const socket: Socket = Client(url(), {
+          transports: ['polling'],
+          auth: { token },
+          reconnection: false,
+        });
+        const t = setTimeout(() => reject(new Error('connect timeout')), 5000);
+        socket.once('connect', () => {
+          clearTimeout(t);
+          resolve(socket);
+        });
+      });
 
     for (let i = 0; i < N; i++) {
-      // eslint-disable-next-line no-await-in-loop
       const s = await connectOne();
       clients.push(s);
-      joinAcks.push(new Promise((resolve) => s.emit('join_village', { villageId: roomId }, resolve)));
+      joinAcks.push(
+        new Promise((resolve) => s.emit('join_village', { villageId: roomId }, resolve)),
+      );
     }
 
     const ackResults = await Promise.all(joinAcks);
@@ -59,9 +70,15 @@ describe.skipIf(SKIP)('WebSocket load/latency harness', () => {
     const start = Date.now();
     const payload = { agentId: 'demo', status: 'idle', ts: Date.now() };
     let received = 0;
-    const waiters = clients.map((s) => new Promise<void>((resolve) => {
-      s.once('agent_update', () => { received += 1; resolve(); });
-    }));
+    const waiters = clients.map(
+      (s) =>
+        new Promise<void>((resolve) => {
+          s.once('agent_update', () => {
+            received += 1;
+            resolve();
+          });
+        }),
+    );
     // Send broadcast
     const { getIO } = await import('../src/realtime/io');
     getIO()?.to(`village:${roomId}`).emit('agent_update', payload);
@@ -82,4 +99,3 @@ describe.skipIf(SKIP)('WebSocket load/latency harness', () => {
     clients.forEach((s) => s.close());
   }, 15000);
 });
-

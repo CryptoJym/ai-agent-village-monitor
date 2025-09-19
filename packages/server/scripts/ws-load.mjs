@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
 import { io as ioc } from 'socket.io-client';
 import jwt from 'jsonwebtoken';
 

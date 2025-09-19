@@ -12,8 +12,13 @@ async function withAgentLock(agentId: number | string, fn: () => Promise<any>, t
   if (!redis) {
     const prev = localLocks.get(key) || Promise.resolve();
     let release: () => void;
-    const p = new Promise<void>((res) => { release = res; });
-    localLocks.set(key, prev.then(() => p));
+    const p = new Promise<void>((res) => {
+      release = res;
+    });
+    localLocks.set(
+      key,
+      prev.then(() => p),
+    );
     try {
       return await fn();
     } finally {
@@ -24,7 +29,8 @@ async function withAgentLock(agentId: number | string, fn: () => Promise<any>, t
   }
   const token = crypto.randomBytes(16).toString('hex');
   const start = Date.now();
-  while (Date.now() - start < 5000) { // try up to 5s to acquire
+  while (Date.now() - start < 5000) {
+    // try up to 5s to acquire
     // @ts-ignore ioredis allows extended args
     const ok = await redis.set(key, token, 'PX', ttlMs, 'NX');
     if (ok) {
@@ -34,7 +40,9 @@ async function withAgentLock(agentId: number | string, fn: () => Promise<any>, t
         try {
           const v = await redis.get(key);
           if (v === token) await redis.del(key);
-        } catch {}
+        } catch {
+          // Ignore Redis cleanup failure; lock will expire via TTL.
+        }
       }
     }
     await new Promise((r) => setTimeout(r, 50 + Math.random() * 50));
@@ -49,12 +57,16 @@ export async function ensureActiveSession(agentId: number | string, opts?: { res
   const { restart } = opts || {};
   return withAgentLock(agentIdStr, async () => {
     return prisma.$transaction(async (tx: any) => {
-      const existing = await tx.agentSession.findFirst({ where: { agentId: agentIdStr, endedAt: null } });
+      const existing = await tx.agentSession.findFirst({
+        where: { agentId: agentIdStr, endedAt: null },
+      });
       if (existing && !restart) return existing;
       if (existing && restart) {
         await tx.agentSession.update({ where: { id: existing.id }, data: { endedAt: new Date() } });
       }
-      const created = await tx.agentSession.create({ data: { agentId: agentIdStr, startedAt: new Date(), endedAt: null } });
+      const created = await tx.agentSession.create({
+        data: { agentId: agentIdStr, startedAt: new Date(), endedAt: null },
+      });
       audit('session.created', { agentId: agentIdStr, sessionId: created.id });
       return created;
     });
@@ -69,7 +81,9 @@ export async function endActiveSession(agentId: number | string) {
   const prisma = getPrisma();
   if (!prisma) return;
   const agentIdStr = String(agentId);
-  const existing = await prisma.agentSession.findFirst({ where: { agentId: agentIdStr, endedAt: null } });
+  const existing = await prisma.agentSession.findFirst({
+    where: { agentId: agentIdStr, endedAt: null },
+  });
   if (!existing) return;
   await prisma.agentSession.update({ where: { id: existing.id }, data: { endedAt: new Date() } });
   audit('session.ended', { agentId: agentIdStr, sessionId: existing.id });

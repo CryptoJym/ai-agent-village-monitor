@@ -78,7 +78,7 @@ describe('GitHub OAuth flow (E2E mock)', () => {
       global.fetch = origFetch;
     };
     // @ts-expect-error - override fetch in tests
-    global.fetch = vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+    global.fetch = vi.fn(async (input: RequestInfo, _init?: RequestInit) => {
       const url = String(input);
       if (url.includes('github.com/login/oauth/access_token')) {
         return new Response(JSON.stringify({ access_token: 'ghs_abc123' }), {
@@ -87,10 +87,17 @@ describe('GitHub OAuth flow (E2E mock)', () => {
         });
       }
       if (url.includes('api.github.com/user')) {
-        return new Response(JSON.stringify({ id: 123, login: 'alice', avatar_url: 'https://avatars.example/alice.png' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            id: 123,
+            login: 'alice',
+            avatar_url: 'https://avatars.example/alice.png',
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        );
       }
       return new Response('not found', { status: 404 });
     });
@@ -127,10 +134,17 @@ describe('GitHub OAuth flow (E2E mock)', () => {
         });
       }
       if (url.includes('api.github.com/user')) {
-        return new Response(JSON.stringify({ id: 123, login: 'alice', avatar_url: 'https://avatars.example/alice.png' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            id: 123,
+            login: 'alice',
+            avatar_url: 'https://avatars.example/alice.png',
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        );
       }
       return new Response('not found', { status: 404 });
     });
