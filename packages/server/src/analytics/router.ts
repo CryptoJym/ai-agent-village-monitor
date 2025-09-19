@@ -84,7 +84,9 @@ analyticsRouter.post('/analytics/collect', async (req, res) => {
                   if (ms > 2000) await r.incr(`kpi:day:${today}:fast_travel_over_budget`);
                 }
               }
-            } catch {}
+            } catch {
+              // Ignore parsing failures; metric aggregation remains best-effort.
+            }
             break;
           case 'house_command': {
             const houseId = String(e.houseId || '').trim();

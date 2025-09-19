@@ -5,7 +5,6 @@ let warned = false;
 function getJwtSecret(): string {
   const s = process.env.JWT_SECRET || config.JWT_SECRET || '';
   if (!s && !warned) {
-    // eslint-disable-next-line no-console
     console.warn('[auth] JWT_SECRET not set; auth endpoints will error.');
     warned = true;
   }

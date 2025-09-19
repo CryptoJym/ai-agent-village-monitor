@@ -17,7 +17,7 @@ export class Minimap {
   private worldH: number;
   private dotsLayer: Phaser.GameObjects.Container;
   private agentDot?: Phaser.GameObjects.Arc;
-  private houseDots: Map<string, Phaser.GameObjects.Arc> = new Map();
+  private houseMarkers: Map<string, Phaser.GameObjects.GameObject> = new Map();
   private viewRect?: Phaser.GameObjects.Rectangle;
   private visible = true;
   private refreshEvent?: Phaser.Time.TimerEvent;
@@ -297,16 +297,46 @@ export class Minimap {
     }
   }
 
-  setHouse(id: string, p: Point) {
+  setHouse(id: string, p: Point, textureKey?: string) {
     const m = this.toMini(p);
-    let dot = this.houseDots.get(id);
-    if (!dot) {
+    const existing = this.houseMarkers.get(id);
+    const hasTexture = textureKey && this.scene.textures.exists(textureKey);
+
+    if (hasTexture) {
+      let marker: Phaser.GameObjects.Image;
+      if (
+        existing &&
+        existing instanceof Phaser.GameObjects.Image &&
+        existing.texture.key === textureKey
+      ) {
+        marker = existing;
+      } else {
+        existing?.destroy();
+        marker = this.scene.add.image(m.x, m.y, textureKey!).setOrigin(0.5, 1);
+        const baseWidth = marker.width || 1;
+        const baseHeight = marker.height || 1;
+        const targetWidth = 18;
+        const targetHeight = 14;
+        const scale = Math.min(targetWidth / baseWidth, targetHeight / baseHeight);
+        marker.setScale(scale);
+        marker.setAlpha(0.95);
+        this.dotsLayer.add(marker);
+        this.houseMarkers.set(id, marker);
+      }
+      marker.setPosition(m.x, m.y);
+      return;
+    }
+
+    let dot: Phaser.GameObjects.Arc;
+    if (existing && existing instanceof Phaser.GameObjects.Arc) {
+      dot = existing;
+    } else {
+      existing?.destroy();
       dot = this.scene.add.circle(m.x, m.y, 2, 0x22c55e, 1);
       this.dotsLayer.add(dot);
-      this.houseDots.set(id, dot);
-    } else {
-      dot.setPosition(m.x, m.y);
+      this.houseMarkers.set(id, dot);
     }
+    dot.setPosition(m.x, m.y);
   }
 
   setViewport(rect: { x: number; y: number; width: number; height: number }) {

@@ -140,7 +140,9 @@ router.get('/auth/github/callback', async (req, res, next) => {
         token: ghToken,
         scopes: tokenJson.scope || undefined,
       });
-    } catch {}
+    } catch {
+      // Token persistence failures should not block login; tokens can be refreshed later.
+    }
 
     // Issue JWTs and set cookies
     const access = signAccessToken(dbUser.id, dbUser.username);
@@ -212,7 +214,7 @@ router.post('/auth/refresh', async (req, res) => {
     if (currentHash !== sha256Hex(providedJti)) {
       // Reuse detected: revoke family by clearing current entry
       refreshStore.delete(userId);
-       
+
       console.info('[auth] token_reuse_detected', { userId });
       return res.status(401).json({ error: 'unauthorized' });
     }
@@ -247,7 +249,9 @@ router.post('/auth/logout', async (req, res) => {
     try {
       const parts = JSON.parse(Buffer.from(raw.split('.')[1], 'base64').toString('utf-8')) as any;
       if (parts?.sub) refreshStore.delete(String(parts.sub));
-    } catch {}
+    } catch {
+      // Token parsing failed; nothing to revoke.
+    }
   }
   res.clearCookie('access_token');
   res.clearCookie('refresh_token');
@@ -257,7 +261,9 @@ router.post('/auth/logout', async (req, res) => {
       : null;
     const actorId = parts?.sub ? String(parts.sub) : undefined;
     audit.log('auth.logout', { actorId });
-  } catch {}
+  } catch {
+    // Logout audit logging is optional; ignore parse failures.
+  }
   res.setHeader('Cache-Control', 'no-store');
   return res.status(204).end();
 });

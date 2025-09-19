@@ -27,13 +27,13 @@ export class GitHubService {
     const out: RepoInfo[] = [];
     let cursor: string | undefined = undefined;
     // paginate using client's GraphQL helper
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       // @ts-expect-error using internal client helper
       const page = await (this.client as any).listOrgReposGraphQL(org, cursor);
       const nodes = page?.nodes ?? [];
       for (const n of nodes) {
-        const owner = typeof n.nameWithOwner === 'string' ? String(n.nameWithOwner).split('/')[0] : undefined;
+        const owner =
+          typeof n.nameWithOwner === 'string' ? String(n.nameWithOwner).split('/')[0] : undefined;
         out.push({
           id: n.id,
           name: n.name,
@@ -51,7 +51,10 @@ export class GitHubService {
   }
 
   // Cached GraphQL repo listing with REST fallback for resilience.
-  async listOrgReposPreferGraphQLWithFallback(org: string, opts?: { bypassCache?: boolean }): Promise<RepoInfo[]> {
+  async listOrgReposPreferGraphQLWithFallback(
+    org: string,
+    opts?: { bypassCache?: boolean },
+  ): Promise<RepoInfo[]> {
     const key = keyOrgRepos(org);
     const ttl = ttlForOrgRepos();
     const useCache = isCacheEnabled() && !opts?.bypassCache;

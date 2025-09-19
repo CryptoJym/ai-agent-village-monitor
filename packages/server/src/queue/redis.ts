@@ -24,6 +24,7 @@ export async function pingRedis(): Promise<boolean> {
     const res = await client.ping();
     return res?.toUpperCase() === 'PONG';
   } catch {
+    // Treat ping failure as unhealthy connection.
     return false;
   }
 }
@@ -35,7 +36,9 @@ export async function closeRedis() {
     } catch {
       try {
         await redisSingleton.disconnect();
-      } catch {}
+      } catch {
+        // Ignore disconnect failures on shutdown.
+      }
     }
     redisSingleton = null;
   }

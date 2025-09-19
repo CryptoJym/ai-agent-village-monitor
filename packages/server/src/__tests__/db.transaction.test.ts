@@ -4,7 +4,6 @@ import { describe, it, expect } from 'vitest';
 const hasDb = !!process.env.DATABASE_URL;
 let PrismaClient: any;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   PrismaClient = require('@prisma/client').PrismaClient;
 } catch {
   PrismaClient = null;
@@ -22,7 +21,11 @@ describe('db transaction', () => {
           data: { githubId: BigInt(Date.now() % 2147483647), username },
         });
         await tx.village.create({
-          data: { githubOrgId: BigInt(Date.now() % 2147483647), name: 'txn-village', ownerId: user.id },
+          data: {
+            githubOrgId: BigInt(Date.now() % 2147483647),
+            name: 'txn-village',
+            ownerId: user.id,
+          },
         });
         throw new Error('force rollback');
       });
@@ -35,4 +38,3 @@ describe('db transaction', () => {
     await prisma.$disconnect();
   });
 });
-

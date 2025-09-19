@@ -19,12 +19,12 @@ declare module 'socket.io' {
  * connections but logs a warning for visibility.
  */
 export function socketAuth(socket: Socket, next: NextFunction) {
-  const token = (socket.handshake.auth as Record<string, unknown> | undefined)?.token
-    ?? (socket.handshake.query?.token as string | undefined);
+  const token =
+    (socket.handshake.auth as Record<string, unknown> | undefined)?.token ??
+    (socket.handshake.query?.token as string | undefined);
 
   if (!config.JWT_SECRET) {
     // Allow connection in dev/test without strict auth to ease local iteration
-    // eslint-disable-next-line no-console
     console.warn('[ws] JWT_SECRET is not set; allowing unauthenticated WebSocket connection');
     return next();
   }
@@ -37,11 +37,10 @@ export function socketAuth(socket: Socket, next: NextFunction) {
     const payload = verifyAccessToken(token);
     socket.data.user = payload;
     return next();
-  } catch (e) {
+  } catch {
     const err = new Error('unauthorized: invalid token');
     // @ts-expect-error attach code for client-side handling
     err.data = { code: 'WS_INVALID_TOKEN' };
     return next(err);
   }
 }
-

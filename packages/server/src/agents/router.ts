@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client';
 import { requireAuth, getUserVillageRole } from '../auth/middleware';
-import { toEventDTO, toEventDTOs } from '../events/dto';
+import { toEventDTOs } from '../events/dto';
 
 export const agentsRouter = Router();
 
@@ -74,7 +74,9 @@ agentsRouter.get('/agents/:id/stream/sse', requireAuth, async (req, res) => {
   if (process.env.NODE_ENV === 'test') {
     try {
       res.write(': ok\n\n');
-    } catch {}
+    } catch {
+      // Ignore write failures in test teardown.
+    }
     return res.end();
   }
 

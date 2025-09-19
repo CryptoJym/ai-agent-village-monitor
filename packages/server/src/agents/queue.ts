@@ -9,7 +9,11 @@ export type AgentCommandPayload =
   | { kind: 'command'; agentId: string | number; command: string; args?: Record<string, unknown> };
 
 function stableStringify(obj: unknown) {
-  try { return JSON.stringify(obj, Object.keys(obj as any).sort()); } catch { return JSON.stringify(obj); }
+  try {
+    return JSON.stringify(obj, Object.keys(obj as any).sort());
+  } catch {
+    return JSON.stringify(obj);
+  }
 }
 
 function computeJobId(payload: AgentCommandPayload): string {
@@ -20,7 +24,11 @@ function computeJobId(payload: AgentCommandPayload): string {
   const args = (payload as any).args || {};
   const requestId = args.clientRequestId || args.requestId;
   if (requestId) return `cmd:${agent}:${(payload as any).command}:${String(requestId)}`;
-  const hash = crypto.createHash('sha1').update(`${(payload as any).command}:${stableStringify(args)}`).digest('hex').slice(0, 12);
+  const hash = crypto
+    .createHash('sha1')
+    .update(`${(payload as any).command}:${stableStringify(args)}`)
+    .digest('hex')
+    .slice(0, 12);
   return `cmd:${agent}:${(payload as any).command}:${hash}`;
 }
 
@@ -36,10 +44,16 @@ export async function enqueueAgentJob(payload: AgentCommandPayload, opts?: JobsO
     try {
       const state = await existing.getState();
       if (state && !['completed', 'failed'].includes(state)) {
-        audit.log('agent.job_deduped', { jobId, kind: name, agentId: String((payload as any).agentId) });
+        audit.log('agent.job_deduped', {
+          jobId,
+          kind: name,
+          agentId: String((payload as any).agentId),
+        });
         return { ok: true as const, enqueued: false as const, jobId };
       }
-    } catch {}
+    } catch {
+      // Ignore state lookup failures; treat as needing enqueue.
+    }
   }
   await queues.agentCommands.add(name, payload as any, {
     jobId,

@@ -87,6 +87,9 @@ model House {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   metadata     Json?
+  primaryLanguage String?
+  stars           Int?
+  openIssues      Int?
   // Layout persistence
   positionX    Float?
   positionY    Float?

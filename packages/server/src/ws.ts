@@ -31,8 +31,7 @@ export function attachSocket(server: HTTPServer, app: Express): AttachedSocket {
   });
 
   // Make io accessible to Express handlers (e.g., REST endpoints triggering broadcasts)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (app as any).set('io', io);
+  app.set('io', io);
 
   return {
     io,
@@ -41,4 +40,3 @@ export function attachSocket(server: HTTPServer, app: Express): AttachedSocket {
     },
   };
 }
-

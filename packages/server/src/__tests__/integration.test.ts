@@ -12,7 +12,6 @@ describe('integration: REST + DB with containers', () => {
   let app: any;
   let signAccessToken: (id: number, username: string) => string;
   let prisma: any;
-  let ownerId = 0;
   let token = '';
 
   const hasDocker = process.env.USE_TESTCONTAINERS === 'true';
@@ -58,15 +57,28 @@ describe('integration: REST + DB with containers', () => {
     app = createApp();
 
     // Create a user and sign a token
-    const u = await prisma.user.create({ data: { githubId: BigInt(Date.now()), username: 'itest' } });
-    ownerId = u.id;
+    const u = await prisma.user.create({
+      data: { githubId: BigInt(Date.now()), username: 'itest' },
+    });
     token = signAccessToken(u.id, u.username);
   }, 180_000);
 
   afterAll(async () => {
-    try { await prisma?.$disconnect?.(); } catch {}
-    try { await pg?.stop(); } catch {}
-    try { await redis?.stop(); } catch {}
+    try {
+      await prisma?.$disconnect?.();
+    } catch {
+      // Best-effort cleanup; ignore if already disconnected.
+    }
+    try {
+      await pg?.stop();
+    } catch {
+      // Container may already be stopped; safe to ignore.
+    }
+    try {
+      await redis?.stop();
+    } catch {
+      // Container may already be stopped; safe to ignore.
+    }
   }, 60_000);
 
   it('POST /api/villages then GET by id', async () => {

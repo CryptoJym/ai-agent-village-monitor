@@ -163,10 +163,12 @@ export class AgentManager {
   // Graceful resource cleanup: stop all agents, end sessions, clear timers
   async shutdown() {
     const tasks: Array<Promise<any>> = [];
-    for (const [id, rt] of this.runtimes.entries()) {
+    for (const [id] of this.runtimes.entries()) {
       try {
         this.clearRetryTimer(id);
-      } catch {}
+      } catch {
+        // Timer already cleared; nothing to do.
+      }
       tasks.push(this.controller.stop(id).catch(() => {}));
       tasks.push(endActiveSession(id).catch(() => {}));
       this.setState(id, 'disconnected', {
@@ -178,7 +180,9 @@ export class AgentManager {
     await Promise.allSettled(tasks);
     try {
       await this.controller.shutdown?.();
-    } catch {}
+    } catch {
+      // Controller shutdown is best effort during teardown.
+    }
   }
 }
 

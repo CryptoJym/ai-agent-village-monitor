@@ -17,7 +17,7 @@ export function requestLogger() {
           duration_ms: ms,
           headers: scrubHeaders(req.headers as any),
         };
-         
+
         console.info(JSON.stringify(payload));
         try {
           // Respect Do Not Track (DNT) and Global Privacy Control (GPC) for analytics metrics
@@ -34,8 +34,12 @@ export function requestLogger() {
               status: String(res.statusCode),
             });
           }
-        } catch {}
-      } catch {}
+        } catch {
+          // Metrics pipeline optional; ignore failures.
+        }
+      } catch {
+        // Logging output should not break request handling.
+      }
     });
     next();
   };

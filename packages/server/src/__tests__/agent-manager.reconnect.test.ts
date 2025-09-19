@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentManager } from '../agents/manager';
-import type { MCPAgentController, CommandArgs, CommandResult, RunCommandOptions } from '../agents/controller';
+import type {
+  MCPAgentController,
+  CommandArgs,
+  CommandResult,
+  RunCommandOptions,
+} from '../agents/controller';
 
 class FlakyController implements MCPAgentController {
   attempts = 0;
@@ -9,8 +14,15 @@ class FlakyController implements MCPAgentController {
     if (this.attempts < 3) throw new Error('transient');
     return { ok: true, sessionToken: 'tok' };
   }
-  async stop(_agentId: string | number): Promise<{ ok: boolean }> { return { ok: true }; }
-  async runCommand(_agentId: string | number, _command: string, _args?: CommandArgs, _opts?: RunCommandOptions): Promise<CommandResult> {
+  async stop(_agentId: string | number): Promise<{ ok: boolean }> {
+    return { ok: true };
+  }
+  async runCommand(
+    _agentId: string | number,
+    _command: string,
+    _args?: CommandArgs,
+    _opts?: RunCommandOptions,
+  ): Promise<CommandResult> {
     return { ok: true };
   }
 }
@@ -27,7 +39,7 @@ describe('AgentManager reconnect/backoff', () => {
     const id = 'a-1';
 
     // First connect attempt fails and schedules retry
-    let res = await mgr.connectAgent(id);
+    const res = await mgr.connectAgent(id);
     expect(res.ok).toBe(false);
     let rt = (mgr as any).get(id);
     expect(rt.state).toBe('reconnecting');
@@ -57,4 +69,3 @@ describe('AgentManager reconnect/backoff', () => {
     expect(rt.retryTimer).toBeNull();
   });
 });
-

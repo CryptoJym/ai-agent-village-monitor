@@ -1,4 +1,4 @@
-import { randomBytes, createCipheriv, createDecipheriv } from 'node:crypto';
+import { randomBytes, createCipheriv, createDecipheriv, createHash } from 'node:crypto';
 
 function getKey(): Buffer | null {
   const raw = process.env.TOKEN_ENCRYPTION_KEY || '';
@@ -42,11 +42,6 @@ export function decryptToken(bundle: CipherBundle): string | null {
 }
 
 export function tokenHash(bytes: Buffer): Buffer {
-  // Lightweight hash (SHA-256 via Node crypto) implemented using Web Crypto subtle is async;
-  // here we reuse createCipheriv-dependencies for sync simplicity via a small library if needed.
-  // To avoid new deps, approximate with Node's built-in crypto createHash using require.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createHash } = require('node:crypto');
+  // Lightweight hash (SHA-256 via Node crypto) implemented using sync createHash.
   return createHash('sha256').update(bytes).digest();
 }
-

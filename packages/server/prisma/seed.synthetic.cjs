@@ -2,7 +2,6 @@
 // Usage:
 //   SY_ORGS=5 SY_REPOS_PER_ORG=50 SY_AGENTS_PER_VILLAGE=3 SY_BUGS_PER_REPO=2 node prisma/seed.synthetic.cjs
 
-/* eslint-disable no-console */
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -91,7 +90,6 @@ async function seedVillage(orgIndex) {
 async function main() {
   console.log(`[synthetic] Generating ORGS=${ORGS}, REPOS_PER_ORG=${REPOS_PER_ORG}, AGENTS_PER_VILLAGE=${AGENTS_PER_VILLAGE}, BUGS_PER_REPO=${BUGS_PER_REPO}`);
   for (let i = 0; i < ORGS; i++) {
-    // eslint-disable-next-line no-await-in-loop
     await seedVillage(i);
   }
 }

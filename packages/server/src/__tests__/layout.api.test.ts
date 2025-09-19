@@ -17,8 +17,6 @@ function bearer(t: string) {
 }
 
 describe('village layout API', () => {
-  const hasDb = !!process.env.DATABASE_URL && process.env.DISABLE_DB_TESTS !== 'true';
-
   let app: any;
   const ownerId = 101;
   const memberId = 202;

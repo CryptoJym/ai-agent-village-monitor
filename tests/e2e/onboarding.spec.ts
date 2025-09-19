@@ -12,7 +12,7 @@ test.describe('Onboarding flow (smoke)', () => {
       await page.goto('/');
       await page.waitForLoadState('domcontentloaded');
       await page.waitForSelector('h1', { timeout: 10000 });
-    } catch (e) {
+    } catch {
       test.skip(true, 'Base URL not reachable');
     }
     await expect(page.getByText('AI Agent Village Monitor')).toBeVisible();

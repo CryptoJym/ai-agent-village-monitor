@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import { getRedis } from '../queue/redis';
 import { inc } from '../metrics';
 
@@ -13,7 +13,10 @@ function localRemember(id: string, ttlMs: number): boolean {
   return true;
 }
 
-export async function rememberDelivery(deliveryId: string, ttlMs = 24 * 60 * 60 * 1000): Promise<boolean> {
+export async function rememberDelivery(
+  deliveryId: string,
+  ttlMs = 24 * 60 * 60 * 1000,
+): Promise<boolean> {
   if (!deliveryId) return true;
   try {
     const r = getRedis();
@@ -38,4 +41,3 @@ export async function shortCircuitDuplicate(req: Request, res: Response): Promis
   }
   return false;
 }
-

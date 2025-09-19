@@ -8,7 +8,6 @@ export function notFound(req: Request, res: Response) {
     .json({ code: 'NOT_FOUND', error: { message: 'Not Found', code: 'NOT_FOUND' }, requestId });
 }
 
- 
 export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   const requestId = (req as any).id;
   // Handle body parser JSON errors
@@ -57,8 +56,12 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
         requestId: (req as any).id,
         tags: { path: req.originalUrl || req.url },
       });
-    } catch {}
-  } catch {}
+    } catch {
+      // Observability pipeline unavailable; continue without Sentry capture.
+    }
+  } catch {
+    // Logging failure should not crash error middleware.
+  }
 
   // For 5xx errors, avoid leaking internal details
   const safeMessage = status >= 500 ? 'Internal Server Error' : message;

@@ -9,6 +9,101 @@ import { sanitizeString } from '../middleware/sanitize';
 
 export const villagesRouter = Router();
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  js: 'JavaScript',
+  javascript: 'JavaScript',
+  ts: 'TypeScript',
+  typescript: 'TypeScript',
+  py: 'Python',
+  python: 'Python',
+  go: 'Go',
+  rb: 'Ruby',
+  ruby: 'Ruby',
+  java: 'Java',
+  cs: 'C#',
+  csharp: 'C#',
+};
+
+function normalizeLanguage(value?: string | null) {
+  if (!value) return null;
+  return value.trim().toLowerCase();
+}
+
+function languageLabel(value?: string | null) {
+  const norm = normalizeLanguage(value);
+  if (!norm) return null;
+  return LANGUAGE_LABELS[norm] ?? value ?? null;
+}
+
+type VillageAnalytics = {
+  houseCount: number;
+  totalStars: number;
+  primaryLanguage: string | null;
+  primaryLanguageLabel: string | null;
+  languageHistogram: Array<{ language: string | null; label: string | null; count: number }>;
+};
+
+async function computeVillageAnalytics(ids: string[]): Promise<Map<string, VillageAnalytics>> {
+  const result = new Map<string, VillageAnalytics>();
+  if (ids.length === 0) return result;
+
+  const [counts, languages] = await Promise.all([
+    prisma.house.groupBy({
+      by: ['villageId'],
+      where: { villageId: { in: ids } },
+      _count: { _all: true },
+      _sum: { stars: true },
+    }),
+    prisma.house.groupBy({
+      by: ['villageId', 'primaryLanguage'],
+      where: { villageId: { in: ids } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  counts.forEach((entry) => {
+    result.set(entry.villageId, {
+      houseCount: entry._count._all ?? 0,
+      totalStars: entry._sum.stars ?? 0,
+      primaryLanguage: null,
+      primaryLanguageLabel: null,
+      languageHistogram: [],
+    });
+  });
+
+  languages.forEach((entry) => {
+    const current = result.get(entry.villageId) ?? {
+      houseCount: 0,
+      totalStars: 0,
+      primaryLanguage: null,
+      primaryLanguageLabel: null,
+      languageHistogram: [],
+    };
+    const count = entry._count._all ?? 0;
+    const language = entry.primaryLanguage ?? null;
+    current.languageHistogram.push({
+      language,
+      label: languageLabel(language),
+      count,
+    });
+    const currentTop = (current as any)._topLangCount as number | undefined;
+    if (!currentTop || count > currentTop) {
+      current.primaryLanguage = language;
+      current.primaryLanguageLabel = languageLabel(language);
+      (current as any)._topLangCount = count;
+    }
+    result.set(entry.villageId, current);
+  });
+
+  result.forEach((value, key) => {
+    value.languageHistogram.sort((a, b) => b.count - a.count);
+    delete (value as any)._topLangCount;
+    result.set(key, value);
+  });
+
+  return result;
+}
+
 // List villages accessible to current user
 villagesRouter.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -17,16 +112,25 @@ villagesRouter.get('/', requireAuth, async (req, res, next) => {
       where: { OR: [{ ownerId: userId }, { access: { some: { userId } } }] },
       orderBy: { createdAt: 'desc' },
     });
+    const analytics = await computeVillageAnalytics(villages.map((v) => v.id));
+
     res.json(
-      villages.map((v) => ({
-        id: v.id,
-        name: v.name,
-        githubOrgId: v.githubOrgId.toString(),
-        isPublic: v.isPublic,
-        lastSynced: v.lastSynced,
-        createdAt: v.createdAt,
-        updatedAt: v.updatedAt,
-      })),
+      villages.map((v) => {
+        const stat = analytics.get(v.id);
+        return {
+          id: v.id,
+          name: v.name,
+          githubOrgId: v.githubOrgId.toString(),
+          isPublic: v.isPublic,
+          lastSynced: v.lastSynced,
+          createdAt: v.createdAt,
+          updatedAt: v.updatedAt,
+          houseCount: stat?.houseCount ?? 0,
+          totalStars: stat?.totalStars ?? 0,
+          primaryLanguage: stat?.primaryLanguage ?? null,
+          primaryLanguageLabel: stat?.primaryLanguageLabel ?? null,
+        };
+      }),
     );
   } catch (e) {
     next(e);
@@ -85,6 +189,8 @@ villagesRouter.get('/:id', async (req, res, next) => {
       res.setHeader('Cache-Control', 'public, max-age=60');
     }
     if (v.isPublic) res.setHeader('Cache-Control', 'public, max-age=60');
+    const stat = (await computeVillageAnalytics([v.id])).get(v.id);
+
     res.json({
       id: v.id,
       name: (v as any).name ?? (v as any).orgName ?? `Village ${v.id}`,
@@ -94,6 +200,11 @@ villagesRouter.get('/:id', async (req, res, next) => {
       createdAt: v.createdAt,
       updatedAt: v.updatedAt,
       viewerRole,
+      houseCount: stat?.houseCount ?? 0,
+      totalStars: stat?.totalStars ?? 0,
+      primaryLanguage: stat?.primaryLanguage ?? null,
+      primaryLanguageLabel: stat?.primaryLanguageLabel ?? null,
+      languageHistogram: stat?.languageHistogram ?? [],
     });
   } catch (e) {
     next(e);
@@ -485,7 +596,9 @@ villagesRouter.put(
       await Promise.allSettled(updates);
       try {
         await prisma.village.update({ where: { id }, data: { layoutVersion: { increment: 1 } } });
-      } catch {}
+      } catch {
+        // Layout version increment failed; continue with response.
+      }
       res.status(204).end();
     } catch (e) {
       next(e);
@@ -513,7 +626,9 @@ villagesRouter.post(
       });
       try {
         await prisma.village.update({ where: { id }, data: { layoutVersion: { increment: 1 } } });
-      } catch {}
+      } catch {
+        // Layout version increment failed; continue with response.
+      }
       res.status(202).json({ status: 'queued' });
     } catch (e) {
       next(e);

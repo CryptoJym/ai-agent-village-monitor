@@ -90,7 +90,9 @@ function inferRepoFromGit() {
       const m = url.match(/github\.com\/(.+)\.git$/);
       return m ? m[1] : null;
     }
-  } catch {}
+  } catch {
+    // Ignore git failures; fallback to null so caller can prompt.
+  }
   return null;
 }
 

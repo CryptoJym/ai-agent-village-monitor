@@ -13,7 +13,6 @@ export function getPrisma(): any | undefined {
   if (process.env.DISABLE_DB_TESTS === 'true') return undefined;
   if (!process.env.DATABASE_URL) return undefined;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { PrismaClient } = require('@prisma/client');
     prismaInstance = new PrismaClient({ log: ['warn', 'error'] });
     return prismaInstance;

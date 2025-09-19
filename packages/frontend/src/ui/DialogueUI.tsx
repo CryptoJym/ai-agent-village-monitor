@@ -6,6 +6,12 @@ import { ControlTab } from './ControlTab';
 import { InfoTab } from './InfoTab';
 import { ToastProvider } from './Toast';
 
+const logUiStateError = (context: string, error: unknown) => {
+  if (import.meta.env?.DEV && typeof console !== 'undefined') {
+    console.warn(`[DialogueUI] ${context}`, error);
+  }
+};
+
 export type DialogueUIProps = {
   open: boolean;
   onClose: () => void;
@@ -34,8 +40,8 @@ export function DialogueUI({
       ) {
         return st.dialogueTab as any;
       }
-    } catch (e) {
-      void e;
+    } catch (error) {
+      logUiStateError('reading initial dialogueTab', error);
     }
     return 'thread';
   });
@@ -78,7 +84,9 @@ export function DialogueUI({
   useEffect(() => {
     try {
       setUIState({ selectedAgentId: agentId });
-    } catch {}
+    } catch (error) {
+      logUiStateError('persisting selected agent', error);
+    }
   }, [agentId]);
 
   useEffect(() => {
@@ -91,15 +99,17 @@ export function DialogueUI({
         ) {
           setTab(st.dialogueTab as any);
         }
-      } catch {}
+      } catch (error) {
+        logUiStateError('restoring tab on open', error);
+      }
     }
   }, [open]);
 
   useEffect(() => {
     try {
       setUIState({ dialogueTab: tab as any });
-    } catch (e) {
-      void e;
+    } catch (error) {
+      logUiStateError('persisting dialogue tab', error);
     }
   }, [tab]);
 

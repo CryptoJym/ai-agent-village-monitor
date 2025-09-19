@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { WebSocketService } from '../../src/realtime/WebSocketService';
 import { eventBus } from '../../src/realtime/EventBus';
 

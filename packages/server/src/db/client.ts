@@ -22,7 +22,9 @@ function makeStub(): any {
           if (vid === 1 && uid === 42) {
             return { id: 1, villageId: vid, userId: uid, role: 'owner', grantedAt: new Date() };
           }
-        } catch {}
+        } catch {
+          // Ignore parsing errors; fall back to null.
+        }
         return null;
       },
     },
@@ -35,7 +37,7 @@ if (inVitest) {
 } else {
   // Prevent multiple instances in dev with hot-reload
   const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-   
+
   const { PrismaClient: RealPrisma } = require('@prisma/client');
   prismaInstance = globalForPrisma.prisma ?? new RealPrisma();
   if (process.env.NODE_ENV !== 'production')
