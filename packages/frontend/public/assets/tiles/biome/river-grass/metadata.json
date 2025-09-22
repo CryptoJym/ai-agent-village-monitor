@@ -1,0 +1,32 @@
+{
+  "tilesetId": "e7076c1d-4354-43c9-8215-d809436b6bb5",
+  "title": "Freshwater River ↔ Meadow",
+  "category": "biome",
+  "key": "river-grass",
+  "lower": {
+    "description": "clear freshwater river with visible stones and shimmering highlights",
+    "passable": false,
+    "tags": ["water", "river"],
+    "baseTileId": "4e9c5691-de1d-455d-8a50-12bc2c1b3cfc"
+  },
+  "upper": {
+    "description": "lush meadow grass with reeds and small blue flowers",
+    "passable": true,
+    "tags": ["grass"],
+    "baseTileId": "44a69e2d-919e-4e20-ba10-c2abef643815"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "riverbank mud with reeds, stones, and ripples meeting grass"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-22T22:14:29.877Z"
+}

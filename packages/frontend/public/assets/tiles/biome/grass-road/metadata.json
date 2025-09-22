@@ -1,0 +1,32 @@
+{
+  "tilesetId": "92a8a5db-a284-40f9-ac71-ea36f9a03b16",
+  "title": "Grassland ↔ Village Road",
+  "category": "biome",
+  "key": "grass-road",
+  "lower": {
+    "description": "soft meadow grass with trimmed edges",
+    "passable": true,
+    "tags": ["grass"],
+    "baseTileId": "923e89b2-03d3-41d0-a758-eae681f5aa6e"
+  },
+  "upper": {
+    "description": "cobbled village road with stones and moss between joints",
+    "passable": true,
+    "tags": ["road", "cobblestone"],
+    "baseTileId": "2f8e05cc-948e-4f84-866b-d92b7dfca02d"
+  },
+  "transition": {
+    "size": 0,
+    "description": "trimmed grass bordering cobbled road with wooden edging"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-22T22:13:26.286Z"
+}

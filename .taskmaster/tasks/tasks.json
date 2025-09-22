@@ -6775,7 +6775,7 @@
         "description": "Create exterior and interior tile atlases (upper/lower terrain, decorative elements) that match the existing FF3/Ghibli vibe.",
         "details": "- Design prompt presets for outdoor terrain (grasslands, water edges, cliffs, bridges, roads), biome variants, and interior flooring/walls with 32x32 top-down perspective.\n- Use Pixellab create_topdown_tileset and create_isometric_tile tools to produce autop-tile compatible sheets (include edge/corner/center variants for smoothing).\n- Organize outputs under packages/frontend/public/assets/tiles/(biome|interior)/ and generate metadata (tile size, passability, animation frames where relevant).\n- Extend scripts/generate-pixellab-manifest.mjs or add scripts/generate-tiles.mjs to register tile sets and emit tile manifest JSON for the game engine.\n- Capture documentation on how to regenerate or extend tile sets, including prompt templates and seeding guidance.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -6838,7 +6838,7 @@
     ],
     "metadata": {
       "created": "2025-09-21T14:29:45.488Z",
-      "updated": "2025-09-22T20:50:58.369Z",
+      "updated": "2025-09-22T22:22:00.907Z",
       "description": "Tag created on 9/21/2025"
     }
   }
