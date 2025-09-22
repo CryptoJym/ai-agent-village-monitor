@@ -41,7 +41,6 @@ export function AnalyticsConsentBanner() {
       style={{
         position: 'fixed',
         left: 16,
-        right: 16,
         bottom: 16,
         padding: '12px 14px',
         background: '#0b1220',
@@ -53,11 +52,13 @@ export function AnalyticsConsentBanner() {
         gap: 12,
         alignItems: 'center',
         justifyContent: 'space-between',
+        maxWidth: 'min(420px, calc(100vw - 40px))',
+        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.55)',
       }}
       role="region"
       aria-label="Analytics consent"
     >
-      <div style={{ maxWidth: 700 }}>
+      <div style={{ maxWidth: '60%' }}>
         Help us improve with anonymous usage analytics (dialogue opens, session duration, etc.). See
         our{' '}
         <a href="/docs/privacy" style={{ color: '#93c5fd' }}>

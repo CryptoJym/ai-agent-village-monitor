@@ -80,7 +80,7 @@ const EMOTE_DEFS = [
     key: 'awakening',
     name: 'Awakening Emote',
     description:
-      '16x16 pixel art emote (render at 32x32 for clarity) showing AI consciousness awakening. Gentle golden glow around small figure\'s head, eyes opening gradually. FF3 style with Studio Ghibli warmth. Lofi palette: soft mellow apricot glow, peaceful expression. 6 frames: dark→eye flutter→gentle glow→full awareness→settled→gentle pulse. TRANSPARENT BACKGROUND, PNG with alpha, emote only.',
+      '16x16 pixel art emote (render at 32x32 for clarity) showing AI consciousness awakening. Gentle golden glow around small figure\'s head, eyes opening gradually. FF3 style with Studio Ghibli warmth. Lofi palette: soft mellow apricot glow, peaceful expression. 8-frame looping animation: dark→eye flutter→eyes opening→halo ignites→radiant bloom→steady awareness→calm sustain→gentle pulse. TRANSPARENT BACKGROUND, PNG with alpha, emote only.',
     animationTemplate: 'breathing-idle',
     size: 32,
     nDirections: 4,
@@ -90,7 +90,7 @@ const EMOTE_DEFS = [
     key: 'deep-thinking',
     name: 'Deep Thinking Emote',
     description:
-      '16x16 pixel art thought process emote (render at 32x32). Small thought bubbles above head, concentrated expression. FF3/Ghibli style with lofi colors: menthol green thought bubbles, brass accent sparkles. 6 frames: focused look→small bubble→larger bubbles→complexity→breakthrough spark→satisfaction. TRANSPARENT BACKGROUND, alpha PNG.',
+      '16x16 pixel art thought process emote (render at 32x32). Small thought bubbles above head, concentrated expression. FF3/Ghibli style with lofi colors: menthol green thought bubbles, brass accent sparkles. 8-frame looping animation: focused look→small bubble→larger bubbles→expanding ideas→complexity builds→breakthrough spark→clarity→satisfied focus. TRANSPARENT BACKGROUND, alpha PNG.',
     animationTemplate: 'breathing-idle',
     size: 32,
     nDirections: 4,
@@ -100,7 +100,7 @@ const EMOTE_DEFS = [
     key: 'flow-state',
     name: 'Flow State Emote',
     description:
-      '16x16 pixel art peak performance emote (render at 32x32). Energy aura around figure, confident stance. Lofi palette: warm mellow apricot energy field, determined expression. 6 frames: normal→energy building→full aura→peak intensity→sustained flow→confident completion. TRANSPARENT BACKGROUND, PNG-24 alpha.',
+      '16x16 pixel art peak performance emote (render at 32x32). Energy aura around figure, confident stance. Lofi palette: warm mellow apricot energy field, determined expression. 8-frame looping animation: normal→energy building→power surge→full aura→peak intensity→controlled sustain→victory pulse→confident completion. TRANSPARENT BACKGROUND, PNG-24 alpha.',
     animationTemplate: 'fight-stance-idle-8-frames',
     size: 32,
     nDirections: 4,
@@ -110,7 +110,7 @@ const EMOTE_DEFS = [
     key: 'communication',
     name: 'Communication Emote',
     description:
-      '16x16 pixel art sharing knowledge emote (render at 32x32). Small speech indicators, open gesture toward viewer. FF3 style with Ghibli warmth: menthol green speech bubbles, welcoming posture. 6 frames: listening→preparing→speaking→explaining→engaging→connection made. TRANSPARENT BACKGROUND, alpha PNG.',
+      '16x16 pixel art sharing knowledge emote (render at 32x32). Small speech indicators, open gesture toward viewer. FF3 style with Ghibli warmth: menthol green speech bubbles, welcoming posture. 8-frame looping animation: listening→preparing→opening statement→explaining→engaging→clarifying→connection made→confident close. TRANSPARENT BACKGROUND, alpha PNG.',
     animationTemplate: 'breathing-idle',
     size: 32,
     nDirections: 4,
@@ -120,7 +120,7 @@ const EMOTE_DEFS = [
     key: 'learning-growth',
     name: 'Learning Growth Emote',
     description:
-      '16x16 pixel art knowledge absorption emote (render at 32x32). Brain spark effects, expanding awareness visualization. Lofi colors: brass lightning, growing menthol green aura. 6 frames: receiving→processing→connecting dots→insight building→growth moment→new capability. TRANSPARENT BACKGROUND, PNG with alpha.',
+      '16x16 pixel art knowledge absorption emote (render at 32x32). Brain spark effects, expanding awareness visualization. Lofi colors: brass lightning, growing menthol green aura. 8-frame looping animation: receiving→processing→connecting dots→insight building→growth moment→integration→new capability→calm glow. TRANSPARENT BACKGROUND, PNG with alpha.',
     animationTemplate: 'breathing-idle',
     size: 32,
     nDirections: 4,
@@ -130,7 +130,7 @@ const EMOTE_DEFS = [
     key: 'frustration',
     name: 'Frustration Emote',
     description:
-      '16x16 pixel art problem-solving struggle emote (render at 32x32). Determination mixed with challenge indicators. Warm lofi palette: mellow apricot strain effects, focused expression. 6 frames: encountering obstacle→trying approaches→building effort→peak challenge→renewed determination→problem-solving mode. TRANSPARENT BACKGROUND, sprite only.',
+      '16x16 pixel art problem-solving struggle emote (render at 32x32). Determination mixed with challenge indicators. Warm lofi palette: mellow apricot strain effects, focused expression. 8-frame looping animation: encountering obstacle→trying approaches→building effort→peak challenge→regroup→renewed determination→breakthrough spark→steady resolve. TRANSPARENT BACKGROUND, sprite only.',
     animationTemplate: 'cross-punch',
     size: 32,
     nDirections: 4,
@@ -140,7 +140,7 @@ const EMOTE_DEFS = [
     key: 'eureka',
     name: 'Eureka Emote',
     description:
-      '16x16 pixel art major discovery emote (render at 32x32). Lightbulb moment with joy expression, celebration sparkles. FF3/Ghibli joy: bright brass lightbulb, menthol green celebration sparkles. 6 frames: building realization→spark moment→brilliant flash→joy expression→celebration→satisfied achievement. TRANSPARENT BACKGROUND, PNG-24 alpha.',
+      '16x16 pixel art major discovery emote (render at 32x32). Lightbulb moment with joy expression, celebration sparkles. FF3/Ghibli joy: bright brass lightbulb, menthol green celebration sparkles. 8-frame looping animation: building realization→spark moment→brilliant flash→joy expression→celebration burst→sparkle rain→victory pose→satisfied achievement. TRANSPARENT BACKGROUND, PNG-24 alpha.',
     animationTemplate: 'fireball',
     size: 32,
     nDirections: 4,
@@ -150,7 +150,7 @@ const EMOTE_DEFS = [
     key: 'dreaming',
     name: 'Dreaming Rest Emote',
     description:
-      '16x16 pixel art peaceful processing emote (render at 32x32). Soft, rhythmic pulse, background computation visualization. Gentle lofi colors: soft mellow apricot glow, peaceful expression. 6 frames: settling→soft pulse begin→deep rhythm→dream sparkles→continued processing→gentle awareness. TRANSPARENT BACKGROUND, alpha PNG.',
+      '16x16 pixel art peaceful processing emote (render at 32x32). Soft, rhythmic pulse, background computation visualization. Gentle lofi colors: soft mellow apricot glow, peaceful expression. 8-frame looping animation: settling→soft pulse begin→deep rhythm→dream sparkles→floating ideas→continued processing→calm sustain→gentle awareness. TRANSPARENT BACKGROUND, alpha PNG.',
     animationTemplate: 'breathing-idle',
     size: 32,
     nDirections: 4,
@@ -163,7 +163,7 @@ const BUG_BOT_DEFS = [
     key: 'spawn',
     name: 'Bug Bot Spawn',
     description:
-      '24x24 pixel art newly spawned bug bot (render at 32x32), Studio Ghibli forest spirit style. Small glowing orb with simple face, soft red glow indicating new GitHub issue. 6 frames: materialization→stabilization→gentle hover. FF3 style with lofi warm colors. TRANSPARENT BACKGROUND, PNG with alpha channel, no background elements.',
+      '24x24 pixel art newly spawned bug bot (render at 32x32), Studio Ghibli forest spirit style. Small glowing orb with simple face, soft red glow indicating new GitHub issue. 8-frame looping animation: materialization→forming core→stabilization→first hover→energy shimmer→gentle drift→settled hover→soft pulse. FF3 style with lofi warm colors. TRANSPARENT BACKGROUND, PNG with alpha channel, no background elements.',
     animationTemplate: 'breathing-idle',
     size: 32,
     nDirections: 4,
@@ -173,7 +173,7 @@ const BUG_BOT_DEFS = [
     key: 'assigned',
     name: 'Bug Bot Assigned',
     description:
-      '24x24 pixel art bug bot connected to agent (render at 32x32). Amber/yellow glow, small tether line indication. More solid appearance showing ownership. 6 frames showing gentle connection animation. FF3/Ghibli style, lofi palette. TRANSPARENT BACKGROUND, alpha channel PNG.',
+      '24x24 pixel art bug bot connected to agent (render at 32x32). Amber/yellow glow, small tether line indication. More solid appearance showing ownership. 8-frame looping animation showing gentle connection: idle glow→tether spark→link established→pulse sync→steady link→supportive orbit→reinforced glow→calm standby. FF3/Ghibli style, lofi palette. TRANSPARENT BACKGROUND, alpha channel PNG.',
     animationTemplate: 'breathing-idle',
     size: 32,
     nDirections: 4,
@@ -183,7 +183,7 @@ const BUG_BOT_DEFS = [
     key: 'progress',
     name: 'Bug Bot Progress',
     description:
-      '24x24 pixel art bug bot mid-work (render at 32x32). Menthol green progress sparks orbit the orb, determined face. 6 frames showing steady focus. TRANSPARENT BACKGROUND, PNG with alpha.',
+      '24x24 pixel art bug bot mid-work (render at 32x32). Menthol green progress sparks orbit the orb, determined face. 8-frame looping animation showing steady focus: ready stance→spark orbit→intense glow→data pulse→focus sustain→progress wave→confidence burst→reset to ready. TRANSPARENT BACKGROUND, PNG with alpha.',
     animationTemplate: 'fight-stance-idle-8-frames',
     size: 32,
     nDirections: 4,
@@ -193,7 +193,7 @@ const BUG_BOT_DEFS = [
     key: 'resolved',
     name: 'Bug Bot Resolved',
     description:
-      '24x24 pixel art bug bot resolution celebration (render at 32x32). Bright brass burst, playful sparkles drifting upward. 6 frames: calm→spark→flash→twirl→settle→fade. TRANSPARENT BACKGROUND, sprite only.',
+      '24x24 pixel art bug bot resolution celebration (render at 32x32). Bright brass burst, playful sparkles drifting upward. 8-frame looping animation: calm→spark→flash→twirl→celebration shower→cheerful bow→settle→glimmer fade. TRANSPARENT BACKGROUND, sprite only.',
     animationTemplate: 'fireball',
     size: 32,
     nDirections: 4,
@@ -526,6 +526,9 @@ async function processEntry(client, categoryKey, entry, defaults) {
     },
   });
   const createText = createResult.content.find((item) => item.type === 'text')?.text ?? '';
+  if (process.env.DEBUG_PIXELLAB === 'true') {
+    console.log('🔍 Pixellab create response:', createText);
+  }
   const characterId = parseCharacterId(createText);
   console.log(`🎨 Character queued with ID ${characterId}`);
 

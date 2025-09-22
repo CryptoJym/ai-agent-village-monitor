@@ -1,8 +1,8 @@
 {
   "character": {
-    "id": "295dbfff-c890-4730-9907-b8831ca6ef07",
+    "id": "82e94907-0a6d-4896-a66c-bc20c80c601f",
     "name": "Awakening Emote",
-    "prompt": "16x16 pixel art emote (render at 32x32 for clarity) showing AI consciousness awakening. Gentle golden glow around small figure's head, eyes opening gradually. FF3 style with Studio Ghibli warmth. Lofi palette: soft mellow apricot glow, peaceful expression. 6 frames: dark\u2192eye flutter\u2192gentle glow\u2192full awareness\u2192settled\u2192gentle pulse. TRANSPARENT BACKGROUND, PNG with alpha, emote only.",
+    "prompt": "16x16 pixel art emote (render at 32x32 for clarity) showing AI consciousness awakening. Gentle golden glow around small figure's head, eyes opening gradually. FF3 style with Studio Ghibli warmth. Lofi palette: soft mellow apricot glow, peaceful expression. 8-frame looping animation: dark\u2192eye flutter\u2192eyes opening\u2192halo ignites\u2192radiant bloom\u2192steady awareness\u2192calm sustain\u2192gentle pulse. TRANSPARENT BACKGROUND, PNG with alpha, emote only.",
     "size": {
       "width": 32,
       "height": 32
@@ -10,7 +10,7 @@
     "template_id": "mannequin",
     "directions": 4,
     "view": "low top-down",
-    "created_at": "2025-09-18T04:05:57.245278+00:00"
+    "created_at": "2025-09-22T16:11:24.145773+00:00"
   },
   "frames": {
     "rotations": {
@@ -2265,5 +2265,5 @@
     }
   },
   "export_version": "1.0",
-  "export_date": "2025-09-18T04:08:53.216471"
+  "export_date": "2025-09-22T16:12:43.967587"
 }

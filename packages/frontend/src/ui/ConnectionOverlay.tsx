@@ -3,16 +3,24 @@ import { eventBus } from '../realtime/EventBus';
 import { ws } from '../realtime/WebSocketService';
 
 export function ConnectionOverlay() {
-  const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connected');
+  const [state, setState] = useState<{
+    status: 'connecting' | 'connected' | 'disconnected';
+    error?: string | null;
+  }>({ status: 'connected' });
+
   useEffect(() => {
-    const on = (p: { status: 'connecting' | 'connected' | 'disconnected' }) => setStatus(p.status);
+    const on = (p: { status: 'connecting' | 'connected' | 'disconnected'; error?: string }) =>
+      setState({ status: p.status, error: p.error });
     eventBus.on('connection_status', on);
     return () => eventBus.off('connection_status', on);
   }, []);
-  if (status === 'connected') return null;
-  const label = status === 'connecting' ? 'Connecting…' : 'Disconnected';
+
+  if (state.status === 'connected') return null;
+  const label = state.status === 'connecting' ? 'Connecting…' : 'Disconnected';
+  const errorDetail = state.error && state.status !== 'connecting' ? state.error : null;
   return (
     <div
+      data-testid="connection-overlay"
       style={{
         position: 'absolute',
         inset: 0,
@@ -34,11 +42,23 @@ export function ConnectionOverlay() {
           textAlign: 'center',
         }}
       >
-        <div style={{ marginBottom: 12, fontWeight: 600 }}>{label}</div>
+        <div style={{ marginBottom: 8, fontWeight: 600 }}>{label}</div>
+        {errorDetail && (
+          <div
+            style={{
+              marginBottom: 12,
+              fontSize: 13,
+              color: '#fca5a5',
+              wordBreak: 'break-word',
+            }}
+          >
+            {errorDetail}
+          </div>
+        )}
         <button
           type="button"
           onClick={() => ws.connect()}
-          disabled={status === 'connecting'}
+          disabled={state.status === 'connecting'}
           style={{
             padding: '8px 12px',
             background: '#1f2937',

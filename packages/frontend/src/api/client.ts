@@ -8,10 +8,40 @@ import {
   type VillageAccessRow,
 } from './schemas';
 
-function getBaseUrl() {
+const ENV_API_BASE = (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
+const ENV_BACKEND_URL = (import.meta as any)?.env?.VITE_BACKEND_URL as string | undefined;
+const PROD_BACKEND_FALLBACK = 'https://backend-production-6a6e4.up.railway.app';
+const PROD_FRONTEND_HOST = 'ai-agent-village-monitor-vuplicity.vercel.app';
+
+function normalizeBase(url: string) {
+  return url.replace(/\/$/, '');
+}
+
+function resolveBackendBase() {
+  if (ENV_API_BASE) return normalizeBase(ENV_API_BASE);
+  if (ENV_BACKEND_URL) {
+    const base = normalizeBase(`${ENV_BACKEND_URL}`);
+    return base.endsWith('/api') ? base : `${base}/api`;
+  }
   if (typeof location !== 'undefined') {
-    const proto = location.protocol === 'https:' ? 'https' : 'http';
-    return `${proto}://${location.hostname}:3000/api`;
+    const { hostname } = location;
+    if (hostname === PROD_FRONTEND_HOST || hostname.endsWith(`.${PROD_FRONTEND_HOST}`)) {
+      return `${PROD_BACKEND_FALLBACK}/api`;
+    }
+  }
+  return null;
+}
+
+function getBaseUrl() {
+  const explicit = resolveBackendBase();
+  if (explicit) return explicit;
+  if (typeof location !== 'undefined') {
+    const { protocol, hostname, port } = location;
+    const origin = `${protocol}//${hostname}${port ? `:${port}` : ''}`;
+    if ((hostname === 'localhost' || hostname === '127.0.0.1') && port !== '3000') {
+      return `${protocol}//${hostname}:3000/api`;
+    }
+    return `${origin.replace(/\/$/, '')}/api`;
   }
   return 'http://localhost:3000/api';
 }

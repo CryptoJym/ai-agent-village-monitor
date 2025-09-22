@@ -1,3 +1,5 @@
+import { pixellabAnimationMetadata } from './pixellabMetadata';
+
 export type Direction4 = 'south' | 'west' | 'east' | 'north';
 export type Direction8 =
   | 'south'
@@ -14,6 +16,7 @@ export interface AnimationConfig {
   frameCount: number;
   frameRate: number;
   repeat: number;
+  framesByDirection?: Record<string, number>;
 }
 
 export interface CharacterManifest {
@@ -23,6 +26,46 @@ export interface CharacterManifest {
   category: 'agent' | 'emote' | 'bug-bot';
   directions: ReadonlyArray<Direction4 | Direction8>;
   animation?: AnimationConfig;
+}
+
+type AssetCategory = keyof typeof pixellabAnimationMetadata;
+
+function deriveAnimationMetadata(
+  category: AssetCategory,
+  key: string,
+  animationName: string,
+): { frameCount: number; framesByDirection: Record<string, number> } | undefined {
+  const categoryData = pixellabAnimationMetadata[category];
+  if (!categoryData) return undefined;
+  const animationData = categoryData[key]?.[animationName];
+  if (!animationData) return undefined;
+  const framesByDirection: Record<string, number> = {};
+  for (const [direction, count] of Object.entries(animationData)) {
+    if (typeof count === 'number' && count > 0) {
+      framesByDirection[direction] = count;
+    }
+  }
+  const counts = Object.values(framesByDirection);
+  if (counts.length === 0) return undefined;
+  const frameCount = Math.min(...counts);
+  return { frameCount, framesByDirection };
+}
+
+function withAnimation(
+  defaults: AnimationConfig | undefined,
+  assetDir: Extract<AssetCategory, 'agents' | 'emotes' | 'bug-bots'>,
+  key: string,
+): AnimationConfig | undefined {
+  if (!defaults) return undefined;
+  const metadata = deriveAnimationMetadata(assetDir, key, defaults.name);
+  if (!metadata) {
+    return { ...defaults };
+  }
+  return {
+    ...defaults,
+    frameCount: metadata.frameCount,
+    framesByDirection: metadata.framesByDirection,
+  };
 }
 
 const DIRECTION8: Direction8[] = [
@@ -86,7 +129,7 @@ export const agentManifests: CharacterManifest[] = [
   basePath: `/assets/agents/${key}`,
   preview: `/assets/agents/${key}/preview.png`,
   directions: DIRECTION8,
-  animation: DEFAULT_AGENT_ANIMATION,
+  animation: withAnimation(DEFAULT_AGENT_ANIMATION, 'agents', key),
 }));
 
 export const emoteManifests: CharacterManifest[] = [
@@ -104,7 +147,7 @@ export const emoteManifests: CharacterManifest[] = [
   basePath: `/assets/emotes/${key}`,
   preview: `/assets/emotes/${key}/preview.png`,
   directions: DIRECTION4,
-  animation,
+  animation: withAnimation(animation, 'emotes', key),
 }));
 
 const DEFAULT_BUG_CALM = DEFAULT_EMOTE_CALM;
@@ -122,7 +165,7 @@ export const bugBotManifests: CharacterManifest[] = [
   basePath: `/assets/bug-bots/${key}`,
   preview: `/assets/bug-bots/${key}/preview.png`,
   directions: DIRECTION4,
-  animation,
+  animation: withAnimation(animation, 'bug-bots', key),
 }));
 
 export const pixellabManifest = {

@@ -6755,5 +6755,91 @@
       "updated": "2025-09-16T20:25:19.806Z",
       "description": "Tasks for mvp context"
     }
+  },
+  "world-builder": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Regenerate Pixellab character and emote sprites with full 8-frame loops",
+        "description": "Re-run the Pixellab pipeline so every character, emote, and bug-bot animation provides eight frames per direction to match our JRPG aesthetic.",
+        "details": "- Extend scripts/generate-agents.mjs to accept per-entry frame targets and ensure animate_character requests the correct 8-frame template.\n- Update prompts to explicitly mention \"8-frame looping animation\" while preserving existing FF3 + Studio Ghibli tone, colors, and props.\n- Regenerate the affected assets (emotes: awakening, deep-thinking, flow-state, communication, learning-growth, frustration, eureka, dreaming; bug-bots: spawn, assigned, progress, resolved; any agents still at 6 frames).\n- Sync regenerated ZIPs into packages/frontend/public/assets/... and rerun scripts/generate-pixellab-manifest.mjs so metadata reflects the new counts.\n- Verify no legacy 6-frame leftovers remain (clean extracted/ directories, refresh previews).\n- Document regeneration steps in docs/art-pipeline.md for future runs.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Generate Pixellab terrain and tile-set assets",
+        "description": "Create exterior and interior tile atlases (upper/lower terrain, decorative elements) that match the existing FF3/Ghibli vibe.",
+        "details": "- Design prompt presets for outdoor terrain (grasslands, water edges, cliffs, bridges, roads), biome variants, and interior flooring/walls with 32x32 top-down perspective.\n- Use Pixellab create_topdown_tileset and create_isometric_tile tools to produce autop-tile compatible sheets (include edge/corner/center variants for smoothing).\n- Organize outputs under packages/frontend/public/assets/tiles/(biome|interior)/ and generate metadata (tile size, passability, animation frames where relevant).\n- Extend scripts/generate-pixellab-manifest.mjs or add scripts/generate-tiles.mjs to register tile sets and emit tile manifest JSON for the game engine.\n- Capture documentation on how to regenerate or extend tile sets, including prompt templates and seeding guidance.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Create themed interior house asset packs",
+        "description": "Produce interior tiles, furniture, and props for each programming-language house so players can enter unique spaces.",
+        "details": "- Define style guides for each house theme (JavaScript neon lab, Go coastal lodge, Ruby artisan workshop, etc.) consistent with our existing color palette and lighting.\n- Use Pixellab MCP to generate interior floor/wall tiles, doorway transitions, stairs, and decorative props (desks, terminals, plants, notice boards).\n- Compose interior layout blueprints (YAML/JSON) describing tile layers, object placement, and spawn points stored under packages/frontend/src/data/houses/.\n- Export interior atlases into packages/frontend/public/assets/interiors/<theme>/ and update manifest generator to surface props/tiles with passability metadata.\n- Document interior pipeline (prompt templates, layout schema, how to add new house themes).",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Implement procedural world map generator",
+        "description": "Build a world-map engine that lays out villages and terrain based on each user's organization structure.",
+        "details": "- Design a noise/Voronoi based terrain generator seeded by user ID, producing biome regions and height maps for tile selection.\n- Map GitHub organizations to village nodes; compute positioning rules (spacing, roads, signage) ensuring readability on the overworld.\n- Integrate newly generated tile sets for upper/lower terrain, rivers, bridges, and decorative elements.\n- Output map data structures (tile layers, entity placements) consumable by Phaser scenes and store per-user seeds/preferences.\n- Add serialization + caching so the same user gets consistent worlds across sessions while enabling future re-rolls.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Add village interior navigation and scene transitions",
+        "description": "Support entering houses and exploring interior maps rendered with the new asset packs.",
+        "details": "- Implement Phaser scene management for WorldMapScene ↔ InteriorScene transitions, preserving player state and camera positions.\n- Load interior layouts from data/houses blueprints and instantiate tile layers, props, and NPC spawn zones.\n- Handle door/portal triggers, fade effects, and minimap updates when moving between scenes.\n- Ensure collision + pathfinding layers respect furniture and walls; update command palette/help text as needed.\n- Write regression tests or manual QA checklist covering enter/exit interactions and state persistence.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Develop NPC population and behavior system",
+        "description": "Populate villages and interiors with NPCs that reflect team activity and bring the MMO feel to life.",
+        "details": "- Generate additional Pixellab NPC sprites (different roles, accessories) and register them in the manifest with default animations.\n- Implement population seeding using user/org data: assign NPC counts, roles (engineer, bot, visitor), and color accents.\n- Add behavior scripts (idle, wander, work at desk, converse) with simple state machines and integrate with analytics events where appropriate.\n- Ensure performance by batching animations and culling off-screen NPCs.\n- Provide configuration hooks so specific repos/orgs can override population themes.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Integrate expanded assets into engine and documentation",
+        "description": "Wire the new sprite, tile, and interior assets into the Phaser runtime and update developer docs.",
+        "details": "- Extend pixellabManifest/tile manifests to include new atlases, collision info, and animation metadata.\n- Update AssetManager loaders and world/interior scenes to consume tile sets, NPC sprites, and blueprint data.\n- Add automated validation (e.g., unit tests or lint scripts) that confirm frame counts and asset directories are in sync.\n- Refresh docs/art-pipeline.md and engine README with instructions for regenerating assets, configuring world seeds, and adding new themes.\n- Coordinate with infrastructure to ensure build bundling (Vite/Phaser) handles the additional asset volume efficiently.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-21T14:29:45.488Z",
+      "updated": "2025-09-21T14:33:03.074Z",
+      "description": "Tag created on 9/21/2025"
+    }
   }
 }
