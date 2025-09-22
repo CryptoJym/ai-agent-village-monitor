@@ -6764,7 +6764,7 @@
         "description": "Re-run the Pixellab pipeline so every character, emote, and bug-bot animation provides eight frames per direction to match our JRPG aesthetic.",
         "details": "- Extend scripts/generate-agents.mjs to accept per-entry frame targets and ensure animate_character requests the correct 8-frame template.\n- Update prompts to explicitly mention \"8-frame looping animation\" while preserving existing FF3 + Studio Ghibli tone, colors, and props.\n- Regenerate the affected assets (emotes: awakening, deep-thinking, flow-state, communication, learning-growth, frustration, eureka, dreaming; bug-bots: spawn, assigned, progress, resolved; any agents still at 6 frames).\n- Sync regenerated ZIPs into packages/frontend/public/assets/... and rerun scripts/generate-pixellab-manifest.mjs so metadata reflects the new counts.\n- Verify no legacy 6-frame leftovers remain (clean extracted/ directories, refresh previews).\n- Document regeneration steps in docs/art-pipeline.md for future runs.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -6838,7 +6838,7 @@
     ],
     "metadata": {
       "created": "2025-09-21T14:29:45.488Z",
-      "updated": "2025-09-21T14:33:03.074Z",
+      "updated": "2025-09-22T20:50:58.369Z",
       "description": "Tag created on 9/21/2025"
     }
   }
