@@ -1,9 +1,9 @@
 {
   "models": {
     "main": {
-      "provider": "openai",
-      "modelId": "gpt-5",
-      "maxTokens": 120000,
+      "provider": "codex",
+      "modelId": "codex/gpt-5",
+      "maxTokens": 100000,
       "temperature": 0.2
     },
     "research": {
@@ -32,6 +32,16 @@
     "defaultTag": "master",
     "azureOpenaiBaseURL": "https://your-endpoint.openai.azure.com/",
     "userId": "1234567890"
+  },
+  "codex": {
+    "pathToCodexExecutable": "codex",
+    "orchestratorConfig": {
+      "enableSubagentSpawning": true,
+      "autoStart": true,
+      "maxConcurrentExecutors": 3,
+      "cloudExecution": true,
+      "githubIntegration": true
+    }
   },
   "claudeCode": {}
 }

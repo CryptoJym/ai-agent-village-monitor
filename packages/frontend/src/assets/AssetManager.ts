@@ -74,7 +74,9 @@ export class AssetManager {
           loadedPixellabKeys.add(rotKey);
         }
         if (entry.animation) {
-          for (let i = 0; i < entry.animation.frameCount; i++) {
+          const totalFrames =
+            entry.animation.framesByDirection?.[direction] ?? entry.animation.frameCount;
+          for (let i = 0; i < totalFrames; i++) {
             const frameKey = buildFrameKey(entry, entry.animation.name, direction, i);
             if (loadedPixellabKeys.has(frameKey)) continue;
             const framePath = `${entry.basePath}/animations/${entry.animation.name}/${direction}/frame_${toFrameName(
@@ -94,7 +96,9 @@ export class AssetManager {
       for (const direction of entry.directions) {
         const animKey = buildAnimationKey(entry, entry.animation.name, direction);
         if (scene.anims.exists(animKey)) continue;
-        const frames = Array.from({ length: entry.animation.frameCount }, (_, i) => ({
+        const totalFrames =
+          entry.animation.framesByDirection?.[direction] ?? entry.animation.frameCount;
+        const frames = Array.from({ length: totalFrames }, (_, i) => ({
           key: buildFrameKey(entry, entry.animation!.name, direction, i),
         }));
         scene.anims.create({

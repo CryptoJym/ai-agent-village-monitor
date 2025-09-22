@@ -87,11 +87,16 @@ export function createApp(): Express {
     app.use(helmet.hsts({ maxAge: 15552000, includeSubDomains: true, preload: true }));
     // Redirect HTTP→HTTPS behind proxies when necessary
     app.use((req, res, next) => {
+      const userAgent = String(req.headers['user-agent'] || '');
+      const host = String(req.headers.host || '');
+      const isRailwayHealthCheck =
+        userAgent.includes('RailwayHealthCheck') || host === 'healthcheck.railway.app';
+      if (isRailwayHealthCheck) return next();
+
       const xfProto = String(req.headers['x-forwarded-proto'] || '')
         .split(',')[0]
         .trim();
       if (!req.secure && xfProto !== 'https') {
-        const host = req.headers.host;
         const url = `https://${host}${req.originalUrl || req.url}`;
         return res.redirect(301, url);
       }

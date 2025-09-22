@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getPreferences, updatePreferences } from '../api/user';
-import type { Preferences } from '../api/schemas';
+import { PreferencesSchema, type Preferences } from '../api/schemas';
 
 export function SettingsPreferences({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [prefs, setPrefs] = useState<Preferences | null>(null);
@@ -10,11 +10,26 @@ export function SettingsPreferences({ open, onClose }: { open: boolean; onClose:
   useEffect(() => {
     if (!open) return;
     setError(null);
+    setPrefs((prev) => prev ?? PreferencesSchema.parse({}));
     (async () => {
       try {
         setPrefs(await getPreferences());
       } catch (e: any) {
-        setError(e?.message || 'Failed to load preferences');
+        const fallback = PreferencesSchema.parse({});
+        const message = e?.message || 'Failed to load preferences';
+        setPrefs(e?.prefs ? PreferencesSchema.parse(e.prefs) : fallback);
+        if (
+          typeof message === 'string' &&
+          (message.includes('AUTH_REQUIRED') || message.includes('401'))
+        ) {
+          setError('Sign in to manage preferences.');
+          return;
+        }
+        if (typeof message === 'string' && message.includes('404')) {
+          setError('Preferences not found. Using defaults.');
+          return;
+        }
+        setError(message);
       }
     })();
   }, [open]);

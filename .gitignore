@@ -68,3 +68,4 @@ playwright-report/
 
 # OS files
 .DS_Store
+.vercel

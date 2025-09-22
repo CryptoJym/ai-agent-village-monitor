@@ -18,11 +18,24 @@ export class WebSocketService {
 
   constructor(options: WebSocketOptions = {}) {
     const envWs = (import.meta as any)?.env?.VITE_WS_URL as string | undefined;
-    const defaultUrl =
-      envWs ??
-      (typeof location !== 'undefined'
-        ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:3000`
-        : 'ws://localhost:3000');
+    const defaultUrl = (() => {
+      if (envWs) return envWs;
+      if (typeof location === 'undefined') return 'ws://localhost:3000';
+      const { protocol, hostname, port } = location;
+      const scheme = protocol === 'https:' ? 'wss' : 'ws';
+      const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+      if (
+        hostname === 'ai-agent-village-monitor-vuplicity.vercel.app' ||
+        hostname.endsWith('.ai-agent-village-monitor-vuplicity.vercel.app')
+      ) {
+        return 'wss://backend-production-6a6e4.up.railway.app';
+      }
+      if (isLocal && port !== '3000') {
+        return `${scheme}://${hostname}:3000`;
+      }
+      const host = port ? `${hostname}:${port}` : hostname;
+      return `${scheme}://${host}`;
+    })();
     this.opts = {
       url: options.url ?? defaultUrl,
       token: options.token ?? '',
@@ -57,8 +70,14 @@ export class WebSocketService {
       void this.fetchCatchup().catch(() => {});
     });
 
-    this.socket.on('disconnect', () => {
-      eventBus.emit('connection_status', { status: 'disconnected' });
+    this.socket.on('connect_error', (error) => {
+      const message = typeof error?.message === 'string' ? error.message : 'connection failed';
+      eventBus.emit('connection_status', { status: 'disconnected', error: message });
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      const message = typeof reason === 'string' ? reason : undefined;
+      eventBus.emit('connection_status', { status: 'disconnected', error: message });
     });
 
     // Server events → event bus (throttled for high-frequency streams)

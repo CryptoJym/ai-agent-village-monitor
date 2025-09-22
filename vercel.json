@@ -5,7 +5,18 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "${env.BACKEND_URL}/api/$1"
+    },
+    {
+      "source": "/auth/(.*)",
+      "destination": "${env.BACKEND_URL}/auth/$1"
+    },
+    {
+      "source": "/socket.io/:match*",
+      "destination": "${env.BACKEND_URL}/socket.io/:match*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
-
