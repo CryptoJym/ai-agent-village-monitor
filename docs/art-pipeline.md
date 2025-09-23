@@ -74,3 +74,24 @@ export PIXELLAB_TOKEN="<your-token>"  # set once per shell session
 - Commit regenerated assets and the updated manifest together.
 - Update release notes or commit messages with the regenerated entries to aid QA.
 - If new animation templates are added, include the template ID and desired frame count in `scripts/generate-agents.mjs` so future runs stay consistent.
+
+## Tileset Workflow
+
+- Top-down biomes live under `packages/frontend/public/assets/tiles/biome/`; interiors live under `packages/frontend/public/assets/tiles/interior/`.
+- Generate new tilesets with the helper script:
+
+  ```bash
+  # Regenerate every configured tileset
+  PIXELLAB_TOKEN=... node scripts/generate-tiles.mjs
+
+  # Only outdoor biomes or a specific entry
+  PIXELLAB_TOKEN=... node scripts/generate-tiles.mjs --category biome
+  PIXELLAB_TOKEN=... node scripts/generate-tiles.mjs --tileset grass-road
+  ```
+
+- Each run downloads a 4×4 Wang tileset image (`tileset.png`) plus `wang-metadata.json` for corner data and writes a friendly `metadata.json` describing prompts, passability, and base tile IDs.
+- Tile manifests are folded into `packages/frontend/src/assets/pixellabMetadata.ts` via:
+  ```bash
+  PIXELLAB_TOKEN=... node scripts/generate-pixellab-manifest.mjs
+  ```
+- The manifest exports `pixellabTileMetadata` for the game engine; use the stored base tile IDs to chain new terrain transitions as needed.

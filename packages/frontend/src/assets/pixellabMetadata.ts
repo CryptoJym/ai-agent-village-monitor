@@ -148,3 +148,300 @@ export const pixellabAnimationMetadata = {
 } as const;
 
 export type PixellabAnimationMetadata = typeof pixellabAnimationMetadata;
+
+export const pixellabTileMetadata = {
+  biome: {
+    'beach-grass': {
+      tilesetId: '4252e14a-71ab-44a9-915e-8b075c96be83',
+      title: 'Beach ↔ Meadow Grass',
+      category: 'biome',
+      key: 'beach-grass',
+      lower: {
+        description: 'warm sandy beach with scattered shells and tide lines',
+        passable: true,
+        tags: ['sand'],
+        baseTileId: '22370d94-7368-4d2e-9a81-d5b70bd1fdba',
+      },
+      upper: {
+        description: 'lush meadow grass with wildflowers and clover patches',
+        passable: true,
+        tags: ['grass'],
+        baseTileId: '02b76d4e-888d-499e-b774-8f56483b322f',
+      },
+      transition: {
+        size: 0.25,
+        description: 'damp sand blending into grass tufts with seaweed accents',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:10:30.868Z',
+    },
+    'grass-forest': {
+      tilesetId: '3c2b811c-40a5-4b29-8941-2eb95e4dd962',
+      title: 'Grassland ↔ Forest Floor',
+      category: 'biome',
+      key: 'grass-forest',
+      lower: {
+        description: 'sunlit meadow grass with subtle texture and scattered petals',
+        passable: true,
+        tags: ['grass'],
+        baseTileId: '29019014-bd7e-4deb-9202-aaef0f55c62a',
+      },
+      upper: {
+        description: 'mossy forest floor with roots, ferns, and leaf litter',
+        passable: false,
+        tags: ['forest'],
+        baseTileId: '76d473fc-4c0c-4dec-adc3-e0299bf3b131',
+      },
+      transition: {
+        size: 0.5,
+        description: 'gradual blend of grass into mossy underbrush with exposed roots',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:11:34.721Z',
+    },
+    'grass-road': {
+      tilesetId: '92a8a5db-a284-40f9-ac71-ea36f9a03b16',
+      title: 'Grassland ↔ Village Road',
+      category: 'biome',
+      key: 'grass-road',
+      lower: {
+        description: 'soft meadow grass with trimmed edges',
+        passable: true,
+        tags: ['grass'],
+        baseTileId: '923e89b2-03d3-41d0-a758-eae681f5aa6e',
+      },
+      upper: {
+        description: 'cobbled village road with stones and moss between joints',
+        passable: true,
+        tags: ['road', 'cobblestone'],
+        baseTileId: '2f8e05cc-948e-4f84-866b-d92b7dfca02d',
+      },
+      transition: {
+        size: 0,
+        description: 'trimmed grass bordering cobbled road with wooden edging',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:13:26.286Z',
+    },
+    'grass-rock': {
+      tilesetId: '7f7265b5-b3b1-40d1-9fe9-7a960168e411',
+      title: 'Grassland ↔ Rocky Cliff',
+      category: 'biome',
+      key: 'grass-rock',
+      lower: {
+        description: 'rolling grass field with small flowers and dew sparkle',
+        passable: true,
+        tags: ['grass'],
+        baseTileId: '42f32f49-5d2a-4044-9edc-50b2c61e3472',
+      },
+      upper: {
+        description: 'weathered stone plateau with cracks, lichen, and cliff edge',
+        passable: false,
+        tags: ['rock', 'cliff'],
+        baseTileId: '0a60881d-7bcc-4803-b63a-5f66c423ad8d',
+      },
+      transition: {
+        size: 0.5,
+        description: 'tufts of grass giving way to rocky outcrop with erosion',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:12:38.269Z',
+    },
+    'ocean-beach': {
+      tilesetId: '57f5401e-8308-4113-8fec-a89b59b553b4',
+      title: 'Ocean ↔ Beach Shoreline',
+      category: 'biome',
+      key: 'ocean-beach',
+      lower: {
+        description: 'ocean water with gentle waves, deep teal, subtle foam',
+        passable: false,
+        tags: ['water', 'coast'],
+        baseTileId: 'a82d57a3-39b4-484e-89b3-e54266d4582a',
+      },
+      upper: {
+        description: 'sunlit sandy beach shoreline with shell fragments and wet sand',
+        passable: true,
+        tags: ['sand', 'shore'],
+        baseTileId: '22370d94-7368-4d2e-9a81-d5b70bd1fdba',
+      },
+      transition: {
+        size: 0.25,
+        description: 'foamy water meeting sand with sparkling highlights',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:07:51.963Z',
+    },
+    'river-grass': {
+      tilesetId: 'e7076c1d-4354-43c9-8215-d809436b6bb5',
+      title: 'Freshwater River ↔ Meadow',
+      category: 'biome',
+      key: 'river-grass',
+      lower: {
+        description: 'clear freshwater river with visible stones and shimmering highlights',
+        passable: false,
+        tags: ['water', 'river'],
+        baseTileId: '4e9c5691-de1d-455d-8a50-12bc2c1b3cfc',
+      },
+      upper: {
+        description: 'lush meadow grass with reeds and small blue flowers',
+        passable: true,
+        tags: ['grass'],
+        baseTileId: '44a69e2d-919e-4e20-ba10-c2abef643815',
+      },
+      transition: {
+        size: 0.25,
+        description: 'riverbank mud with reeds, stones, and ripples meeting grass',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:14:29.877Z',
+    },
+  },
+  interior: {
+    'stone-marble': {
+      tilesetId: '265aee50-4ba1-44e8-92d2-b562d559f814',
+      title: 'Stone Floor ↔ Marble Inlay',
+      category: 'interior',
+      key: 'stone-marble',
+      lower: {
+        description: 'rough-cut stone tiles, cool greys with subtle moss in cracks',
+        passable: true,
+        tags: ['stone'],
+        baseTileId: 'afe0e7a1-de93-4dac-aaf3-fde979a7fcf0',
+      },
+      upper: {
+        description: 'polished marble inlay with geometric brass pattern and shine',
+        passable: true,
+        tags: ['marble'],
+        baseTileId: 'fc42eff5-710b-4332-b127-0bbe1dde7665',
+      },
+      transition: {
+        size: 0.25,
+        description: 'stone tiles morphing into marble with ornate brass band',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:16:34.218Z',
+    },
+    'tech-holo': {
+      tilesetId: 'fa5a333b-14e6-4ae2-9cfc-d1f541e4e87a',
+      title: 'Workshop Floor ↔ Holographic Grid',
+      category: 'interior',
+      key: 'tech-holo',
+      lower: {
+        description: 'industrial workshop floor with worn metal panels and rivets',
+        passable: true,
+        tags: ['metal'],
+        baseTileId: 'ef52853d-3f21-4ad6-8fba-dca19d422a83',
+      },
+      upper: {
+        description: 'holographic walkway grid glowing cyan with animated circuitry',
+        passable: true,
+        tags: ['hologram', 'tech'],
+        baseTileId: '6ba9a68b-d749-4069-a8f2-924e33de91d9',
+      },
+      transition: {
+        size: 0.25,
+        description: 'glowing conduits and vents blending metal into holographic surface',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:17:38.186Z',
+    },
+    'wood-carpet': {
+      tilesetId: 'edd9a76b-8ae9-4024-8ceb-ff4311d78425',
+      title: 'Wooden Floor ↔ Plush Carpet',
+      category: 'interior',
+      key: 'wood-carpet',
+      lower: {
+        description: 'polished oak floorboards with warm varnish and subtle grain',
+        passable: true,
+        tags: ['wood'],
+        baseTileId: '806cc901-8e70-4d11-90a0-c5c904c145f1',
+      },
+      upper: {
+        description: 'plush crimson carpet with gold embroidery and gentle shading',
+        passable: true,
+        tags: ['carpet'],
+        baseTileId: '2173e2ff-7c08-4b90-a7b3-2ac292db8cbd',
+      },
+      transition: {
+        size: 0,
+        description: 'decorative brass floor trim separating wood and carpet',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-22T22:15:30.610Z',
+    },
+  },
+} as const;
+
+export type PixellabTileMetadata = typeof pixellabTileMetadata;

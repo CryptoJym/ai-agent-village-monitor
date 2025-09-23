@@ -1,0 +1,32 @@
+{
+  "tilesetId": "7f7265b5-b3b1-40d1-9fe9-7a960168e411",
+  "title": "Grassland ↔ Rocky Cliff",
+  "category": "biome",
+  "key": "grass-rock",
+  "lower": {
+    "description": "rolling grass field with small flowers and dew sparkle",
+    "passable": true,
+    "tags": ["grass"],
+    "baseTileId": "42f32f49-5d2a-4044-9edc-50b2c61e3472"
+  },
+  "upper": {
+    "description": "weathered stone plateau with cracks, lichen, and cliff edge",
+    "passable": false,
+    "tags": ["rock", "cliff"],
+    "baseTileId": "0a60881d-7bcc-4803-b63a-5f66c423ad8d"
+  },
+  "transition": {
+    "size": 0.5,
+    "description": "tufts of grass giving way to rocky outcrop with erosion"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-22T22:12:38.269Z"
+}

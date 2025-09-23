@@ -1,0 +1,32 @@
+{
+  "tilesetId": "3c2b811c-40a5-4b29-8941-2eb95e4dd962",
+  "title": "Grassland ↔ Forest Floor",
+  "category": "biome",
+  "key": "grass-forest",
+  "lower": {
+    "description": "sunlit meadow grass with subtle texture and scattered petals",
+    "passable": true,
+    "tags": ["grass"],
+    "baseTileId": "29019014-bd7e-4deb-9202-aaef0f55c62a"
+  },
+  "upper": {
+    "description": "mossy forest floor with roots, ferns, and leaf litter",
+    "passable": false,
+    "tags": ["forest"],
+    "baseTileId": "76d473fc-4c0c-4dec-adc3-e0299bf3b131"
+  },
+  "transition": {
+    "size": 0.5,
+    "description": "gradual blend of grass into mossy underbrush with exposed roots"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-22T22:11:34.721Z"
+}

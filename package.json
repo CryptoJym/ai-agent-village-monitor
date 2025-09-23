@@ -25,6 +25,7 @@
     "e2e:ui": "playwright test --ui",
     "e2e:preview": "PW_WEB_SERVER='node scripts/preview-and-wait.mjs' PW_BASE_URL='http://localhost:4173' playwright test --reporter=dot",
     "bootstrap:village": "node scripts/bootstrap-village.mjs",
+    "pixellab:tiles": "node scripts/generate-tiles.mjs",
     "omnara:auto": "scripts/omnara-auto.sh",
     "oa": "scripts/omnara-auto.sh",
     "omnara:hard": "scripts/omnara-hard.sh",

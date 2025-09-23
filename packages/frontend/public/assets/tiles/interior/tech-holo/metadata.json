@@ -1,0 +1,32 @@
+{
+  "tilesetId": "fa5a333b-14e6-4ae2-9cfc-d1f541e4e87a",
+  "title": "Workshop Floor ↔ Holographic Grid",
+  "category": "interior",
+  "key": "tech-holo",
+  "lower": {
+    "description": "industrial workshop floor with worn metal panels and rivets",
+    "passable": true,
+    "tags": ["metal"],
+    "baseTileId": "ef52853d-3f21-4ad6-8fba-dca19d422a83"
+  },
+  "upper": {
+    "description": "holographic walkway grid glowing cyan with animated circuitry",
+    "passable": true,
+    "tags": ["hologram", "tech"],
+    "baseTileId": "6ba9a68b-d749-4069-a8f2-924e33de91d9"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "glowing conduits and vents blending metal into holographic surface"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-22T22:17:38.186Z"
+}

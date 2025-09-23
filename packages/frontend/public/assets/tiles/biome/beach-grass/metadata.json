@@ -1,0 +1,32 @@
+{
+  "tilesetId": "4252e14a-71ab-44a9-915e-8b075c96be83",
+  "title": "Beach ↔ Meadow Grass",
+  "category": "biome",
+  "key": "beach-grass",
+  "lower": {
+    "description": "warm sandy beach with scattered shells and tide lines",
+    "passable": true,
+    "tags": ["sand"],
+    "baseTileId": "22370d94-7368-4d2e-9a81-d5b70bd1fdba"
+  },
+  "upper": {
+    "description": "lush meadow grass with wildflowers and clover patches",
+    "passable": true,
+    "tags": ["grass"],
+    "baseTileId": "02b76d4e-888d-499e-b774-8f56483b322f"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "damp sand blending into grass tufts with seaweed accents"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-22T22:10:30.868Z"
+}

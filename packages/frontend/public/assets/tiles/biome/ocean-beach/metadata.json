@@ -1,0 +1,32 @@
+{
+  "tilesetId": "57f5401e-8308-4113-8fec-a89b59b553b4",
+  "title": "Ocean ↔ Beach Shoreline",
+  "category": "biome",
+  "key": "ocean-beach",
+  "lower": {
+    "description": "ocean water with gentle waves, deep teal, subtle foam",
+    "passable": false,
+    "tags": ["water", "coast"],
+    "baseTileId": "a82d57a3-39b4-484e-89b3-e54266d4582a"
+  },
+  "upper": {
+    "description": "sunlit sandy beach shoreline with shell fragments and wet sand",
+    "passable": true,
+    "tags": ["sand", "shore"],
+    "baseTileId": "22370d94-7368-4d2e-9a81-d5b70bd1fdba"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "foamy water meeting sand with sparkling highlights"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-22T22:07:51.963Z"
+}
