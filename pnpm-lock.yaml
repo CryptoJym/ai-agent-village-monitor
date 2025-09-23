@@ -27,8 +27,8 @@ importers:
         specifier: ^1.10.1
         version: 1.10.1
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.11
     devDependencies:
       '@playwright/test':
         specifier: ^1.48.0
@@ -115,8 +115,8 @@ importers:
         specifier: ^4.8.1
         version: 4.8.1
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.11
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^6.6.3
@@ -209,8 +209,8 @@ importers:
         specifier: ^4.8.1
         version: 4.8.1
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.1.11
+        version: 4.1.11
     devDependencies:
       '@prisma/client':
         specifier: ^6.16.1
@@ -4875,6 +4875,9 @@ packages:
 
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
+  zod@4.1.11:
+    resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
 
 snapshots:
 
@@ -10088,3 +10091,5 @@ snapshots:
       zod: 3.25.76
 
   zod@3.25.76: {}
+
+  zod@4.1.11: {}
