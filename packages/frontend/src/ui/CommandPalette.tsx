@@ -122,7 +122,7 @@ export function CommandPalette() {
               setActive(0);
             }}
             onKeyDown={onKeyDown}
-            placeholder="Search agents, houses, actions…"
+            placeholder="Search agents, houses, interiors, actions…"
             aria-controls="palette-list"
             aria-autocomplete="list"
             style={{

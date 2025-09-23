@@ -6797,7 +6797,7 @@
         "description": "Build a world-map engine that lays out villages and terrain based on each user's organization structure.",
         "details": "- Design a noise/Voronoi based terrain generator seeded by user ID, producing biome regions and height maps for tile selection.\n- Map GitHub organizations to village nodes; compute positioning rules (spacing, roads, signage) ensuring readability on the overworld.\n- Integrate newly generated tile sets for upper/lower terrain, rivers, bridges, and decorative elements.\n- Output map data structures (tile layers, entity placements) consumable by Phaser scenes and store per-user seeds/preferences.\n- Add serialization + caching so the same user gets consistent worlds across sessions while enabling future re-rolls.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -6808,7 +6808,7 @@
         "description": "Support entering houses and exploring interior maps rendered with the new asset packs.",
         "details": "- Implement Phaser scene management for WorldMapScene ↔ InteriorScene transitions, preserving player state and camera positions.\n- Load interior layouts from data/houses blueprints and instantiate tile layers, props, and NPC spawn zones.\n- Handle door/portal triggers, fade effects, and minimap updates when moving between scenes.\n- Ensure collision + pathfinding layers respect furniture and walls; update command palette/help text as needed.\n- Write regression tests or manual QA checklist covering enter/exit interactions and state persistence.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -6819,7 +6819,7 @@
         "description": "Populate villages and interiors with NPCs that reflect team activity and bring the MMO feel to life.",
         "details": "- Generate additional Pixellab NPC sprites (different roles, accessories) and register them in the manifest with default animations.\n- Implement population seeding using user/org data: assign NPC counts, roles (engineer, bot, visitor), and color accents.\n- Add behavior scripts (idle, wander, work at desk, converse) with simple state machines and integrate with analytics events where appropriate.\n- Ensure performance by batching animations and culling off-screen NPCs.\n- Provide configuration hooks so specific repos/orgs can override population themes.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -6830,7 +6830,7 @@
         "description": "Wire the new sprite, tile, and interior assets into the Phaser runtime and update developer docs.",
         "details": "- Extend pixellabManifest/tile manifests to include new atlases, collision info, and animation metadata.\n- Update AssetManager loaders and world/interior scenes to consume tile sets, NPC sprites, and blueprint data.\n- Add automated validation (e.g., unit tests or lint scripts) that confirm frame counts and asset directories are in sync.\n- Refresh docs/art-pipeline.md and engine README with instructions for regenerating assets, configuring world seeds, and adding new themes.\n- Coordinate with infrastructure to ensure build bundling (Vite/Phaser) handles the additional asset volume efficiently.",
         "testStrategy": "",
-        "status": "pending",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -6838,7 +6838,7 @@
     ],
     "metadata": {
       "created": "2025-09-21T14:29:45.488Z",
-      "updated": "2025-09-23T02:48:20.034Z",
+      "updated": "2025-09-23T06:01:13.790Z",
       "description": "Tag created on 9/21/2025"
     }
   }

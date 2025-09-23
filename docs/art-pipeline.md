@@ -53,10 +53,11 @@ export PIXELLAB_TOKEN="<your-token>"  # set once per shell session
 
 - ✅ Inspect `packages/frontend/public/assets/<category>/<entry>/metadata.json` and confirm each direction array length is `8`.
 - ✅ Ensure `generated/pixellab/<category>/<entry>/extracted/` contains the expected PNG sequences and preview images.
-- ✅ Run lint & tests when regeneration touches the manifest or other code:
+- ✅ Regenerated tiles/interiors should emit `metadata.json` + `wang-metadata.json`; confirm both land in `packages/frontend/public/assets/tiles/**` and `packages/frontend/public/assets/interiors/**`.
+- ✅ Run lint & focused tests when regeneration touches the manifest or other code:
   ```bash
   pnpm -w lint
-  pnpm -r test
+  pnpm --filter @ai-agent-village-monitor/frontend test --run pixellabMetadataConsistency
   ```
 - ✅ Review `packages/frontend/src/assets/pixellabMetadata.ts` for unexpected diffs.
 
@@ -74,6 +75,7 @@ export PIXELLAB_TOKEN="<your-token>"  # set once per shell session
 - Commit regenerated assets and the updated manifest together.
 - Update release notes or commit messages with the regenerated entries to aid QA.
 - If new animation templates are added, include the template ID and desired frame count in `scripts/generate-agents.mjs` so future runs stay consistent.
+- After regenerating interiors, run the game and double-check the synth ambience + lighting palette still match the updated art.
 
 ## Tileset Workflow
 
@@ -98,6 +100,11 @@ export PIXELLAB_TOKEN="<your-token>"  # set once per shell session
   PIXELLAB_TOKEN=... node scripts/generate-pixellab-manifest.mjs
   ```
 - The manifest exports `pixellabTileMetadata` for the game engine; use the stored base tile IDs to chain new terrain transitions as needed.
+
+## NPC & Ambience Quick Notes
+
+- NPC population now derives from repo stats (stars, issues, active agents). After updating assets, run the frontend once to ensure tint palettes and minimap pins still look correct.
+- Ambient interior audio is generated at runtime via WebAudio oscillators. No raw audio files are required; if the vibe changes, tweak `packages/frontend/src/audio/ambient.ts` or update the lighting palette in `InteriorScene` to match.
 
 ## Interior Style Guides
 

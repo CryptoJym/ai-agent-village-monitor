@@ -147,6 +147,10 @@ export function HelpMenu({
           >
             Submit Feedback
           </button>
+          <div style={{ padding: '8px 12px', fontSize: 11, color: '#94a3b8' }}>
+            Tip: Double-click a house to enter its interior. Inside, click tiles to move, press M to
+            toggle the minimap, and Esc to exit.
+          </div>
         </div>
       )}
     </div>

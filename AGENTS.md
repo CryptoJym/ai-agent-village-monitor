@@ -25,6 +25,13 @@ AI-powered task management and monitoring in a pnpm monorepo. Tasks are orchestr
 - Server DB: `cd packages/server && pnpm prisma:generate && pnpm db:migrate && pnpm start`
 - Frontend preview: `pnpm --filter @ai-agent-village-monitor/frontend preview`
 
+## Exploration Controls
+
+- In the village scene, double-click a house to enter its themed interior; right-click still opens the dashboard context menu.
+- Inside interiors, the visitor follows pathfinding around furniture: click tiles to move, press `M` to toggle the interior minimap, and press `Esc` (or use the on-screen exit control) to return with your camera position intact.
+- Retro synth ambience and per-theme lighting now kick in automatically—mute via system audio if needed, or tweak the tone by expanding `packages/frontend/src/audio/ambient.ts`.
+- Ambient NPCs wander each interior to showcase the theme—watch for their routines when planning new layouts.
+
 ## Coding Standards
 
 - TypeScript everywhere. ESLint + Prettier (single quotes, semicolons, trailing commas, width 100).
@@ -100,3 +107,11 @@ task-master add-dependency --id=43.3 --depends-on=43.2
 - **Manual trigger (optional)**: leave `autoStart` as-is for automatic runs; otherwise include `codex-orchestrate` or a `taskmaster_orchestration` JSON payload in the prompt to launch orchestration on demand.
 - **Debugging**: set `CODEX_DEBUG_LOG=true` when needed to log raw Codex responses, then unset it for normal runs.
 - **CLI auth**: ensure the `codex` CLI is authenticated before kicking off long orchestrated sessions (the provider shells out to it directly).
+
+## Codex CLI Quick Reference
+
+- **JSON streaming**: always add `--json` to `codex exec` so Task Master can parse responses. Example: `codex exec --json --model gpt-5 "Return JSON with key test and value 123"`.
+- **Disable MCP chatter**: when you need a clean answer without MCP discovery logs, append `-c mcp.enabled=false` to the command.
+- **Inspect MCP servers**: run `codex mcp:list` to see which servers are installed, and `codex mcp:info <server>` to view the tools each exposes.
+- **Check available tools**: `codex tools` prints the merged tool catalog once MCP servers are loaded—use this before orchestration if you need to verify capabilities.
+- **Reset noisy debug logs**: if `CODEX_DEBUG_LOG` was enabled for troubleshooting, unset it (`unset CODEX_DEBUG_LOG`) before production runs to keep output clean for the orchestrator.

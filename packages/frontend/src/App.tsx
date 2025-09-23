@@ -13,6 +13,7 @@ import { GameCanvas, GameProvider } from './game';
 import { PreloaderScene } from './scenes/PreloaderScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
 import { MainScene } from './scenes/MainScene';
+import { InteriorScene } from './scenes/InteriorScene';
 import { track, flushBeacon } from './analytics/client';
 import { readUIHash, writeUIHash, onHashChange, type UIHashState } from './state/uiState';
 import { eventBus } from './realtime/EventBus';
@@ -268,7 +269,7 @@ export default function App() {
                 const isJsdom =
                   typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '');
                 if (isJsdom) return [];
-                return [PreloaderScene, WorldMapScene, MainScene];
+                return [PreloaderScene, WorldMapScene, MainScene, InteriorScene];
               })(),
             }}
           >

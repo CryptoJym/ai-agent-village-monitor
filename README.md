@@ -102,15 +102,16 @@ Want early access? Open an issue tagged `beta-volunteer` or reach out via Discus
 
 ### Asset Pack Needed
 
-The Phaser preload currently expects:
+The Phaser preload expects the following directories to be populated:
 
-- `packages/frontend/public/assets/agent_sheet.png` (32×32 spritesheet)
-- `packages/frontend/public/assets/bug_bot_sheet.png` (24×24 spritesheet)
-- `packages/frontend/public/assets/effects/sparkle.png` (16×16 frames)
-- `packages/frontend/public/assets/houses/house_{js,py,go}.png`
-- `packages/frontend/public/assets/audio/celebrate.mp3`
+- `packages/frontend/public/assets/agents/<archetype>/` (rotations + animation frames)
+- `packages/frontend/public/assets/emotes/<key>/` and `bug-bots/<key>/` (frame stacks)
+- `packages/frontend/public/assets/houses/house_<language>.png`
+- `packages/frontend/public/assets/tiles/(biome|interior)/<theme>/` (`tileset.png`, `metadata.json`, `wang-metadata.json`)
+- `packages/frontend/public/assets/interiors/<theme>/props/*.png`
+- Optional celebratory SFX: `packages/frontend/public/assets/audio/celebrate.mp3` (retro ambience is generated procedurally via WebAudio)
 
-If you are a designer or audio tinkerer, contributions here are hugely appreciated. Drop assets in those paths or submit a PR with new filenames + manifest updates (`packages/frontend/src/assets/atlases.ts`).
+If you are a designer or audio tinkerer, contributions here are hugely appreciated. Drop assets in those paths or submit a PR with new filenames + manifest updates (`packages/frontend/src/assets/atlases.ts` and `packages/frontend/src/assets/pixellabManifest.ts`).
 
 ---
 

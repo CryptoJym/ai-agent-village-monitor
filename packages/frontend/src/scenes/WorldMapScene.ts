@@ -1,17 +1,18 @@
 import Phaser from 'phaser';
-
-type VillageInfo = {
-  id: string;
-  name: string;
-  language?: string;
-  houseCount?: number;
-  totalStars?: number;
-};
+import {
+  generateWorldMap,
+  type VillageDescriptor,
+  type WorldMapData,
+  type VillagePlacement,
+} from '../world';
 
 export class WorldMapScene extends Phaser.Scene {
-  private villages: VillageInfo[] = [];
-  private tiles: Map<string, Phaser.GameObjects.Container> = new Map();
+  private villages: VillageDescriptor[] = [];
   private loadingText?: Phaser.GameObjects.Text;
+  private terrainLayer?: Phaser.GameObjects.Layer;
+  private villageLayer?: Phaser.GameObjects.Layer;
+  private currentWorld?: WorldMapData;
+  private readonly villageNodes: Map<string, Phaser.GameObjects.Container> = new Map();
 
   private readonly supportedHouseLanguages = [
     'js',
@@ -39,9 +40,9 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#0b1220');
+    this.cameras.main.setBackgroundColor('#05090f');
     this.loadingText = this.add
-      .text(12, 12, 'Loading villages…', {
+      .text(16, 16, 'Loading world…', {
         color: '#e2e8f0',
         fontFamily: 'monospace',
         fontSize: '12px',
@@ -52,40 +53,163 @@ export class WorldMapScene extends Phaser.Scene {
       typeof window !== 'undefined' &&
       new URLSearchParams(window.location.search).has('profileWorld');
     const startedAt = (typeof performance !== 'undefined' && performance.now()) || Date.now();
+
     this.fetchVillages(profile)
-      .then((list) => {
-        // If profiling, expand to a large list
+      .then((villages) => {
+        this.villages = villages;
+        this.loadingText?.setText('Generating terrain…');
+        const world = generateWorldMap(villages);
+        this.currentWorld = world;
+        this.renderWorld(world);
+        this.renderVillages(world);
+        this.configureCamera(world);
+        const endedAt = (typeof performance !== 'undefined' && performance.now()) || Date.now();
+        const ms = Math.round(endedAt - startedAt);
+        const summary = `Rendered ${world.villages.length} villages in ${ms}ms`;
         if (profile) {
-          const expanded: VillageInfo[] = [];
-          const target = Math.max(list.length, 200);
-          for (let i = 0; i < target; i++) {
-            const v = list[i % list.length] || { id: `v-${i + 1}`, name: `Village ${i + 1}` };
-            expanded.push({ id: `${v.id}-${i}`, name: `${v.name}` });
-          }
-          this.villages = expanded;
+          this.loadingText?.setText(`Profile: ${summary}`);
         } else {
-          this.villages = list;
+          this.loadingText?.setText('Click to focus, double-click a house to explore inside');
         }
-        this.loadingText?.setText(`Villages: ${list.length}`);
-        this.chunkRenderTiles(this.villages, () => {
-          const endedAt = (typeof performance !== 'undefined' && performance.now()) || Date.now();
-          const ms = Math.round(endedAt - startedAt);
-          const summary = `Rendered ${this.villages.length} villages in ${ms}ms`;
-          this.loadingText?.setText(profile ? `Profile: ${summary}` : 'Select a village (click)');
-          // Expose for manual inspection
-
-          (window as any)._worldProfilingResult = { count: this.villages.length, ms };
-          // Also log in console for convenience
-
-          console.info('[worldmap] profile', { count: this.villages.length, ms });
-        });
+        (window as any)._worldProfilingResult = { count: world.villages.length, ms };
+        console.info('[worldmap] profile', { count: world.villages.length, ms });
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('[worldmap] failed to load villages', error);
         this.loadingText?.setText('Failed to load villages');
       });
   }
 
-  private async fetchVillages(profile = false): Promise<VillageInfo[]> {
+  private configureCamera(world: WorldMapData) {
+    const camera = this.cameras.main;
+    const widthPx = world.width * world.tileSize;
+    const heightPx = world.height * world.tileSize;
+    camera.setBounds(0, 0, widthPx, heightPx);
+    const zoom = Math.min(2.2, Math.max(0.9, 920 / Math.max(widthPx, heightPx)));
+    camera.setZoom(zoom);
+    camera.centerOn(widthPx / 2, heightPx / 2);
+    camera.setLerp(0.15, 0.15);
+  }
+
+  private clearLayer(layer?: Phaser.GameObjects.Layer) {
+    if (!layer) return;
+    layer.removeAll(true);
+    layer.destroy(true);
+  }
+
+  private renderWorld(world: WorldMapData) {
+    this.clearLayer(this.terrainLayer);
+    const layer = this.add.layer();
+    layer.setDepth(0);
+    for (const tile of world.tiles) {
+      const image = this.add.image(
+        tile.x * world.tileSize,
+        tile.y * world.tileSize,
+        tile.textureKey,
+        tile.frame,
+      );
+      image.setOrigin(0, 0);
+      image.setDisplaySize(world.tileSize, world.tileSize);
+      if (!tile.passable) {
+        image.setTintFill(0xffffff);
+        image.setAlpha(0.92);
+      }
+      layer.add(image);
+    }
+    this.terrainLayer = layer;
+  }
+
+  private renderVillages(world: WorldMapData) {
+    this.clearLayer(this.villageLayer);
+    this.villageNodes.clear();
+    const layer = this.add.layer();
+    layer.setDepth(10);
+    for (const placement of world.villages) {
+      const node = this.buildVillageNode(world, placement);
+      layer.add(node);
+      this.villageNodes.set(placement.id, node);
+    }
+    this.villageLayer = layer;
+  }
+
+  private buildVillageNode(world: WorldMapData, placement: VillagePlacement) {
+    const tileSize = world.tileSize;
+    const px = (placement.x + 0.5) * tileSize;
+    const py = (placement.y + 0.5) * tileSize;
+    const container = this.add.container(px, py);
+    container.setDepth(20);
+
+    const highlight = this.add.circle(0, tileSize * 0.05, tileSize * 0.55, 0x2563eb, 0);
+    highlight.setStrokeStyle(2, 0x60a5fa, 0.6);
+
+    const houseTextureKey = this.getHouseTextureKey(placement);
+    const house = this.add.image(0, -tileSize * 0.05, houseTextureKey).setOrigin(0.5, 1);
+    let baseScaleX = house.scaleX;
+    let baseScaleY = house.scaleY;
+    if (house.width > 0 && house.height > 0) {
+      const scale = Math.min((tileSize * 0.8) / house.width, (tileSize * 0.9) / house.height);
+      house.setScale(scale);
+      baseScaleX = house.scaleX;
+      baseScaleY = house.scaleY;
+    }
+
+    const label = this.add
+      .text(0, tileSize * 0.1, placement.name, {
+        color: '#f1f5f9',
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        align: 'center',
+        wordWrap: { width: tileSize * 2, useAdvancedWrap: true },
+      })
+      .setOrigin(0.5, 0);
+
+    const language = this.getVillageLanguage(placement);
+    const languageLabel = this.add
+      .text(0, tileSize * 0.1 + 16, this.getLanguageLabel(language), {
+        color: '#94a3b8',
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        align: 'center',
+      })
+      .setOrigin(0.5, 0);
+
+    const stats = `${placement.houseCount ?? 0} houses • ★ ${placement.totalStars ?? 0}`;
+    const statsLabel = this.add
+      .text(0, tileSize * 0.1 + 30, stats, {
+        color: '#64748b',
+        fontFamily: 'monospace',
+        fontSize: '9px',
+        align: 'center',
+      })
+      .setOrigin(0.5, 0);
+
+    container.add([highlight, house, label, languageLabel, statsLabel]);
+    container.setSize(tileSize * 1.6, tileSize * 1.8);
+    container.setInteractive({
+      useHandCursor: true,
+      hitArea: new Phaser.Geom.Rectangle(
+        -tileSize * 0.8,
+        -tileSize,
+        tileSize * 1.6,
+        tileSize * 1.8,
+      ),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+    });
+
+    container.on('pointerover', () => {
+      highlight.fillAlpha = 0.25;
+      house.setScale(baseScaleX * 1.05, baseScaleY * 1.05);
+    });
+    container.on('pointerout', () => {
+      highlight.fillAlpha = 0;
+      house.setScale(baseScaleX, baseScaleY);
+    });
+    container.on('pointerdown', () => this.navigateToVillage(placement.id));
+
+    return container;
+  }
+
+  private async fetchVillages(profile = false): Promise<VillageDescriptor[]> {
     try {
       const res = await fetch('/api/villages', { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error(`status ${res.status}`);
@@ -98,22 +222,21 @@ export class WorldMapScene extends Phaser.Scene {
         houseCount?: number | null;
         totalStars?: number | null;
       }>;
-      return (data || []).map((v) => ({
-        id: String(v?.id ?? ''),
-        name: v?.name ?? String(v?.id ?? ''),
+      return (data || []).map((v, idx) => ({
+        id: String(v?.id ?? idx),
+        name: v?.name ?? `Village ${idx + 1}`,
         language: this.normalizeLanguage(v?.language ?? v?.primaryLanguage) ?? undefined,
         houseCount: typeof v?.houseCount === 'number' ? v.houseCount : undefined,
         totalStars: typeof v?.totalStars === 'number' ? v.totalStars : undefined,
       }));
     } catch {
-      // Fallback mock data for now
-      const n = profile ? 20 : 9;
+      const n = profile ? 32 : 12;
       return Array.from({ length: n }).map((_, i) => ({
         id: `v-${i + 1}`,
         name: `Village ${i + 1}`,
         language: this.supportedHouseLanguages[i % this.supportedHouseLanguages.length],
-        houseCount: Phaser.Math.Between(3, 12),
-        totalStars: Phaser.Math.Between(10, 250),
+        houseCount: Phaser.Math.Between(3, 16),
+        totalStars: Phaser.Math.Between(5, 260),
       }));
     }
   }
@@ -122,6 +245,18 @@ export class WorldMapScene extends Phaser.Scene {
     if (!lang) return undefined;
     const normalized = String(lang).toLowerCase().trim();
     return this.supportedHouseLanguages.includes(normalized as any) ? normalized : undefined;
+  }
+
+  private getVillageLanguage(v: VillageDescriptor): string {
+    const normalized = this.normalizeLanguage(v.language);
+    if (normalized) {
+      v.language = normalized;
+      return normalized;
+    }
+    const idx = Math.abs(this.hashString(v.id)) % this.supportedHouseLanguages.length;
+    const lang = this.supportedHouseLanguages[idx];
+    v.language = lang;
+    return lang;
   }
 
   private hashString(input: string): number {
@@ -133,19 +268,7 @@ export class WorldMapScene extends Phaser.Scene {
     return h >>> 0;
   }
 
-  private getVillageLanguage(v: VillageInfo): string {
-    const normalized = this.normalizeLanguage(v.language);
-    if (normalized) {
-      v.language = normalized;
-      return normalized;
-    }
-    const idx = this.hashString(v.id) % this.supportedHouseLanguages.length;
-    const lang = this.supportedHouseLanguages[idx];
-    v.language = lang;
-    return lang;
-  }
-
-  private getHouseTextureKey(v: VillageInfo): string {
+  private getHouseTextureKey(v: VillageDescriptor): string {
     const language = this.normalizeLanguage(v.language) ?? this.getVillageLanguage(v);
     const key = `house_${language}`;
     return this.textures.exists(key) ? key : 'house_generic';
@@ -155,111 +278,7 @@ export class WorldMapScene extends Phaser.Scene {
     return this.languageLabels[lang] ?? lang.toUpperCase();
   }
 
-  private chunkRenderTiles(list: VillageInfo[], onComplete?: () => void) {
-    const padding = 16;
-    const tileW = 140;
-    const tileH = 90;
-    const cols = Math.max(1, Math.floor((this.scale.width - padding * 2) / (tileW + padding)));
-
-    let index = 0;
-    const addBatch = () => {
-      const batch = list.slice(index, index + 6);
-      batch.forEach((v, i) => {
-        const overall = index + i;
-        const row = Math.floor(overall / cols);
-        const col = overall % cols;
-        const x = padding + col * (tileW + padding) + tileW / 2;
-        const y = 80 + row * (tileH + padding) + tileH / 2;
-        this.addVillageTile(v, x, y, tileW, tileH);
-      });
-      index += batch.length;
-      if (index < list.length) {
-        this.time.delayedCall(16, addBatch);
-      } else {
-        if (onComplete) onComplete();
-        else if (this.loadingText) this.loadingText.setText('Select a village (click)');
-      }
-    };
-    addBatch();
-  }
-
-  private addVillageTile(v: VillageInfo, x: number, y: number, w: number, h: number) {
-    if (this.tiles.has(v.id)) return;
-    const g = this.add.graphics();
-    g.fillStyle(0x1f2937, 1);
-    g.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
-    g.lineStyle(2, 0x374151, 1);
-    g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
-
-    const houseTextureKey = this.getHouseTextureKey(v);
-    const preview = this.add.image(0, -h * 0.05, houseTextureKey).setOrigin(0.5, 1);
-    if (preview.width > 0 && preview.height > 0) {
-      const scale = Math.min((w * 0.6) / preview.width, (h * 0.55) / preview.height);
-      preview.setScale(scale);
-    }
-
-    const label = this.add
-      .text(0, h * 0.15, v.name, {
-        color: '#e5e7eb',
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        align: 'center',
-      })
-      .setOrigin(0.5, 0);
-
-    const language = this.getVillageLanguage(v);
-    const languageLabel = this.add
-      .text(0, h * 0.15 + 16, this.getLanguageLabel(language), {
-        color: '#94a3b8',
-        fontFamily: 'monospace',
-        fontSize: '10px',
-        align: 'center',
-      })
-      .setOrigin(0.5, 0);
-
-    const statsLine = this.add
-      .text(0, h * 0.15 + 30, `${v.houseCount ?? 0} houses • ★ ${v.totalStars ?? 0}`, {
-        color: '#64748b',
-        fontFamily: 'monospace',
-        fontSize: '9px',
-        align: 'center',
-      })
-      .setOrigin(0.5, 0);
-
-    const tile = this.add.container(x, y, [g, preview, label, languageLabel, statsLine]);
-    tile.setSize(w, h);
-    tile.setInteractive({
-      useHandCursor: true,
-      pixelPerfect: false,
-      hitArea: new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
-      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
-    });
-
-    const previewScaleX = preview.scaleX;
-    const previewScaleY = preview.scaleY;
-    tile.on('pointerover', () => {
-      g.clear();
-      g.fillStyle(0x243142, 1);
-      g.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
-      g.lineStyle(2, 0x64748b, 1);
-      g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
-      preview.setScale(previewScaleX * 1.05, previewScaleY * 1.05);
-    });
-    tile.on('pointerout', () => {
-      g.clear();
-      g.fillStyle(0x1f2937, 1);
-      g.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
-      g.lineStyle(2, 0x374151, 1);
-      g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
-      preview.setScale(previewScaleX, previewScaleY);
-    });
-    tile.on('pointerdown', () => this.navigateToVillage(v.id));
-
-    this.tiles.set(v.id, tile);
-  }
-
   private navigateToVillage(villageId: string) {
-    // Pass selected villageId to MainScene
     this.scene.start('MainScene', { villageId });
   }
 }

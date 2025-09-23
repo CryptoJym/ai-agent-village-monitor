@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import '../src/i18n';
 
 // Provide a requestAnimationFrame fallback for tests that batch events on RAF
@@ -45,3 +45,49 @@ try {
 } catch (e) {
   void e;
 }
+
+// Provide a minimal AudioContext stub so ambient-synth helpers do not explode in Vitest
+if (!(globalThis as any).AudioContext) {
+  class FakeOscillator {
+    frequency = { value: 0 };
+    connect() {}
+    start() {}
+    stop() {}
+    disconnect() {}
+  }
+  class FakeGain {
+    gain = { value: 0 };
+    connect() {}
+    disconnect() {}
+  }
+  class FakeFilter extends FakeGain {
+    type = 'lowpass';
+    frequency = { value: 0 };
+  }
+  class FakeAudioContext {
+    destination = {};
+    resume() {
+      return Promise.resolve();
+    }
+    createGain() {
+      return new FakeGain();
+    }
+    createOscillator() {
+      return new FakeOscillator();
+    }
+    createBiquadFilter() {
+      return new FakeFilter();
+    }
+  }
+  (globalThis as any).AudioContext = FakeAudioContext;
+  (globalThis as any).webkitAudioContext = FakeAudioContext;
+}
+
+// Lightweight mock for NpcManager so scene tests don't pull Phaser internals
+vi.mock('../src/npc/NpcManager', () => ({
+  NpcManager: class {
+    constructor() {}
+    update() {}
+    destroy() {}
+  },
+}));

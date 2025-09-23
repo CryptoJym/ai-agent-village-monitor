@@ -29,6 +29,7 @@ export class House extends PhaserLib.GameObjects.Container {
   private tooltip?: Phaser.GameObjects.Container;
   private tooltipTimer?: Phaser.Time.TimerEvent;
   private lastCommitFlashAt?: number;
+  private lastPrimaryClickAt = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number, props: HouseProps) {
     super(scene, x, y);
@@ -76,7 +77,10 @@ export class House extends PhaserLib.GameObjects.Container {
     this.applyLanguageStyle(props.language);
   }
 
-  onClickZoom(panTo: (x: number, y: number) => void) {
+  onClickZoom(
+    panTo: (x: number, y: number) => void,
+    options?: { onEnter?: () => void; doubleClickMs?: number },
+  ) {
     this.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       const isRightClick =
         pointer && typeof pointer.rightButtonDown === 'function' && pointer.rightButtonDown();
@@ -84,6 +88,18 @@ export class House extends PhaserLib.GameObjects.Container {
         eventBus.emit('house_dashboard_request', { houseId: this.id, source: 'right_click' });
         return;
       }
+
+      const now = pointer?.downTime ?? Date.now();
+      const threshold = options?.doubleClickMs ?? 320;
+      if (options?.onEnter && now - this.lastPrimaryClickAt <= threshold) {
+        const native = pointer?.event as MouseEvent | undefined;
+        native?.stopImmediatePropagation?.();
+        this.lastPrimaryClickAt = 0;
+        options.onEnter();
+        return;
+      }
+
+      this.lastPrimaryClickAt = now;
       panTo(this.x, this.y);
     });
     return this;

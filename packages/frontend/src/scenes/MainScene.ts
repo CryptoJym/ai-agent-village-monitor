@@ -17,6 +17,8 @@ import { track } from '../analytics/client';
 import * as SearchIndex from '../search/SearchIndex';
 import { CameraNavigator } from '../camera/CameraNavigator';
 import { startTravel } from '../metrics/perf';
+import { NpcManager } from '../npc/NpcManager';
+import type { HouseSnapshot } from '../npc/types';
 
 type HouseMeta = {
   name: string;
@@ -81,6 +83,8 @@ export class MainScene extends Phaser.Scene {
   private camNav?: CameraNavigator;
   private travelStartAt?: number;
   private layoutVersion = 0;
+  private interiorActive = false;
+  private npcManager?: NpcManager;
   private houseMetadata: Map<string, HouseMeta> = new Map();
   private houseAssignMenu?: Phaser.GameObjects.Container;
   private houseAssignInputHandler?: (pointer: Phaser.Input.Pointer, objects: any[]) => void;
@@ -132,6 +136,8 @@ export class MainScene extends Phaser.Scene {
     } catch (error) {
       this.logWarning('updating minimap viewport during update()', error);
     }
+
+    this.npcManager?.update(view);
   }
 
   create(data?: { villageId?: string }) {
@@ -235,6 +241,7 @@ export class MainScene extends Phaser.Scene {
       const worldSize = { w: this.scale.width * 2, h: this.scale.height * 2 };
       this.minimap = new Minimap(this, { width: 180, height: 120, world: worldSize });
       if (this.agent) this.minimap.setAgentPosition({ x: this.agent.x, y: this.agent.y });
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.minimap?.destroy());
       // Toggle minimap with N (avoid conflict with World Map 'M')
       this.input.keyboard?.on('keydown-N', () => this.minimap?.toggle());
       // Camera navigator
@@ -459,7 +466,9 @@ export class MainScene extends Phaser.Scene {
         stars: s.stars,
         issues: s.issues,
       });
-      house.onClickZoom((tx, ty) => this.panAndZoomTo(tx, ty, 1.15));
+      house.onClickZoom((tx, ty) => this.panAndZoomTo(tx, ty, 1.15), {
+        onEnter: () => this.openInteriorForHouse(house),
+      });
       house.setHealth(s.issues);
       this.add.existing(house);
       this.registerHouse(s.id, x, y, 18, s.lang);
@@ -474,8 +483,24 @@ export class MainScene extends Phaser.Scene {
     }
     this.syncSearchIndex();
 
+    const houseSnapshots = Array.from(this.houseObjects.keys())
+      .map((id) => this.buildHouseSnapshot(id))
+      .filter((snap): snap is HouseSnapshot => Boolean(snap));
+
+    this.npcManager = new NpcManager(this, {
+      houses: houseSnapshots,
+      behavior: { wanderRadius: 64 },
+      onSummary: (summary) => eventBus.emit('npc_population', summary),
+    });
+
     // Start repo mock harness to drive house visuals
     this.startRepoEventHarness();
+
+    const onResume = (_scene: Phaser.Scene, payload: any) => this.handleInteriorResume(payload);
+    this.events.on(Phaser.Scenes.Events.RESUME, onResume);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.events.off(Phaser.Scenes.Events.RESUME, onResume as any);
+    });
 
     // (Removed legacy mini overlay; replaced by Minimap class above)
 
@@ -549,6 +574,7 @@ export class MainScene extends Phaser.Scene {
         },
       });
       this.queueSaveLayout(true);
+      this.npcManager?.destroy();
     });
   }
 
@@ -562,6 +588,80 @@ export class MainScene extends Phaser.Scene {
       duration: 280,
       ease: 'Sine.easeInOut',
     });
+  }
+
+  private openInteriorForHouse(house: House) {
+    if (this.interiorSceneUnavailable()) return;
+    if (this.interiorActive) return;
+    this.interiorActive = true;
+
+    const cam = this.cameras.main;
+    const villageId = (this as any).villageId as string | undefined;
+    if (villageId) {
+      saveVillageState(villageId, {
+        agent: this.agent ? { x: this.agent.x, y: this.agent.y } : undefined,
+        camera: { scrollX: cam.scrollX, scrollY: cam.scrollY, zoom: cam.zoom },
+      });
+    }
+
+    const payload = {
+      villageId,
+      houseId: house.id,
+      language: house.language,
+      returnScene: 'MainScene',
+      returnCamera: { scrollX: cam.scrollX, scrollY: cam.scrollY, zoom: cam.zoom },
+    };
+
+    try {
+      this.scene.launch('InteriorScene', payload);
+      this.scene.pause();
+    } catch (error) {
+      this.interiorActive = false;
+      this.logWarning('launching InteriorScene', error);
+    }
+  }
+
+  private interiorSceneUnavailable(): boolean {
+    const sceneManager = this.scene.manager as Phaser.Scenes.SceneManager & {
+      keys?: Record<string, unknown>;
+    };
+    const registry = (sceneManager.keys || {}) as Record<string, unknown>;
+    if ('InteriorScene' in registry) return false;
+    try {
+      this.scene.get('InteriorScene');
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  private handleInteriorResume(payload: any) {
+    this.interiorActive = false;
+    if (!payload) return;
+
+    if (payload.camera) {
+      const cam = this.cameras.main;
+      if (typeof payload.camera.scrollX === 'number') cam.scrollX = payload.camera.scrollX;
+      if (typeof payload.camera.scrollY === 'number') cam.scrollY = payload.camera.scrollY;
+      if (typeof payload.camera.zoom === 'number') {
+        const z = Phaser.Math.Clamp(payload.camera.zoom, this.minZoom, this.maxZoom);
+        cam.setZoom(z);
+      }
+      try {
+        this.minimap?.setViewport(cam.worldView as any);
+      } catch (error) {
+        this.logWarning('syncing minimap after interior resume', error);
+      }
+    }
+
+    const houseId = payload?.interiorReturn?.houseId;
+    if (houseId) {
+      const house = this.houseObjects.get(String(houseId));
+      if (house) {
+        house.setLightsActive(true);
+        this.time.delayedCall(1200, () => house.setLightsActive(false));
+      }
+    }
   }
 
   // Teleport or ultra-fast pan the main camera to a world position.
@@ -1486,7 +1586,26 @@ export class MainScene extends Phaser.Scene {
       }
     }
 
+    const snapshot = this.buildHouseSnapshot(houseId);
+    if (snapshot) {
+      this.npcManager?.updateHouseSnapshot(snapshot);
+    }
+
     if (resync) this.syncSearchIndex();
+  }
+
+  private buildHouseSnapshot(houseId: string): HouseSnapshot | null {
+    const entry = this.houses.get(houseId);
+    if (!entry) return null;
+    const meta = this.houseMetadata.get(houseId);
+    return {
+      id: houseId,
+      name: meta?.name ?? houseId,
+      language: meta?.language ?? entry.language ?? 'generic',
+      position: { x: entry.x, y: entry.y },
+      radius: entry.radius,
+      metadata: meta,
+    };
   }
 
   private parseSpriteConfig(raw: any): Record<string, any> {

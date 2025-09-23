@@ -18,6 +18,7 @@ export class Minimap {
   private dotsLayer: Phaser.GameObjects.Container;
   private agentDot?: Phaser.GameObjects.Arc;
   private houseMarkers: Map<string, Phaser.GameObjects.GameObject> = new Map();
+  private npcMarkers: Map<string, Phaser.GameObjects.GameObject> = new Map();
   private viewRect?: Phaser.GameObjects.Rectangle;
   private visible = true;
   private refreshEvent?: Phaser.Time.TimerEvent;
@@ -25,6 +26,7 @@ export class Minimap {
   private camPollEvent?: Phaser.Time.TimerEvent;
   private lastCam = { x: 0, y: 0, zoom: 1 };
   private mode: 'interval' | 'camera' = 'interval';
+  private onResize?: () => void;
   private refreshDelayMs = 250;
   // Keyboard focus/navigation
   private focusMode = false;
@@ -93,7 +95,8 @@ export class Minimap {
     this.setUpdateMode('interval');
 
     // Respond to resizes
-    scene.scale.on(Phaser.Scale.Events.RESIZE, () => this.positionAtCorner());
+    this.onResize = () => this.positionAtCorner();
+    scene.scale.on(Phaser.Scale.Events.RESIZE, this.onResize);
     this.positionAtCorner();
 
     // Keyboard navigation and focus
@@ -359,5 +362,42 @@ export class Minimap {
 
   setOnTeleport(handler: (p: Point) => void) {
     this.teleportHandler = handler;
+  }
+
+  setNpc(id: string, p?: Point) {
+    const existing = this.npcMarkers.get(id);
+    if (!p) {
+      existing?.destroy();
+      this.npcMarkers.delete(id);
+      return;
+    }
+    const mini = this.toMini(p);
+    let dot: Phaser.GameObjects.Arc;
+    if (existing && existing instanceof Phaser.GameObjects.Arc) {
+      dot = existing;
+    } else {
+      existing?.destroy();
+      dot = this.scene.add.circle(mini.x, mini.y, 2, 0xfbbf24, 1);
+      dot.setAlpha(0.95);
+      this.dotsLayer.add(dot);
+      this.npcMarkers.set(id, dot);
+    }
+    dot.setPosition(mini.x, mini.y);
+  }
+
+  destroy() {
+    this.refreshEvent?.remove(false);
+    this.camPollEvent?.remove(false);
+    if (this.onResize) {
+      this.scene.scale.off(Phaser.Scale.Events.RESIZE, this.onResize);
+    }
+    this.houseMarkers.forEach((marker) => marker.destroy());
+    this.npcMarkers.forEach((marker) => marker.destroy());
+    this.houseMarkers.clear();
+    this.npcMarkers.clear();
+    this.focusMarker?.destroy();
+    this.viewRect?.destroy();
+    this.agentDot?.destroy();
+    this.container.destroy(true);
   }
 }

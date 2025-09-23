@@ -2,6 +2,8 @@ import type Phaser from 'phaser';
 import type { AssetManifest, AtlasEntry, ImageEntry, SheetEntry, AudioEntry } from './manifest';
 import {
   pixellabManifest,
+  pixellabTileMetadata,
+  pixellabInteriorMetadata,
   type CharacterManifest,
   type Direction4,
   type Direction8,
@@ -21,6 +23,9 @@ export function hashTint(seed: string): number {
 }
 
 const loadedPixellabKeys = new Set<string>();
+const loadedTileTextures = new Set<string>();
+const loadedTileDefinitions = new Set<string>();
+const loadedInteriorProps = new Set<string>();
 
 const buildRotationKey = (entry: CharacterManifest, direction: Direction4 | Direction8) =>
   `pixellab:${entry.category}:${entry.key}:rot:${direction}`;
@@ -37,6 +42,12 @@ const buildAnimationKey = (
   animation: string,
   direction: Direction4 | Direction8,
 ) => `pixellab:${entry.category}:${entry.key}:${animation}:${direction}`;
+
+const buildTileTextureKey = (category: string, key: string) => `pixellabTile:${category}:${key}`;
+const buildTileDefinitionKey = (category: string, key: string) =>
+  `${buildTileTextureKey(category, key)}:wang`;
+const buildInteriorPropTextureKey = (theme: string, propKey: string) =>
+  `pixellabInterior:${theme}:${propKey}`;
 
 const iterateCharacters = (): CharacterManifest[] => [
   ...pixellabManifest.agents,
@@ -88,6 +99,33 @@ export class AssetManager {
         }
       }
     }
+
+    for (const [category, entries] of Object.entries(pixellabTileMetadata)) {
+      for (const [key, metadata] of Object.entries(entries)) {
+        const textureKey = buildTileTextureKey(category, key);
+        if (!loadedTileTextures.has(textureKey)) {
+          const basePath = `/assets/tiles/${category}/${key}`;
+          scene.load.image(textureKey, `${basePath}/${metadata.files.image}`);
+          loadedTileTextures.add(textureKey);
+        }
+        const definitionKey = buildTileDefinitionKey(category, key);
+        if (!loadedTileDefinitions.has(definitionKey) && metadata.files.definition) {
+          const basePath = `/assets/tiles/${category}/${key}`;
+          scene.load.json(definitionKey, `${basePath}/${metadata.files.definition}`);
+          loadedTileDefinitions.add(definitionKey);
+        }
+      }
+    }
+
+    for (const [theme, interior] of Object.entries(pixellabInteriorMetadata)) {
+      for (const prop of interior.props || []) {
+        const textureKey = buildInteriorPropTextureKey(theme, prop.key);
+        if (loadedInteriorProps.has(textureKey)) continue;
+        const basePath = `/assets/interiors/${theme}`;
+        scene.load.image(textureKey, `${basePath}/${prop.file}`);
+        loadedInteriorProps.add(textureKey);
+      }
+    }
   }
 
   static registerPixellabAnimations(scene: Phaser.Scene) {
@@ -107,6 +145,27 @@ export class AssetManager {
           frameRate: entry.animation.frameRate,
           repeat: entry.animation.repeat,
         });
+      }
+    }
+  }
+
+  static registerPixellabTiles(scene: Phaser.Scene) {
+    for (const [category, entries] of Object.entries(pixellabTileMetadata)) {
+      for (const [key, metadata] of Object.entries(entries)) {
+        if (!metadata?.files?.definition) continue;
+        const textureKey = buildTileTextureKey(category, key);
+        if (!scene.textures.exists(textureKey)) continue;
+        const texture = scene.textures.get(textureKey);
+        const definitionKey = buildTileDefinitionKey(category, key);
+        const definition = definitionKey ? scene.cache.json.get(definitionKey) : null;
+        const tiles = definition?.tileset_data?.tiles;
+        if (!Array.isArray(tiles)) continue;
+        for (const tile of tiles) {
+          const bbox = tile?.bounding_box;
+          if (!bbox || typeof tile.id !== 'string') continue;
+          if (texture.has(tile.id)) continue;
+          texture.add(tile.id, 0, bbox.x, bbox.y, bbox.width, bbox.height);
+        }
       }
     }
   }
@@ -146,6 +205,11 @@ export class AssetManager {
     };
     const key = (lang || '').toLowerCase();
     return map[key] || 'house_generic';
+  }
+
+  static interiorPropTextureKey(theme: string, propKey: string): string {
+    const normalizedTheme = (theme || '').toLowerCase();
+    return buildInteriorPropTextureKey(normalizedTheme, propKey);
   }
 }
 

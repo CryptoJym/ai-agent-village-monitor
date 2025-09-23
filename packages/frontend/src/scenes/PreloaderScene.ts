@@ -47,6 +47,7 @@ export class PreloaderScene extends Phaser.Scene {
 
   create() {
     AssetManager.registerPixellabAnimations(this);
+    AssetManager.registerPixellabTiles(this);
     this.scene.start('WorldMapScene');
   }
 }
