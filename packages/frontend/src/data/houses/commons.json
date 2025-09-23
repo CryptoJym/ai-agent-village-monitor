@@ -1,0 +1,47 @@
+{
+  "theme": "commons",
+  "tilesetKey": "interior/generic-commons",
+  "dimensions": {
+    "width": 9,
+    "height": 9
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "commons-table",
+      "position": [4, 3],
+      "layer": "gathering",
+      "orientation": "south"
+    },
+    {
+      "key": "notice-board",
+      "position": [2, 7],
+      "layer": "gathering",
+      "orientation": "south"
+    },
+    {
+      "key": "lantern-hearth",
+      "position": [6, 7],
+      "layer": "gathering",
+      "orientation": "south"
+    }
+  ],
+  "spawns": {
+    "player": [4, 8],
+    "npcs": [
+      [3, 5],
+      [6, 4]
+    ]
+  }
+}

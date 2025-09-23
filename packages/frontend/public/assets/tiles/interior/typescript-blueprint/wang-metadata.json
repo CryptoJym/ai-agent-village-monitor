@@ -1,0 +1,736 @@
+{
+  "id": "6700a671-0dde-4449-b62e-4706c6c9f1aa",
+  "name": "polished slate floor with painted type annotations and blueprint markings → rolled blueprint rugs with precise grid lines and glowing node markers",
+  "lower_description": "polished slate floor with painted type annotations and blueprint markings",
+  "upper_description": "rolled blueprint rugs with precise grid lines and glowing node markers",
+  "transition_description": "brass drafting rulers and parchment trim blending slate into blueprint rugs",
+  "tile_size": {
+    "width": 32,
+    "height": 32
+  },
+  "transition_size": 0.25,
+  "view": "high top-down",
+  "style_settings": {
+    "detail": "medium detail",
+    "outline": "single color outline",
+    "shading": "medium shading"
+  },
+  "generation_parameters": {
+    "tile_strength": 1.1,
+    "tileset_adherence": 140,
+    "text_guidance_scale": 9,
+    "tileset_adherence_freedom": 400
+  },
+  "base_tile_ids": {
+    "lower": "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+    "upper": "bbf0d264-162a-4ea3-b0fb-e904be203bd1"
+  },
+  "tileset_data": {
+    "tiles": [
+      {
+        "id": "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+        "name": "NW+NE+SW+SE",
+        "corners": {
+          "NE": "lower",
+          "NW": "lower",
+          "SE": "lower",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8"
+          ],
+          "west": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7"
+          ],
+          "north": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "cf125e52-a542-41ac-a078-2359c480fc2d"
+          ],
+          "south": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d"
+          ]
+        },
+        "description": "Lower terrain in all corners",
+        "bounding_box": {
+          "x": 64,
+          "y": 32,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+        "name": "none",
+        "corners": {
+          "NE": "upper",
+          "NW": "upper",
+          "SE": "upper",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a"
+          ],
+          "west": [
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ],
+          "north": [
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee"
+          ],
+          "south": [
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ]
+        },
+        "description": "No lower terrain corners (all upper)",
+        "bounding_box": {
+          "x": 0,
+          "y": 96,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+        "name": "NE+SW+SE",
+        "corners": {
+          "NE": "lower",
+          "NW": "upper",
+          "SE": "lower",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8"
+          ],
+          "west": [
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "north": [
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "south": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d"
+          ]
+        },
+        "description": "Lower terrain in northeast, southwest, southeast corners",
+        "bounding_box": {
+          "x": 32,
+          "y": 32,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+        "name": "NW+NE+SW",
+        "corners": {
+          "NE": "lower",
+          "NW": "lower",
+          "SE": "upper",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "west": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7"
+          ],
+          "north": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "cf125e52-a542-41ac-a078-2359c480fc2d"
+          ],
+          "south": [
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ]
+        },
+        "description": "Lower terrain in northwest, northeast, southwest corners",
+        "bounding_box": {
+          "x": 96,
+          "y": 32,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+        "name": "NW+NE",
+        "corners": {
+          "NE": "lower",
+          "NW": "lower",
+          "SE": "upper",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "west": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "north": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "cf125e52-a542-41ac-a078-2359c480fc2d"
+          ],
+          "south": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ]
+        },
+        "description": "Lower terrain in northwest and northeast corners",
+        "bounding_box": {
+          "x": 32,
+          "y": 64,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+        "name": "NW+NE+SE",
+        "corners": {
+          "NE": "lower",
+          "NW": "lower",
+          "SE": "lower",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8"
+          ],
+          "west": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "north": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "cf125e52-a542-41ac-a078-2359c480fc2d"
+          ],
+          "south": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ]
+        },
+        "description": "Lower terrain in northwest, northeast, southeast corners",
+        "bounding_box": {
+          "x": 64,
+          "y": 64,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+        "name": "NW+SW",
+        "corners": {
+          "NE": "upper",
+          "NW": "lower",
+          "SE": "upper",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a"
+          ],
+          "west": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7"
+          ],
+          "north": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "south": [
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ]
+        },
+        "description": "Lower terrain in northwest and southwest corners",
+        "bounding_box": {
+          "x": 96,
+          "y": 64,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "cea8f359-0e0d-4a13-b767-12dd288bede8",
+        "name": "NW+SW+SE",
+        "corners": {
+          "NE": "upper",
+          "NW": "lower",
+          "SE": "lower",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "west": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7"
+          ],
+          "north": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "south": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d"
+          ]
+        },
+        "description": "Lower terrain in northwest, southwest, southeast corners",
+        "bounding_box": {
+          "x": 64,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+        "name": "NE+SE",
+        "corners": {
+          "NE": "lower",
+          "NW": "upper",
+          "SE": "lower",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8"
+          ],
+          "west": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ],
+          "north": [
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "south": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ]
+        },
+        "description": "Lower terrain in northeast and southeast corners",
+        "bounding_box": {
+          "x": 32,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+        "name": "SE",
+        "corners": {
+          "NE": "upper",
+          "NW": "upper",
+          "SE": "lower",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "west": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ],
+          "north": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee"
+          ],
+          "south": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ]
+        },
+        "description": "Lower terrain in southeast corner only",
+        "bounding_box": {
+          "x": 32,
+          "y": 96,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "cf125e52-a542-41ac-a078-2359c480fc2d",
+        "name": "SW+SE",
+        "corners": {
+          "NE": "upper",
+          "NW": "upper",
+          "SE": "lower",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "west": [
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "north": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee"
+          ],
+          "south": [
+            "ddf9804d-259b-4583-a9a1-c83e32230fa8",
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d"
+          ]
+        },
+        "description": "Lower terrain in southwest and southeast corners",
+        "bounding_box": {
+          "x": 96,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+        "name": "NE",
+        "corners": {
+          "NE": "lower",
+          "NW": "upper",
+          "SE": "upper",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "west": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ],
+          "north": [
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "south": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ]
+        },
+        "description": "Lower terrain in northeast corner only",
+        "bounding_box": {
+          "x": 0,
+          "y": 64,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+        "name": "NW",
+        "corners": {
+          "NE": "upper",
+          "NW": "lower",
+          "SE": "upper",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a"
+          ],
+          "west": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "north": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "south": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "1c2d0319-61ae-4514-9774-186f81731c9d"
+          ]
+        },
+        "description": "Lower terrain in northwest corner only",
+        "bounding_box": {
+          "x": 96,
+          "y": 96,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "1c2d0319-61ae-4514-9774-186f81731c9d",
+        "name": "SW",
+        "corners": {
+          "NE": "upper",
+          "NW": "upper",
+          "SE": "upper",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a"
+          ],
+          "west": [
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "north": [
+            "bbf0d264-162a-4ea3-b0fb-e904be203bd1",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee"
+          ],
+          "south": [
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ]
+        },
+        "description": "Lower terrain in southwest corner only",
+        "bounding_box": {
+          "x": 0,
+          "y": 0,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "d9c061d6-5dd9-4319-877a-3436f02c12d5",
+        "name": "NE+SW",
+        "corners": {
+          "NE": "lower",
+          "NW": "upper",
+          "SE": "upper",
+          "SW": "lower"
+        },
+        "connections": {
+          "east": [
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "west": [
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "north": [
+            "fa67aa89-0a21-4cfa-94cf-0512caff6a6d",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "b229a8c2-a69b-46e4-935e-6062ab4baa96",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ],
+          "south": [
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "cea8f359-0e0d-4a13-b767-12dd288bede8",
+            "3282c077-b352-4ea8-ad9f-dd70d5d4b1ee",
+            "99039f68-7ebc-41dc-b198-b9a856450e7a"
+          ]
+        },
+        "description": "Lower terrain in northeast and southwest corners (diagonal)",
+        "bounding_box": {
+          "x": 64,
+          "y": 96,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "id": "99039f68-7ebc-41dc-b198-b9a856450e7a",
+        "name": "NW+SE",
+        "corners": {
+          "NE": "upper",
+          "NW": "lower",
+          "SE": "lower",
+          "SW": "upper"
+        },
+        "connections": {
+          "east": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "cf125e52-a542-41ac-a078-2359c480fc2d",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "west": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "ce7dca4c-c6c4-4d13-9b92-12f2c38ff6c4",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "north": [
+            "95b5e249-56d1-496d-ad9f-7f1346d8092c",
+            "881f4f4b-52e6-4cef-b399-1f76f673c2ec",
+            "1c2d0319-61ae-4514-9774-186f81731c9d",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ],
+          "south": [
+            "5a08b7a6-5907-4593-ade1-0d9ba47c63db",
+            "80d592ae-dc46-42d8-94b2-dfeb2cfe33e7",
+            "9b6726fe-ffba-4af0-bc75-f15d13e07a1a",
+            "d9c061d6-5dd9-4319-877a-3436f02c12d5"
+          ]
+        },
+        "description": "Lower terrain in northwest and southeast corners (diagonal)",
+        "bounding_box": {
+          "x": 0,
+          "y": 32,
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "tile_size": {
+      "width": 32,
+      "height": 32
+    },
+    "total_tiles": 16,
+    "terrain_types": ["lower", "upper"]
+  },
+  "metadata": {
+    "terrain_prompts": {
+      "lower": "polished slate floor with painted type annotations and blueprint markings",
+      "upper": "rolled blueprint rugs with precise grid lines and glowing node markers",
+      "transition": "brass drafting rulers and parchment trim blending slate into blueprint rugs"
+    }
+  },
+  "created_at": "2025-09-23T01:31:34.039209+00:00",
+  "format": "tileset15",
+  "layout": {
+    "type": "tileset15",
+    "description": "4x4 grid of 16 unique Wang tiles",
+    "grid_size": {
+      "width": 4,
+      "height": 4
+    },
+    "tile_count": 16
+  },
+  "tileset_image": {
+    "filename": "tileset_6700a671-0dde-4449-b62e-4706c6c9f1aa.png",
+    "format": "PNG",
+    "dimensions": {
+      "width": 128,
+      "height": 128
+    }
+  }
+}

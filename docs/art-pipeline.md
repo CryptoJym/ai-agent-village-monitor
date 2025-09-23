@@ -87,6 +87,9 @@ export PIXELLAB_TOKEN="<your-token>"  # set once per shell session
   # Only outdoor biomes or a specific entry
   PIXELLAB_TOKEN=... node scripts/generate-tiles.mjs --category biome
   PIXELLAB_TOKEN=... node scripts/generate-tiles.mjs --tileset grass-road
+
+  # Just interior themes
+  PIXELLAB_TOKEN=... node scripts/generate-tiles.mjs --category interior
   ```
 
 - Each run downloads a 4×4 Wang tileset image (`tileset.png`) plus `wang-metadata.json` for corner data and writes a friendly `metadata.json` describing prompts, passability, and base tile IDs.
@@ -95,3 +98,16 @@ export PIXELLAB_TOKEN="<your-token>"  # set once per shell session
   PIXELLAB_TOKEN=... node scripts/generate-pixellab-manifest.mjs
   ```
 - The manifest exports `pixellabTileMetadata` for the game engine; use the stored base tile IDs to chain new terrain transitions as needed.
+
+## Interior Style Guides
+
+| Theme                      | Palette & Mood                            | Signature Elements                                   | Floor/Accent Pairing                          |
+| -------------------------- | ----------------------------------------- | ---------------------------------------------------- | --------------------------------------------- |
+| JavaScript Neon Lab        | Cyan + magenta neon on obsidian glass     | Holo terminals, quantum rigs, neon signage           | Obsidian trace floor → holographic walkway    |
+| TypeScript Blueprint Hall  | Blueprint blue, parchment cream, brass    | Drafting tables, rolled plans, precision instruments | Slate drafting floor → glowing blueprint rugs |
+| Python Observatory Cottage | Indigo, candlelit bronze, mystical greens | Telescopes, star charts, serpent motifs              | Spiral stone tiles → star map mosaic          |
+| Go Coastal Lodge           | Seafoam, driftwood taupe, rope            | Nets, shells, maritime charts                        | Driftwood planks → woven rope runner          |
+| Ruby Artisan Workshop      | Ruby reds, cherrywood, burnished brass    | Gem polishers, jeweler benches, artisan tools        | Cherrywood floor → velvet ruby carpet         |
+| Java Brew Guild            | Coffee browns, copper glow, burlap        | Espresso bars, bean roasters, stacked burlap sacks   | Cobblestone floor → coffee bean mosaic        |
+| C# Azure Conservatory      | Azure glass, silver steel, bracket glyphs | Pipe-organ consoles, azure flora, light prisms       | Frosted glass floor → illuminated walkway     |
+| Commons Guild Hall         | Neutral stone, lantern brass, parchment   | Notice boards, communal tables, rolled scrolls       | Neutral stone → woven tatami mats             |

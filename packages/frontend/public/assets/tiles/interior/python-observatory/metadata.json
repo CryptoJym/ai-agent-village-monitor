@@ -1,0 +1,32 @@
+{
+  "tilesetId": "5316d6fa-49b1-470c-82d9-279421ba62f9",
+  "title": "Python Observatory Cottage",
+  "category": "interior",
+  "key": "python-observatory",
+  "lower": {
+    "description": "warm stone tiles with spiral motifs and candlelight highlights",
+    "passable": true,
+    "tags": ["stone", "spiral"],
+    "baseTileId": "acd7296c-000f-46dd-bcd9-e3fbcb561976"
+  },
+  "upper": {
+    "description": "star map floor in indigo and gold with constellation inlays",
+    "passable": true,
+    "tags": ["astronomy", "mosaic"],
+    "baseTileId": "713aea0f-e065-44d6-8708-7cffd4464455"
+  },
+  "transition": {
+    "size": 0.5,
+    "description": "etched bronze rings and flowing script connecting stone to star map"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:33:41.354Z"
+}

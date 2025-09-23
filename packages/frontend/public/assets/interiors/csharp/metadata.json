@@ -1,0 +1,48 @@
+{
+  "theme": "csharp",
+  "tilesetKey": "interior/csharp-conservatory",
+  "props": [
+    {
+      "key": "azure-planter",
+      "description": "32x32 isometric pixel art crystal planter with bioluminescent azure flora and light prism stand, transparent background",
+      "passable": true,
+      "orientation": "south",
+      "tags": ["planter", "decor"],
+      "tileId": "0ca879cb-8e23-49f9-ac92-300866242d89",
+      "file": "props/azure-planter.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:15:20.551925+00:00"
+    },
+    {
+      "key": "control-dais",
+      "description": "32x32 isometric pixel art elevated control dais with holographic displays and bracket sigils, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["platform", "control"],
+      "tileId": "d0c01df5-0feb-4b0f-a481-67a36799be4f",
+      "file": "props/control-dais.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:15:43.903897+00:00"
+    },
+    {
+      "key": "organ-console",
+      "description": "32x32 isometric pixel art azure pipe-organ console with bracket-shaped keys and glowing stops, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["instrument", "console"],
+      "tileId": "cc0903eb-780a-44f4-a50e-b4607cec7ea3",
+      "file": "props/organ-console.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:15:02.713414+00:00"
+    }
+  ]
+}

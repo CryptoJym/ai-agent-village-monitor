@@ -1,0 +1,48 @@
+{
+  "theme": "go",
+  "tilesetKey": "interior/go-lodge",
+  "props": [
+    {
+      "key": "coastal-hammock",
+      "description": "32x32 isometric pixel art rope hammock with soft teal cushions suspended on wooden frame, transparent background",
+      "passable": true,
+      "orientation": "south",
+      "tags": ["hammock", "relax"],
+      "tileId": "8eee5645-c5d1-4ecd-b9ff-f77dae3ce784",
+      "file": "props/coastal-hammock.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:12:07.970198+00:00"
+    },
+    {
+      "key": "nautical-chart-table",
+      "description": "32x32 isometric pixel art driftwood table with nautical charts, compass, and coiled rope, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["table", "nautical"],
+      "tileId": "1a947200-355f-4ef9-9dd0-13142d924930",
+      "file": "props/nautical-chart-table.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:11:44.670053+00:00"
+    },
+    {
+      "key": "shell-cabinet",
+      "description": "32x32 isometric pixel art display cabinet with shells, bottled currents, and lantern, transparent background",
+      "passable": false,
+      "orientation": "west",
+      "tags": ["cabinet", "decor"],
+      "tileId": "592f3406-2b5d-4a64-b626-a97d8b82845d",
+      "file": "props/shell-cabinet.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:12:31.070896+00:00"
+    }
+  ]
+}

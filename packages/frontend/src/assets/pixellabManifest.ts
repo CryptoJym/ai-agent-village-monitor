@@ -1,5 +1,10 @@
 import { pixellabAnimationMetadata } from './pixellabMetadata';
-export { pixellabTileMetadata, type PixellabTileMetadata } from './pixellabMetadata';
+export {
+  pixellabTileMetadata,
+  pixellabInteriorMetadata,
+  type PixellabTileMetadata,
+  type PixellabInteriorMetadata,
+} from './pixellabMetadata';
 
 export type Direction4 = 'south' | 'west' | 'east' | 'north';
 export type Direction8 =

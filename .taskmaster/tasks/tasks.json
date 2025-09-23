@@ -6786,7 +6786,7 @@
         "description": "Produce interior tiles, furniture, and props for each programming-language house so players can enter unique spaces.",
         "details": "- Define style guides for each house theme (JavaScript neon lab, Go coastal lodge, Ruby artisan workshop, etc.) consistent with our existing color palette and lighting.\n- Use Pixellab MCP to generate interior floor/wall tiles, doorway transitions, stairs, and decorative props (desks, terminals, plants, notice boards).\n- Compose interior layout blueprints (YAML/JSON) describing tile layers, object placement, and spawn points stored under packages/frontend/src/data/houses/.\n- Export interior atlases into packages/frontend/public/assets/interiors/<theme>/ and update manifest generator to surface props/tiles with passability metadata.\n- Document interior pipeline (prompt templates, layout schema, how to add new house themes).",
         "testStrategy": "",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [],
         "priority": "medium",
         "subtasks": []
@@ -6838,7 +6838,7 @@
     ],
     "metadata": {
       "created": "2025-09-21T14:29:45.488Z",
-      "updated": "2025-09-22T22:22:00.907Z",
+      "updated": "2025-09-23T01:25:09.375Z",
       "description": "Tag created on 9/21/2025"
     }
   }

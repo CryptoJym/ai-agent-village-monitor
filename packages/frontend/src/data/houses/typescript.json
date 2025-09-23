@@ -1,0 +1,48 @@
+{
+  "theme": "typescript",
+  "tilesetKey": "interior/typescript-blueprint",
+  "dimensions": {
+    "width": 10,
+    "height": 10
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+    [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+    [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+    [0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "drafting-table",
+      "position": [4, 4],
+      "layer": "work",
+      "orientation": "south"
+    },
+    {
+      "key": "plan-cabinet",
+      "position": [7, 2],
+      "layer": "work",
+      "orientation": "west"
+    },
+    {
+      "key": "reference-lectern",
+      "position": [3, 7],
+      "layer": "work",
+      "orientation": "south"
+    }
+  ],
+  "spawns": {
+    "player": [5, 9],
+    "npcs": [
+      [4, 5],
+      [8, 8]
+    ]
+  }
+}

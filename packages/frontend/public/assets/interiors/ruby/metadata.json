@@ -1,0 +1,48 @@
+{
+  "theme": "ruby",
+  "tilesetKey": "interior/ruby-workshop",
+  "props": [
+    {
+      "key": "forge-hearth",
+      "description": "32x32 isometric pixel art small forge hearth with ember coals and hanging tools, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["forge", "heat"],
+      "tileId": "c44ae976-3b6d-42b8-b161-61fb4e9d4051",
+      "file": "props/forge-hearth.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:13:35.159339+00:00"
+    },
+    {
+      "key": "gem-display",
+      "description": "32x32 isometric pixel art glass display case filled with glowing ruby artifacts, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["display", "gem"],
+      "tileId": "31f27642-c416-42cb-98e7-7884942d7931",
+      "file": "props/gem-display.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:13:17.504035+00:00"
+    },
+    {
+      "key": "jewelers-bench",
+      "description": "32x32 isometric pixel art jeweler bench with magnifier lamp, gemstones, and engraving tools, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["bench", "artisan"],
+      "tileId": "eb2c09ed-86d2-4c30-a700-1989e45384ad",
+      "file": "props/jewelers-bench.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:12:54.345849+00:00"
+    }
+  ]
+}

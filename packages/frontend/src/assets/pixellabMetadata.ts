@@ -345,26 +345,26 @@ export const pixellabTileMetadata = {
     },
   },
   interior: {
-    'stone-marble': {
-      tilesetId: '265aee50-4ba1-44e8-92d2-b562d559f814',
-      title: 'Stone Floor ↔ Marble Inlay',
+    'csharp-conservatory': {
+      tilesetId: '1ef6fc09-e525-4b5b-879c-302d9c7160ca',
+      title: 'C# Azure Conservatory',
       category: 'interior',
-      key: 'stone-marble',
+      key: 'csharp-conservatory',
       lower: {
-        description: 'rough-cut stone tiles, cool greys with subtle moss in cracks',
+        description: 'frosted azure glass floor with bracket-shaped metal framing',
         passable: true,
-        tags: ['stone'],
-        baseTileId: 'afe0e7a1-de93-4dac-aaf3-fde979a7fcf0',
+        tags: ['glass', 'azure'],
+        baseTileId: '2130b967-4f87-455b-8b74-0ea8ac231393',
       },
       upper: {
-        description: 'polished marble inlay with geometric brass pattern and shine',
+        description: 'illuminated glass walkway with cool white light panels and organ pipes',
         passable: true,
-        tags: ['marble'],
-        baseTileId: 'fc42eff5-710b-4332-b127-0bbe1dde7665',
+        tags: ['glass', 'light'],
+        baseTileId: '969a6c5a-37f9-45f9-88b0-39cacc5fb2dd',
       },
       transition: {
         size: 0.25,
-        description: 'stone tiles morphing into marble with ornate brass band',
+        description: 'brushed steel channels and glowing bracket glyphs blending glass levels',
       },
       tileSize: {
         width: 32,
@@ -375,28 +375,28 @@ export const pixellabTileMetadata = {
         definition: 'wang-metadata.json',
       },
       notes: null,
-      generatedAt: '2025-09-22T22:16:34.218Z',
+      generatedAt: '2025-09-23T01:37:26.190Z',
     },
-    'tech-holo': {
-      tilesetId: 'fa5a333b-14e6-4ae2-9cfc-d1f541e4e87a',
-      title: 'Workshop Floor ↔ Holographic Grid',
+    'generic-commons': {
+      tilesetId: 'ae9f69dc-cddd-4910-ad3a-f2c880f3b886',
+      title: 'Commons Guild Hall',
       category: 'interior',
-      key: 'tech-holo',
+      key: 'generic-commons',
       lower: {
-        description: 'industrial workshop floor with worn metal panels and rivets',
+        description: 'neutral stone tiles with gentle wear and community crest engravings',
         passable: true,
-        tags: ['metal'],
-        baseTileId: 'ef52853d-3f21-4ad6-8fba-dca19d422a83',
+        tags: ['stone', 'neutral'],
+        baseTileId: 'd0f3b9ad-4d5c-4ef2-8018-ab0b196f6b26',
       },
       upper: {
-        description: 'holographic walkway grid glowing cyan with animated circuitry',
+        description: 'woven tatami mats with understated pattern and warm lantern glow',
         passable: true,
-        tags: ['hologram', 'tech'],
-        baseTileId: '6ba9a68b-d749-4069-a8f2-924e33de91d9',
+        tags: ['tatami', 'commons'],
+        baseTileId: 'dd04187f-245c-4ba5-9b5b-fa70b95a1c99',
       },
       transition: {
         size: 0.25,
-        description: 'glowing conduits and vents blending metal into holographic surface',
+        description: 'wooden trim and paper lantern bases easing stone into tatami',
       },
       tileSize: {
         width: 32,
@@ -407,28 +407,28 @@ export const pixellabTileMetadata = {
         definition: 'wang-metadata.json',
       },
       notes: null,
-      generatedAt: '2025-09-22T22:17:38.186Z',
+      generatedAt: '2025-09-23T01:38:29.749Z',
     },
-    'wood-carpet': {
-      tilesetId: 'edd9a76b-8ae9-4024-8ceb-ff4311d78425',
-      title: 'Wooden Floor ↔ Plush Carpet',
+    'go-lodge': {
+      tilesetId: 'b38ce549-241f-4f37-8274-96c15c0992fe',
+      title: 'Go Coastal Lodge',
       category: 'interior',
-      key: 'wood-carpet',
+      key: 'go-lodge',
       lower: {
-        description: 'polished oak floorboards with warm varnish and subtle grain',
+        description: 'seashell-infused driftwood planks with salt-washed texture',
         passable: true,
-        tags: ['wood'],
-        baseTileId: '806cc901-8e70-4d11-90a0-c5c904c145f1',
+        tags: ['wood', 'coastal'],
+        baseTileId: 'b2aef3db-8c38-4aae-9f11-abef5f1a0dc5',
       },
       upper: {
-        description: 'plush crimson carpet with gold embroidery and gentle shading',
+        description: 'woven rope runner with nautical knots and teal accents',
         passable: true,
-        tags: ['carpet'],
-        baseTileId: '2173e2ff-7c08-4b90-a7b3-2ac292db8cbd',
+        tags: ['rope', 'runner'],
+        baseTileId: 'b02c4a19-0e15-48a8-b719-eafe47426156',
       },
       transition: {
         size: 0,
-        description: 'decorative brass floor trim separating wood and carpet',
+        description: 'whitewashed plinths and braided rope trim separating driftwood and runner',
       },
       tileSize: {
         width: 32,
@@ -439,9 +439,583 @@ export const pixellabTileMetadata = {
         definition: 'wang-metadata.json',
       },
       notes: null,
-      generatedAt: '2025-09-22T22:15:30.610Z',
+      generatedAt: '2025-09-23T01:34:30.198Z',
+    },
+    'java-brew': {
+      tilesetId: '3329ad88-a788-4493-8d81-fc0ad525096c',
+      title: 'Java Brew Guild Floor',
+      category: 'interior',
+      key: 'java-brew',
+      lower: {
+        description: 'dark cobblestone floor warmed with coffee stain patina and steam marks',
+        passable: true,
+        tags: ['stone', 'coffee'],
+        baseTileId: '1a37a190-b965-465d-a2a0-907470859089',
+      },
+      upper: {
+        description: 'coffee bean mosaic tile with latte art swirls and brass accents',
+        passable: true,
+        tags: ['mosaic', 'coffee'],
+        baseTileId: '569a0974-ab6a-48c9-a182-04ea728dd0a9',
+      },
+      transition: {
+        size: 0.25,
+        description: 'copper piping and burlap runners guiding from stone to coffee mosaic',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-23T01:36:22.395Z',
+    },
+    'javascript-neon': {
+      tilesetId: '82b50c29-9939-4d5a-bd25-3a06a13b3807',
+      title: 'JavaScript Neon Lab Floor',
+      category: 'interior',
+      key: 'javascript-neon',
+      lower: {
+        description: 'obsidian glass floor with embedded cyan and magenta LED traces',
+        passable: true,
+        tags: ['tech', 'glass'],
+        baseTileId: '2400a228-97a7-4892-b215-5c81b508c428',
+      },
+      upper: {
+        description: 'transparent holo walkway with luminous circuitry and neon edge glow',
+        passable: true,
+        tags: ['tech', 'hologram'],
+        baseTileId: '0ef41e60-d795-47c0-8253-46923c393c23',
+      },
+      transition: {
+        size: 0.25,
+        description:
+          'plated metal rails and glowing cables bridging obsidian glass and holo walkway',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-23T01:31:33.760Z',
+    },
+    'python-observatory': {
+      tilesetId: '5316d6fa-49b1-470c-82d9-279421ba62f9',
+      title: 'Python Observatory Cottage',
+      category: 'interior',
+      key: 'python-observatory',
+      lower: {
+        description: 'warm stone tiles with spiral motifs and candlelight highlights',
+        passable: true,
+        tags: ['stone', 'spiral'],
+        baseTileId: 'acd7296c-000f-46dd-bcd9-e3fbcb561976',
+      },
+      upper: {
+        description: 'star map floor in indigo and gold with constellation inlays',
+        passable: true,
+        tags: ['astronomy', 'mosaic'],
+        baseTileId: '713aea0f-e065-44d6-8708-7cffd4464455',
+      },
+      transition: {
+        size: 0.5,
+        description: 'etched bronze rings and flowing script connecting stone to star map',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-23T01:33:41.354Z',
+    },
+    'ruby-workshop': {
+      tilesetId: 'f0476dd1-c1d8-4454-9948-77c5ac2ae6b8',
+      title: 'Ruby Artisan Workshop',
+      category: 'interior',
+      key: 'ruby-workshop',
+      lower: {
+        description: 'hand-oiled cherrywood planks with ruby inlay pegs and soft sheen',
+        passable: true,
+        tags: ['wood', 'artisan'],
+        baseTileId: 'e87b8973-6eba-41f2-9e0a-8a7cd8fee24a',
+      },
+      upper: {
+        description: 'crimson velvet carpet with stitched geometric patterns and gold thread',
+        passable: true,
+        tags: ['carpet', 'velvet'],
+        baseTileId: '62a7394e-b7e0-443f-a81c-b6d2effc6b52',
+      },
+      transition: {
+        size: 0.25,
+        description: 'carved wooden moulding with brass studs framing wood and velvet',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-23T01:35:18.492Z',
+    },
+    'typescript-blueprint': {
+      tilesetId: '6700a671-0dde-4449-b62e-4706c6c9f1aa',
+      title: 'TypeScript Blueprint Hall',
+      category: 'interior',
+      key: 'typescript-blueprint',
+      lower: {
+        description: 'polished slate floor with painted type annotations and blueprint markings',
+        passable: true,
+        tags: ['slate', 'blueprint'],
+        baseTileId: 'ddf9804d-259b-4583-a9a1-c83e32230fa8',
+      },
+      upper: {
+        description: 'rolled blueprint rugs with precise grid lines and glowing node markers',
+        passable: true,
+        tags: ['blueprint', 'rug'],
+        baseTileId: 'bbf0d264-162a-4ea3-b0fb-e904be203bd1',
+      },
+      transition: {
+        size: 0.25,
+        description: 'brass drafting rulers and parchment trim blending slate into blueprint rugs',
+      },
+      tileSize: {
+        width: 32,
+        height: 32,
+      },
+      files: {
+        image: 'tileset.png',
+        definition: 'wang-metadata.json',
+      },
+      notes: null,
+      generatedAt: '2025-09-23T01:32:37.633Z',
     },
   },
 } as const;
 
 export type PixellabTileMetadata = typeof pixellabTileMetadata;
+
+export const pixellabInteriorMetadata = {
+  commons: {
+    theme: 'commons',
+    tilesetKey: 'interior/generic-commons',
+    props: [
+      {
+        key: 'commons-table',
+        description:
+          '32x32 isometric pixel art communal table with board games, tea set, and scrolls, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['table', 'commons'],
+        tileId: '868ac9fd-a1ce-4ad2-accf-7232be3faa89',
+        file: 'props/commons-table.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:16:07.068107+00:00',
+      },
+      {
+        key: 'lantern-hearth',
+        description:
+          '32x32 isometric pixel art stone hearth with suspended paper lanterns and seating cushions, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['hearth', 'lantern'],
+        tileId: 'cb92ea8d-487e-4c86-9314-f8eef2ed80ec',
+        file: 'props/lantern-hearth.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:16:53.547940+00:00',
+      },
+      {
+        key: 'notice-board',
+        description:
+          '32x32 isometric pixel art bulletin board covered in quest notices, strings, and lanterns, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['board', 'quests'],
+        tileId: '59a4920f-a5e3-4a9b-b8bf-f45f0d42d6a0',
+        file: 'props/notice-board.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:16:30.295513+00:00',
+      },
+    ],
+  },
+  csharp: {
+    theme: 'csharp',
+    tilesetKey: 'interior/csharp-conservatory',
+    props: [
+      {
+        key: 'azure-planter',
+        description:
+          '32x32 isometric pixel art crystal planter with bioluminescent azure flora and light prism stand, transparent background',
+        passable: true,
+        orientation: 'south',
+        tags: ['planter', 'decor'],
+        tileId: '0ca879cb-8e23-49f9-ac92-300866242d89',
+        file: 'props/azure-planter.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:15:20.551925+00:00',
+      },
+      {
+        key: 'control-dais',
+        description:
+          '32x32 isometric pixel art elevated control dais with holographic displays and bracket sigils, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['platform', 'control'],
+        tileId: 'd0c01df5-0feb-4b0f-a481-67a36799be4f',
+        file: 'props/control-dais.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:15:43.903897+00:00',
+      },
+      {
+        key: 'organ-console',
+        description:
+          '32x32 isometric pixel art azure pipe-organ console with bracket-shaped keys and glowing stops, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['instrument', 'console'],
+        tileId: 'cc0903eb-780a-44f4-a50e-b4607cec7ea3',
+        file: 'props/organ-console.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:15:02.713414+00:00',
+      },
+    ],
+  },
+  go: {
+    theme: 'go',
+    tilesetKey: 'interior/go-lodge',
+    props: [
+      {
+        key: 'coastal-hammock',
+        description:
+          '32x32 isometric pixel art rope hammock with soft teal cushions suspended on wooden frame, transparent background',
+        passable: true,
+        orientation: 'south',
+        tags: ['hammock', 'relax'],
+        tileId: '8eee5645-c5d1-4ecd-b9ff-f77dae3ce784',
+        file: 'props/coastal-hammock.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:12:07.970198+00:00',
+      },
+      {
+        key: 'nautical-chart-table',
+        description:
+          '32x32 isometric pixel art driftwood table with nautical charts, compass, and coiled rope, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['table', 'nautical'],
+        tileId: '1a947200-355f-4ef9-9dd0-13142d924930',
+        file: 'props/nautical-chart-table.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:11:44.670053+00:00',
+      },
+      {
+        key: 'shell-cabinet',
+        description:
+          '32x32 isometric pixel art display cabinet with shells, bottled currents, and lantern, transparent background',
+        passable: false,
+        orientation: 'west',
+        tags: ['cabinet', 'decor'],
+        tileId: '592f3406-2b5d-4a64-b626-a97d8b82845d',
+        file: 'props/shell-cabinet.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:12:31.070896+00:00',
+      },
+    ],
+  },
+  java: {
+    theme: 'java',
+    tilesetKey: 'interior/java-brew',
+    props: [
+      {
+        key: 'bean-barrel',
+        description:
+          '32x32 isometric pixel art burlap coffee bean barrel with scoop and spilled beans, transparent background',
+        passable: true,
+        orientation: 'south',
+        tags: ['barrel', 'coffee'],
+        tileId: '6b883b7b-6a98-4665-85fe-f6cbf6c0399e',
+        file: 'props/bean-barrel.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:14:21.750549+00:00',
+      },
+      {
+        key: 'brew-tasting-table',
+        description:
+          '32x32 isometric pixel art tasting table with sampler flights, mugs, and brewing notes, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['table', 'coffee'],
+        tileId: 'b12f65f9-6e47-4264-925b-a51a9203f7ab',
+        file: 'props/brew-tasting-table.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:14:39.371032+00:00',
+      },
+      {
+        key: 'espresso-bar',
+        description:
+          '32x32 isometric pixel art espresso bar with steaming machines, cups, and pastries, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['bar', 'coffee'],
+        tileId: '2f337195-b15f-4cbb-a11b-7cb3a2deb212',
+        file: 'props/espresso-bar.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:13:58.510478+00:00',
+      },
+    ],
+  },
+  javascript: {
+    theme: 'javascript',
+    tilesetKey: 'interior/javascript-neon',
+    props: [
+      {
+        key: 'neon-planter',
+        description:
+          '32x32 isometric pixel art futuristic planter with bioluminescent plants, neon rim, and soft glow, transparent background',
+        passable: true,
+        orientation: 'south',
+        tags: ['decor', 'plant'],
+        tileId: '5dd63743-3669-43a6-a06b-3eb562c3bba8',
+        file: 'props/neon-planter.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:09:24.329242+00:00',
+      },
+      {
+        key: 'neon-workbench',
+        description:
+          '32x32 isometric pixel art neon lab workbench with holographic screens, glowing cables, and scattered components, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['workbench', 'tech'],
+        tileId: '601d000e-9a7a-4590-9da9-e597a2cf571c',
+        file: 'props/neon-workbench.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:08:36.902071+00:00',
+      },
+      {
+        key: 'quantum-server',
+        description:
+          '32x32 isometric pixel art server pillar with pulsating cyan lights, glass panels, and cable harness, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['server', 'tech'],
+        tileId: 'ae3b047f-23f6-4cff-9df8-ebf29dd40b47',
+        file: 'props/quantum-server.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:09:01.060351+00:00',
+      },
+    ],
+  },
+  python: {
+    theme: 'python',
+    tilesetKey: 'interior/python-observatory',
+    props: [
+      {
+        key: 'alchemy-table',
+        description:
+          '32x32 isometric pixel art alchemy worktable with crystal orbs, potions, and rune carvings, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['table', 'alchemy'],
+        tileId: '81ee1b6a-7103-4a66-9585-5bc3002ccce0',
+        file: 'props/alchemy-table.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:11:26.995303+00:00',
+      },
+      {
+        key: 'serpent-bookshelf',
+        description:
+          '32x32 isometric pixel art curved bookshelf with glowing tomes, serpent carvings, and candles, transparent background',
+        passable: false,
+        orientation: 'west',
+        tags: ['bookshelf', 'library'],
+        tileId: '70bcc976-3d0d-44bf-b9a2-b88899fbe807',
+        file: 'props/serpent-bookshelf.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:11:09.469490+00:00',
+      },
+      {
+        key: 'star-telescope',
+        description:
+          '32x32 isometric pixel art brass observatory telescope on carved base with star scrolls, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['telescope', 'astronomy'],
+        tileId: 'f587f4f7-59a3-4720-935a-84fd188c7ce8',
+        file: 'props/star-telescope.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:10:46.404176+00:00',
+      },
+    ],
+  },
+  ruby: {
+    theme: 'ruby',
+    tilesetKey: 'interior/ruby-workshop',
+    props: [
+      {
+        key: 'forge-hearth',
+        description:
+          '32x32 isometric pixel art small forge hearth with ember coals and hanging tools, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['forge', 'heat'],
+        tileId: 'c44ae976-3b6d-42b8-b161-61fb4e9d4051',
+        file: 'props/forge-hearth.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:13:35.159339+00:00',
+      },
+      {
+        key: 'gem-display',
+        description:
+          '32x32 isometric pixel art glass display case filled with glowing ruby artifacts, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['display', 'gem'],
+        tileId: '31f27642-c416-42cb-98e7-7884942d7931',
+        file: 'props/gem-display.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:13:17.504035+00:00',
+      },
+      {
+        key: 'jewelers-bench',
+        description:
+          '32x32 isometric pixel art jeweler bench with magnifier lamp, gemstones, and engraving tools, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['bench', 'artisan'],
+        tileId: 'eb2c09ed-86d2-4c30-a700-1989e45384ad',
+        file: 'props/jewelers-bench.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:12:54.345849+00:00',
+      },
+    ],
+  },
+  typescript: {
+    theme: 'typescript',
+    tilesetKey: 'interior/typescript-blueprint',
+    props: [
+      {
+        key: 'drafting-table',
+        description:
+          '32x32 isometric pixel art drafting table covered in blueprints, measuring tools, and lamp, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['table', 'drafting'],
+        tileId: '1c893b8b-33f8-4440-abfd-11795917ebb9',
+        file: 'props/drafting-table.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:09:47.647804+00:00',
+      },
+      {
+        key: 'plan-cabinet',
+        description:
+          '32x32 isometric pixel art blueprint cabinet with rolled plans, pigeonholes, and brass handles, transparent background',
+        passable: false,
+        orientation: 'west',
+        tags: ['storage', 'plans'],
+        tileId: '2fe651b4-7c8c-408b-bb80-eabbbe3d9100',
+        file: 'props/plan-cabinet.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:10:11.004381+00:00',
+      },
+      {
+        key: 'reference-lectern',
+        description:
+          '32x32 isometric pixel art lectern displaying glowing specification manuscript with quill and brass lamp, transparent background',
+        passable: false,
+        orientation: 'south',
+        tags: ['lectern', 'reference'],
+        tileId: '0961a98d-b5c4-4150-9acb-c5188148d547',
+        file: 'props/reference-lectern.png',
+        size: {
+          width: 32,
+          height: 32,
+        },
+        generatedAt: '2025-09-23T02:10:28.691634+00:00',
+      },
+    ],
+  },
+} as const;
+
+export type PixellabInteriorMetadata = typeof pixellabInteriorMetadata;

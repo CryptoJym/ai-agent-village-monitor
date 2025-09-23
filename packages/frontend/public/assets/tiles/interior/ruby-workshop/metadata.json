@@ -1,0 +1,32 @@
+{
+  "tilesetId": "f0476dd1-c1d8-4454-9948-77c5ac2ae6b8",
+  "title": "Ruby Artisan Workshop",
+  "category": "interior",
+  "key": "ruby-workshop",
+  "lower": {
+    "description": "hand-oiled cherrywood planks with ruby inlay pegs and soft sheen",
+    "passable": true,
+    "tags": ["wood", "artisan"],
+    "baseTileId": "e87b8973-6eba-41f2-9e0a-8a7cd8fee24a"
+  },
+  "upper": {
+    "description": "crimson velvet carpet with stitched geometric patterns and gold thread",
+    "passable": true,
+    "tags": ["carpet", "velvet"],
+    "baseTileId": "62a7394e-b7e0-443f-a81c-b6d2effc6b52"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "carved wooden moulding with brass studs framing wood and velvet"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:35:18.492Z"
+}

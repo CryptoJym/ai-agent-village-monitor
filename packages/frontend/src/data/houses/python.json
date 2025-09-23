@@ -1,0 +1,48 @@
+{
+  "theme": "python",
+  "tilesetKey": "interior/python-observatory",
+  "dimensions": {
+    "width": 10,
+    "height": 10
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "star-telescope",
+      "position": [2, 2],
+      "layer": "observatory",
+      "orientation": "south"
+    },
+    {
+      "key": "serpent-bookshelf",
+      "position": [8, 3],
+      "layer": "observatory",
+      "orientation": "west"
+    },
+    {
+      "key": "alchemy-table",
+      "position": [6, 7],
+      "layer": "observatory",
+      "orientation": "south"
+    }
+  ],
+  "spawns": {
+    "player": [5, 8],
+    "npcs": [
+      [3, 4],
+      [7, 5]
+    ]
+  }
+}

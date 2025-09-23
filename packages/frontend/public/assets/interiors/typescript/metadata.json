@@ -1,0 +1,48 @@
+{
+  "theme": "typescript",
+  "tilesetKey": "interior/typescript-blueprint",
+  "props": [
+    {
+      "key": "drafting-table",
+      "description": "32x32 isometric pixel art drafting table covered in blueprints, measuring tools, and lamp, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["table", "drafting"],
+      "tileId": "1c893b8b-33f8-4440-abfd-11795917ebb9",
+      "file": "props/drafting-table.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:09:47.647804+00:00"
+    },
+    {
+      "key": "plan-cabinet",
+      "description": "32x32 isometric pixel art blueprint cabinet with rolled plans, pigeonholes, and brass handles, transparent background",
+      "passable": false,
+      "orientation": "west",
+      "tags": ["storage", "plans"],
+      "tileId": "2fe651b4-7c8c-408b-bb80-eabbbe3d9100",
+      "file": "props/plan-cabinet.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:10:11.004381+00:00"
+    },
+    {
+      "key": "reference-lectern",
+      "description": "32x32 isometric pixel art lectern displaying glowing specification manuscript with quill and brass lamp, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["lectern", "reference"],
+      "tileId": "0961a98d-b5c4-4150-9acb-c5188148d547",
+      "file": "props/reference-lectern.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:10:28.691634+00:00"
+    }
+  ]
+}

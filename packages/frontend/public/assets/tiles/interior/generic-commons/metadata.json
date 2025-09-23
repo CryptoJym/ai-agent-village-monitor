@@ -1,0 +1,32 @@
+{
+  "tilesetId": "ae9f69dc-cddd-4910-ad3a-f2c880f3b886",
+  "title": "Commons Guild Hall",
+  "category": "interior",
+  "key": "generic-commons",
+  "lower": {
+    "description": "neutral stone tiles with gentle wear and community crest engravings",
+    "passable": true,
+    "tags": ["stone", "neutral"],
+    "baseTileId": "d0f3b9ad-4d5c-4ef2-8018-ab0b196f6b26"
+  },
+  "upper": {
+    "description": "woven tatami mats with understated pattern and warm lantern glow",
+    "passable": true,
+    "tags": ["tatami", "commons"],
+    "baseTileId": "dd04187f-245c-4ba5-9b5b-fa70b95a1c99"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "wooden trim and paper lantern bases easing stone into tatami"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:38:29.749Z"
+}

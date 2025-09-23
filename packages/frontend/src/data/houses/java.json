@@ -1,0 +1,48 @@
+{
+  "theme": "java",
+  "tilesetKey": "interior/java-brew",
+  "dimensions": {
+    "width": 10,
+    "height": 9
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "espresso-bar",
+      "position": [5, 2],
+      "layer": "service",
+      "orientation": "south"
+    },
+    {
+      "key": "bean-barrel",
+      "position": [2, 6],
+      "layer": "service",
+      "orientation": "south",
+      "passable": true
+    },
+    {
+      "key": "brew-tasting-table",
+      "position": [7, 7],
+      "layer": "service",
+      "orientation": "south"
+    }
+  ],
+  "spawns": {
+    "player": [5, 8],
+    "npcs": [
+      [3, 5],
+      [7, 5]
+    ]
+  }
+}

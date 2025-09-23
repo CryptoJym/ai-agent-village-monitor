@@ -1,0 +1,49 @@
+{
+  "theme": "csharp",
+  "tilesetKey": "interior/csharp-conservatory",
+  "dimensions": {
+    "width": 10,
+    "height": 10
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "organ-console",
+      "position": [4, 3],
+      "layer": "performance",
+      "orientation": "south"
+    },
+    {
+      "key": "azure-planter",
+      "position": [7, 6],
+      "layer": "decor",
+      "orientation": "south",
+      "passable": true
+    },
+    {
+      "key": "control-dais",
+      "position": [5, 8],
+      "layer": "performance",
+      "orientation": "south"
+    }
+  ],
+  "spawns": {
+    "player": [5, 9],
+    "npcs": [
+      [3, 6],
+      [7, 4]
+    ]
+  }
+}

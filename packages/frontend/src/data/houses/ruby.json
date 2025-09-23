@@ -1,0 +1,47 @@
+{
+  "theme": "ruby",
+  "tilesetKey": "interior/ruby-workshop",
+  "dimensions": {
+    "width": 9,
+    "height": 9
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "jewelers-bench",
+      "position": [3, 3],
+      "layer": "work",
+      "orientation": "south"
+    },
+    {
+      "key": "gem-display",
+      "position": [6, 4],
+      "layer": "decor",
+      "orientation": "south"
+    },
+    {
+      "key": "forge-hearth",
+      "position": [4, 7],
+      "layer": "work",
+      "orientation": "south"
+    }
+  ],
+  "spawns": {
+    "player": [5, 8],
+    "npcs": [
+      [3, 5],
+      [7, 5]
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "tilesetId": "b38ce549-241f-4f37-8274-96c15c0992fe",
+  "title": "Go Coastal Lodge",
+  "category": "interior",
+  "key": "go-lodge",
+  "lower": {
+    "description": "seashell-infused driftwood planks with salt-washed texture",
+    "passable": true,
+    "tags": ["wood", "coastal"],
+    "baseTileId": "b2aef3db-8c38-4aae-9f11-abef5f1a0dc5"
+  },
+  "upper": {
+    "description": "woven rope runner with nautical knots and teal accents",
+    "passable": true,
+    "tags": ["rope", "runner"],
+    "baseTileId": "b02c4a19-0e15-48a8-b719-eafe47426156"
+  },
+  "transition": {
+    "size": 0,
+    "description": "whitewashed plinths and braided rope trim separating driftwood and runner"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:34:30.198Z"
+}

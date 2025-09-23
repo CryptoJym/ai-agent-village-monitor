@@ -1,0 +1,48 @@
+{
+  "theme": "java",
+  "tilesetKey": "interior/java-brew",
+  "props": [
+    {
+      "key": "bean-barrel",
+      "description": "32x32 isometric pixel art burlap coffee bean barrel with scoop and spilled beans, transparent background",
+      "passable": true,
+      "orientation": "south",
+      "tags": ["barrel", "coffee"],
+      "tileId": "6b883b7b-6a98-4665-85fe-f6cbf6c0399e",
+      "file": "props/bean-barrel.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:14:21.750549+00:00"
+    },
+    {
+      "key": "brew-tasting-table",
+      "description": "32x32 isometric pixel art tasting table with sampler flights, mugs, and brewing notes, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["table", "coffee"],
+      "tileId": "b12f65f9-6e47-4264-925b-a51a9203f7ab",
+      "file": "props/brew-tasting-table.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:14:39.371032+00:00"
+    },
+    {
+      "key": "espresso-bar",
+      "description": "32x32 isometric pixel art espresso bar with steaming machines, cups, and pastries, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["bar", "coffee"],
+      "tileId": "2f337195-b15f-4cbb-a11b-7cb3a2deb212",
+      "file": "props/espresso-bar.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:13:58.510478+00:00"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "theme": "javascript",
+  "tilesetKey": "interior/javascript-neon",
+  "props": [
+    {
+      "key": "neon-planter",
+      "description": "32x32 isometric pixel art futuristic planter with bioluminescent plants, neon rim, and soft glow, transparent background",
+      "passable": true,
+      "orientation": "south",
+      "tags": ["decor", "plant"],
+      "tileId": "5dd63743-3669-43a6-a06b-3eb562c3bba8",
+      "file": "props/neon-planter.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:09:24.329242+00:00"
+    },
+    {
+      "key": "neon-workbench",
+      "description": "32x32 isometric pixel art neon lab workbench with holographic screens, glowing cables, and scattered components, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["workbench", "tech"],
+      "tileId": "601d000e-9a7a-4590-9da9-e597a2cf571c",
+      "file": "props/neon-workbench.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:08:36.902071+00:00"
+    },
+    {
+      "key": "quantum-server",
+      "description": "32x32 isometric pixel art server pillar with pulsating cyan lights, glass panels, and cable harness, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["server", "tech"],
+      "tileId": "ae3b047f-23f6-4cff-9df8-ebf29dd40b47",
+      "file": "props/quantum-server.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:09:01.060351+00:00"
+    }
+  ]
+}

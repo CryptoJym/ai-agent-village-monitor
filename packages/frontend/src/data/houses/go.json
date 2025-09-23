@@ -1,0 +1,48 @@
+{
+  "theme": "go",
+  "tilesetKey": "interior/go-lodge",
+  "dimensions": {
+    "width": 9,
+    "height": 9
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "nautical-chart-table",
+      "position": [3, 3],
+      "layer": "decor",
+      "orientation": "south"
+    },
+    {
+      "key": "coastal-hammock",
+      "position": [6, 7],
+      "layer": "decor",
+      "orientation": "south",
+      "passable": true
+    },
+    {
+      "key": "shell-cabinet",
+      "position": [7, 2],
+      "layer": "decor",
+      "orientation": "west"
+    }
+  ],
+  "spawns": {
+    "player": [5, 8],
+    "npcs": [
+      [4, 6],
+      [6, 4]
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "theme": "javascript",
+  "tilesetKey": "interior/javascript-neon",
+  "dimensions": {
+    "width": 10,
+    "height": 10
+  },
+  "vertexGrid": [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+  ],
+  "props": [
+    {
+      "key": "neon-workbench",
+      "position": [3, 3],
+      "layer": "decor",
+      "orientation": "south"
+    },
+    {
+      "key": "quantum-server",
+      "position": [6, 4],
+      "layer": "decor",
+      "orientation": "west"
+    },
+    {
+      "key": "neon-planter",
+      "position": [2, 7],
+      "layer": "decor",
+      "orientation": "south",
+      "passable": true
+    }
+  ],
+  "spawns": {
+    "player": [5, 8],
+    "npcs": [
+      [3, 5],
+      [7, 3]
+    ]
+  }
+}

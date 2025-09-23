@@ -1,0 +1,48 @@
+{
+  "theme": "python",
+  "tilesetKey": "interior/python-observatory",
+  "props": [
+    {
+      "key": "alchemy-table",
+      "description": "32x32 isometric pixel art alchemy worktable with crystal orbs, potions, and rune carvings, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["table", "alchemy"],
+      "tileId": "81ee1b6a-7103-4a66-9585-5bc3002ccce0",
+      "file": "props/alchemy-table.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:11:26.995303+00:00"
+    },
+    {
+      "key": "serpent-bookshelf",
+      "description": "32x32 isometric pixel art curved bookshelf with glowing tomes, serpent carvings, and candles, transparent background",
+      "passable": false,
+      "orientation": "west",
+      "tags": ["bookshelf", "library"],
+      "tileId": "70bcc976-3d0d-44bf-b9a2-b88899fbe807",
+      "file": "props/serpent-bookshelf.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:11:09.469490+00:00"
+    },
+    {
+      "key": "star-telescope",
+      "description": "32x32 isometric pixel art brass observatory telescope on carved base with star scrolls, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["telescope", "astronomy"],
+      "tileId": "f587f4f7-59a3-4720-935a-84fd188c7ce8",
+      "file": "props/star-telescope.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:10:46.404176+00:00"
+    }
+  ]
+}

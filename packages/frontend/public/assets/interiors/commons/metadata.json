@@ -1,0 +1,48 @@
+{
+  "theme": "commons",
+  "tilesetKey": "interior/generic-commons",
+  "props": [
+    {
+      "key": "commons-table",
+      "description": "32x32 isometric pixel art communal table with board games, tea set, and scrolls, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["table", "commons"],
+      "tileId": "868ac9fd-a1ce-4ad2-accf-7232be3faa89",
+      "file": "props/commons-table.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:16:07.068107+00:00"
+    },
+    {
+      "key": "lantern-hearth",
+      "description": "32x32 isometric pixel art stone hearth with suspended paper lanterns and seating cushions, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["hearth", "lantern"],
+      "tileId": "cb92ea8d-487e-4c86-9314-f8eef2ed80ec",
+      "file": "props/lantern-hearth.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:16:53.547940+00:00"
+    },
+    {
+      "key": "notice-board",
+      "description": "32x32 isometric pixel art bulletin board covered in quest notices, strings, and lanterns, transparent background",
+      "passable": false,
+      "orientation": "south",
+      "tags": ["board", "quests"],
+      "tileId": "59a4920f-a5e3-4a9b-b8bf-f45f0d42d6a0",
+      "file": "props/notice-board.png",
+      "size": {
+        "width": 32,
+        "height": 32
+      },
+      "generatedAt": "2025-09-23T02:16:30.295513+00:00"
+    }
+  ]
+}

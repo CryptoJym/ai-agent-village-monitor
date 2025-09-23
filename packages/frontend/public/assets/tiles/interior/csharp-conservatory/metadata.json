@@ -1,0 +1,32 @@
+{
+  "tilesetId": "1ef6fc09-e525-4b5b-879c-302d9c7160ca",
+  "title": "C# Azure Conservatory",
+  "category": "interior",
+  "key": "csharp-conservatory",
+  "lower": {
+    "description": "frosted azure glass floor with bracket-shaped metal framing",
+    "passable": true,
+    "tags": ["glass", "azure"],
+    "baseTileId": "2130b967-4f87-455b-8b74-0ea8ac231393"
+  },
+  "upper": {
+    "description": "illuminated glass walkway with cool white light panels and organ pipes",
+    "passable": true,
+    "tags": ["glass", "light"],
+    "baseTileId": "969a6c5a-37f9-45f9-88b0-39cacc5fb2dd"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "brushed steel channels and glowing bracket glyphs blending glass levels"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:37:26.190Z"
+}

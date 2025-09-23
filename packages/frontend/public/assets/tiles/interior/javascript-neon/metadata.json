@@ -1,0 +1,32 @@
+{
+  "tilesetId": "82b50c29-9939-4d5a-bd25-3a06a13b3807",
+  "title": "JavaScript Neon Lab Floor",
+  "category": "interior",
+  "key": "javascript-neon",
+  "lower": {
+    "description": "obsidian glass floor with embedded cyan and magenta LED traces",
+    "passable": true,
+    "tags": ["tech", "glass"],
+    "baseTileId": "2400a228-97a7-4892-b215-5c81b508c428"
+  },
+  "upper": {
+    "description": "transparent holo walkway with luminous circuitry and neon edge glow",
+    "passable": true,
+    "tags": ["tech", "hologram"],
+    "baseTileId": "0ef41e60-d795-47c0-8253-46923c393c23"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "plated metal rails and glowing cables bridging obsidian glass and holo walkway"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:31:33.760Z"
+}

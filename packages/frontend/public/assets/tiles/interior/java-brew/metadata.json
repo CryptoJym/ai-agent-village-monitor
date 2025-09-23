@@ -1,0 +1,32 @@
+{
+  "tilesetId": "3329ad88-a788-4493-8d81-fc0ad525096c",
+  "title": "Java Brew Guild Floor",
+  "category": "interior",
+  "key": "java-brew",
+  "lower": {
+    "description": "dark cobblestone floor warmed with coffee stain patina and steam marks",
+    "passable": true,
+    "tags": ["stone", "coffee"],
+    "baseTileId": "1a37a190-b965-465d-a2a0-907470859089"
+  },
+  "upper": {
+    "description": "coffee bean mosaic tile with latte art swirls and brass accents",
+    "passable": true,
+    "tags": ["mosaic", "coffee"],
+    "baseTileId": "569a0974-ab6a-48c9-a182-04ea728dd0a9"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "copper piping and burlap runners guiding from stone to coffee mosaic"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:36:22.395Z"
+}

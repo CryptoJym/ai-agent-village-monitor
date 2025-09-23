@@ -1,0 +1,32 @@
+{
+  "tilesetId": "6700a671-0dde-4449-b62e-4706c6c9f1aa",
+  "title": "TypeScript Blueprint Hall",
+  "category": "interior",
+  "key": "typescript-blueprint",
+  "lower": {
+    "description": "polished slate floor with painted type annotations and blueprint markings",
+    "passable": true,
+    "tags": ["slate", "blueprint"],
+    "baseTileId": "ddf9804d-259b-4583-a9a1-c83e32230fa8"
+  },
+  "upper": {
+    "description": "rolled blueprint rugs with precise grid lines and glowing node markers",
+    "passable": true,
+    "tags": ["blueprint", "rug"],
+    "baseTileId": "bbf0d264-162a-4ea3-b0fb-e904be203bd1"
+  },
+  "transition": {
+    "size": 0.25,
+    "description": "brass drafting rulers and parchment trim blending slate into blueprint rugs"
+  },
+  "tileSize": {
+    "width": 32,
+    "height": 32
+  },
+  "files": {
+    "image": "tileset.png",
+    "definition": "wang-metadata.json"
+  },
+  "notes": null,
+  "generatedAt": "2025-09-23T01:32:37.633Z"
+}
