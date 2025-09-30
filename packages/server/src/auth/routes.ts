@@ -17,10 +17,15 @@ const refreshStore = new Map<string, string>();
 function cookieOptions(days = 30) {
   const isProd = config.NODE_ENV === 'production';
   const maxAge = days * 24 * 60 * 60 * 1000;
+
+  // For cross-domain OAuth (frontend on Vercel, backend on Railway),
+  // we need SameSite=None in production to allow cookies to be sent
+  const sameSite = isProd ? 'none' : 'lax';
+
   return {
     httpOnly: true as const,
-    secure: isProd,
-    sameSite: 'lax' as const,
+    secure: isProd, // Required when SameSite=None
+    sameSite: sameSite as 'none' | 'lax',
     maxAge,
     path: '/',
     // Use domain if provided to allow cross-subdomain cookies in prod
@@ -70,7 +75,10 @@ router.get('/auth/github/callback', async (req, res, next) => {
   try {
     const clientId = config.GITHUB_OAUTH_CLIENT_ID;
     const secret = config.GITHUB_OAUTH_CLIENT_SECRET;
-    if (!clientId || !secret) return res.status(500).json({ error: 'GitHub OAuth not configured' });
+    if (!clientId || !secret) {
+      console.error('OAuth config missing:', { clientId: !!clientId, secret: !!secret });
+      return res.status(500).json({ error: 'GitHub OAuth not configured' });
+    }
 
     const code = String(req.query.code || '');
     const state = String(req.query.state || '');
@@ -82,6 +90,17 @@ router.get('/auth/github/callback', async (req, res, next) => {
         (req.cookies?.oauth_verifier as string) ||
         '',
     );
+
+    // Debug logging for OAuth state issues
+    console.log('OAuth callback debug:', {
+      hasCode: !!code,
+      hasState: !!state,
+      hasCookieState: !!cookieState,
+      stateMatch: state === cookieState,
+      cookies: Object.keys(req.cookies || {}),
+      signedCookies: Object.keys(req.signedCookies || {}),
+    });
+
     if (!code || !state || !cookieState || state !== cookieState) {
       return res.status(400).json({ error: 'Invalid OAuth state' });
     }
