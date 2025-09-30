@@ -28,4 +28,5 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["pnpm", "--filter", "@ai-agent-village-monitor/server", "start"]
+# Run migrations and then start the server
+CMD pnpm --filter @ai-agent-village-monitor/server exec prisma migrate deploy && pnpm --filter @ai-agent-village-monitor/server start
