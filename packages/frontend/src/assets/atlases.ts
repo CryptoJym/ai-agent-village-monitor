@@ -7,20 +7,6 @@ export type AtlasEntry = {
 };
 
 export const ATLAS_MANIFEST: AtlasEntry[] = [
-  // Agents (placeholder spritesheet)
-  {
-    key: 'agent_sheet',
-    type: 'spritesheet',
-    url: '/assets/agent_sheet.png',
-    frameConfig: { frameWidth: 32, frameHeight: 32 },
-  },
-  // Bug bot (placeholder)
-  {
-    key: 'bug_bot_sheet',
-    type: 'spritesheet',
-    url: '/assets/bug_bot_sheet.png',
-    frameConfig: { frameWidth: 24, frameHeight: 24 },
-  },
   // House variants by language (Pixellab sprites)
   { key: 'house_js', type: 'image', url: '/assets/houses/house_js.png' },
   { key: 'house_ts', type: 'image', url: '/assets/houses/house_ts.png' },
@@ -30,15 +16,6 @@ export const ATLAS_MANIFEST: AtlasEntry[] = [
   { key: 'house_java', type: 'image', url: '/assets/houses/house_java.png' },
   { key: 'house_cs', type: 'image', url: '/assets/houses/house_cs.png' },
   { key: 'house_generic', type: 'image', url: '/assets/houses/house_generic.png' },
-  // Effects
-  {
-    key: 'sparkle',
-    type: 'spritesheet',
-    url: '/assets/effects/sparkle.png',
-    frameConfig: { frameWidth: 16, frameHeight: 16 },
-  },
 ];
 
-export const PRELOAD_AUDIO: AtlasEntry[] = [
-  { key: 'celebrate', type: 'audio', url: '/assets/audio/celebrate.mp3' },
-];
+export const PRELOAD_AUDIO: AtlasEntry[] = [];

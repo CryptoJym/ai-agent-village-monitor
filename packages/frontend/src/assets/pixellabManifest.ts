@@ -65,7 +65,7 @@ function withAnimation(
   if (!defaults) return undefined;
   const metadata = deriveAnimationMetadata(assetDir, key, defaults.name);
   if (!metadata) {
-    return { ...defaults };
+    return undefined;
   }
   return {
     ...defaults,
@@ -93,6 +93,23 @@ const DEFAULT_AGENT_ANIMATION: AnimationConfig = {
   frameRate: 8,
   repeat: -1,
 };
+
+function getAvailableDirections(
+  category: Extract<AssetCategory, 'agents' | 'emotes' | 'bug-bots'>,
+  key: string,
+  fallback: ReadonlyArray<Direction4 | Direction8>,
+): ReadonlyArray<Direction4 | Direction8> {
+  const metadata = pixellabAnimationMetadata[category]?.[key];
+  if (!metadata) return fallback;
+  const dirSet = new Set<Direction4 | Direction8>();
+  for (const framesByDirection of Object.values(metadata)) {
+    if (!framesByDirection) continue;
+    for (const dir of Object.keys(framesByDirection)) {
+      dirSet.add(dir as Direction4 | Direction8);
+    }
+  }
+  return dirSet.size > 0 ? (Array.from(dirSet) as ReadonlyArray<Direction4 | Direction8>) : fallback;
+}
 
 const DEFAULT_EMOTE_CALM: AnimationConfig = {
   name: 'breathing-idle',
@@ -134,7 +151,7 @@ export const agentManifests: CharacterManifest[] = [
   category: 'agent' as const,
   basePath: `/assets/agents/${key}`,
   preview: `/assets/agents/${key}/preview.png`,
-  directions: DIRECTION8,
+  directions: getAvailableDirections('agents', key, DIRECTION8) as ReadonlyArray<Direction8>,
   animation: withAnimation(DEFAULT_AGENT_ANIMATION, 'agents', key),
 }));
 
@@ -152,7 +169,7 @@ export const emoteManifests: CharacterManifest[] = [
   category: 'emote' as const,
   basePath: `/assets/emotes/${key}`,
   preview: `/assets/emotes/${key}/preview.png`,
-  directions: DIRECTION4,
+  directions: getAvailableDirections('emotes', key, DIRECTION4) as ReadonlyArray<Direction4>,
   animation: withAnimation(animation, 'emotes', key),
 }));
 

@@ -9,15 +9,18 @@ const logHelpMenuWarning = (context: string, error: unknown) => {
 export function HelpMenu({
   onOpenFeedback,
   onOpenLegend,
+  style,
 }: {
   onOpenFeedback: () => void;
   onOpenLegend?: () => void;
+  style?: React.CSSProperties;
 }) {
   const [open, setOpen] = React.useState(false);
   const [hover, setHover] = React.useState(false);
   const [hintSeen, setHintSeen] = React.useState(false);
   const btnRef = React.useRef<HTMLButtonElement | null>(null);
   const menuRef = React.useRef<HTMLDivElement | null>(null);
+  const menuId = React.useId();
 
   React.useEffect(() => {
     try {
@@ -41,18 +44,60 @@ export function HelpMenu({
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
+  React.useEffect(() => {
+    if (!open || !menuRef.current) return;
+    const focusable = menuRef.current.querySelectorAll<HTMLElement>(
+      'button[role="menuitem"], a[role="menuitem"]',
+    );
+    if (focusable.length > 0) {
+      focusable[0].focus();
+    }
+  }, [open]);
+
+  const handleButtonKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setOpen(true);
+    }
+  };
+
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!menuRef.current) return;
+    const focusable = Array.from(
+      menuRef.current.querySelectorAll<HTMLElement>('button[role="menuitem"], a[role="menuitem"]'),
+    );
+    if (focusable.length === 0) return;
+    const currentIndex = focusable.findIndex((el) => el === document.activeElement);
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      const next = focusable[(currentIndex + 1) % focusable.length];
+      next.focus();
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      const prev = focusable[(currentIndex - 1 + focusable.length) % focusable.length];
+      prev.focus();
+    }
+    if (event.key === 'Escape') {
+      setOpen(false);
+      btnRef.current?.focus();
+    }
+  };
+
   return (
-    <div style={{ position: 'absolute', right: 12, top: 56 }}>
+    <div style={{ display: 'inline-block', position: 'relative', ...style }}>
       <button
         ref={btnRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={menuId}
         onClick={() => setOpen((v) => !v)}
+        onKeyDown={handleButtonKeyDown}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
-          padding: '8px 12px',
+          padding: '10px 14px',
           background: '#0b1220',
           color: '#e5e7eb',
           border: '1px solid #334155',
@@ -61,6 +106,7 @@ export function HelpMenu({
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
+          minHeight: 44,
         }}
       >
         <span>Help</span>
@@ -84,9 +130,12 @@ export function HelpMenu({
       </button>
       {open && (
         <div
+          id={menuId}
           ref={menuRef}
           role="menu"
           aria-label="Help menu"
+          tabIndex={-1}
+          onKeyDown={handleMenuKeyDown}
           style={{
             marginTop: 8,
             position: 'absolute',
@@ -108,7 +157,7 @@ export function HelpMenu({
             }}
             style={{ ...itemStyle, width: '100%', textAlign: 'left', background: 'transparent' }}
           >
-            Keyboard Legend (?)
+            Keyboard legend
           </button>
           <a
             role="menuitem"
@@ -135,7 +184,7 @@ export function HelpMenu({
             rel="noopener noreferrer"
             style={itemStyle}
           >
-            GitHub Discussions
+            GitHub discussions
           </a>
           <button
             role="menuitem"
@@ -145,11 +194,10 @@ export function HelpMenu({
             }}
             style={{ ...itemStyle, width: '100%', textAlign: 'left', background: 'transparent' }}
           >
-            Submit Feedback
+            Submit feedback
           </button>
           <div style={{ padding: '8px 12px', fontSize: 11, color: '#94a3b8' }}>
-            Tip: Double-click a house to enter its interior. Inside, click tiles to move, press M to
-            toggle the minimap, and Esc to exit.
+            Tip: Double-click a house to enter. Press M for minimap, Esc to exit interiors.
           </div>
         </div>
       )}

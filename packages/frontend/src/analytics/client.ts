@@ -22,12 +22,11 @@ function hasDntGpc(): boolean {
 function getConsent(): boolean {
   try {
     const v = localStorage.getItem(CONSENT_KEY);
-    // Opt-in by default until user disables
-    const local = v === null ? true : v === 'true';
+    const local = v === 'true';
     if (hasDntGpc()) return false;
     return local;
   } catch {
-    return true;
+    return false;
   }
 }
 export function setConsent(v: boolean) {

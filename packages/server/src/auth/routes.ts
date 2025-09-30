@@ -1,5 +1,4 @@
 import express from 'express';
-import cookieParser from 'cookie-parser';
 import { config } from '../config';
 import { prisma } from '../db/client';
 import { audit } from '../audit/logger';
@@ -8,7 +7,8 @@ import { signAccessToken, signRefreshToken, verifyAccessToken, verifyRefreshToke
 import { saveProviderToken } from './tokenStore';
 
 const router = express.Router();
-router.use(cookieParser());
+// Note: Cookie parser with secret is already configured in app.ts
+// Don't add it again here as it would override the signed cookie parser
 
 // Ephemeral in-memory refresh token store for MVP
 // Maps userId -> hashed current refresh token
@@ -268,47 +268,5 @@ router.post('/auth/logout', async (req, res) => {
   return res.status(204).end();
 });
 
-// Rotate refresh token and issue a new access token
-router.post('/auth/refresh', async (req, res) => {
-  try {
-    const raw =
-      (req.signedCookies?.refresh_token as string) || (req.cookies?.refresh_token as string) || '';
-    if (!raw) return res.status(401).json({ error: 'unauthorized' });
-
-    const payload = verifyRefreshToken(raw);
-    const userId = String(payload.sub);
-    const jti = String(payload.jti || '');
-    if (!jti) return res.status(401).json({ error: 'unauthorized' });
-
-    // Verify rotation state (hashed jti match)
-    const expected = refreshStore.get(userId);
-    if (!expected || expected !== sha256Hex(jti)) {
-      // Token reuse or invalid; revoke the family and force re-login
-      refreshStore.delete(userId);
-      res.clearCookie('access_token');
-      res.clearCookie('refresh_token');
-      res.setHeader('Cache-Control', 'no-store');
-      return res.status(401).json({ error: 'unauthorized' });
-    }
-
-    // Issue new tokens
-    // For MVP we do not hit DB; we reuse the opaque username in JWT (or blank)
-    const access = signAccessToken(Number(userId), '');
-    const newRefreshId = randomString(32);
-    const refresh = signRefreshToken(Number(userId), '', newRefreshId);
-    refreshStore.set(userId, sha256Hex(newRefreshId));
-
-    res.cookie('access_token', access, {
-      ...cookieOptions(1),
-      maxAge: 60 * 60 * 1000,
-      signed: true,
-    });
-    res.cookie('refresh_token', refresh, { ...cookieOptions(30), signed: true });
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({ status: 'rotated' });
-  } catch {
-    return res.status(401).json({ error: 'unauthorized' });
-  }
-});
 
 export { router as authRouter };

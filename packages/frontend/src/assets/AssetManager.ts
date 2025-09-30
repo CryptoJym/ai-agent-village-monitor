@@ -43,6 +43,22 @@ const buildAnimationKey = (
   direction: Direction4 | Direction8,
 ) => `pixellab:${entry.category}:${entry.key}:${animation}:${direction}`;
 
+const getAnimationFrameCount = (entry: CharacterManifest, direction: Direction4 | Direction8) => {
+  const animation = entry.animation;
+  if (!animation) return 0;
+  if (animation.framesByDirection) {
+    return animation.framesByDirection[direction] ?? 0;
+  }
+  return animation.frameCount;
+};
+
+const getAnimationDirections = (entry: CharacterManifest): Array<Direction4 | Direction8> => {
+  if (entry.animation?.framesByDirection) {
+    return Object.keys(entry.animation.framesByDirection) as Array<Direction4 | Direction8>;
+  }
+  return entry.directions;
+};
+
 const buildTileTextureKey = (category: string, key: string) => `pixellabTile:${category}:${key}`;
 const buildTileDefinitionKey = (category: string, key: string) =>
   `${buildTileTextureKey(category, key)}:wang`;
@@ -78,6 +94,7 @@ export class AssetManager {
 
   static queuePixellabAssets(scene: Phaser.Scene) {
     for (const entry of iterateCharacters()) {
+      const animationDirections = getAnimationDirections(entry);
       for (const direction of entry.directions) {
         const rotKey = buildRotationKey(entry, direction);
         if (!loadedPixellabKeys.has(rotKey)) {
@@ -85,8 +102,13 @@ export class AssetManager {
           loadedPixellabKeys.add(rotKey);
         }
         if (entry.animation) {
-          const totalFrames =
-            entry.animation.framesByDirection?.[direction] ?? entry.animation.frameCount;
+          if (!animationDirections.includes(direction)) {
+            continue;
+          }
+          const totalFrames = getAnimationFrameCount(entry, direction);
+          if (totalFrames <= 0) {
+            continue;
+          }
           for (let i = 0; i < totalFrames; i++) {
             const frameKey = buildFrameKey(entry, entry.animation.name, direction, i);
             if (loadedPixellabKeys.has(frameKey)) continue;
@@ -131,14 +153,20 @@ export class AssetManager {
   static registerPixellabAnimations(scene: Phaser.Scene) {
     for (const entry of iterateCharacters()) {
       if (!entry.animation) continue;
-      for (const direction of entry.directions) {
+      const animationDirections = getAnimationDirections(entry);
+      for (const direction of animationDirections) {
         const animKey = buildAnimationKey(entry, entry.animation.name, direction);
         if (scene.anims.exists(animKey)) continue;
-        const totalFrames =
-          entry.animation.framesByDirection?.[direction] ?? entry.animation.frameCount;
+        const totalFrames = getAnimationFrameCount(entry, direction);
+        if (totalFrames <= 0) {
+          continue;
+        }
         const frames = Array.from({ length: totalFrames }, (_, i) => ({
           key: buildFrameKey(entry, entry.animation!.name, direction, i),
         }));
+        if (frames.length === 0) {
+          continue;
+        }
         scene.anims.create({
           key: animKey,
           frames,
@@ -176,6 +204,13 @@ export class AssetManager {
 
   static animationKey(entry: CharacterManifest, direction: Direction4 | Direction8) {
     if (!entry.animation) return undefined;
+    const animationDirections = getAnimationDirections(entry);
+    if (!animationDirections.includes(direction)) {
+      return undefined;
+    }
+    if (getAnimationFrameCount(entry, direction) <= 0) {
+      return undefined;
+    }
     return buildAnimationKey(entry, entry.animation.name, direction);
   }
 

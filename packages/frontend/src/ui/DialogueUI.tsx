@@ -83,7 +83,7 @@ export function DialogueUI({
   // Persist selected agent and tab; restore tab on open
   useEffect(() => {
     try {
-      setUIState({ selectedAgentId: agentId });
+      setUIState({ agentId });
     } catch (error) {
       logUiStateError('persisting selected agent', error);
     }

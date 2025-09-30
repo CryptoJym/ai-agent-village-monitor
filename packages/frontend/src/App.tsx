@@ -34,6 +34,7 @@ import { FastTravelMetrics } from './ui/FastTravelMetrics';
 import { HelpMenu } from './ui/HelpMenu';
 import { HelpHint } from './ui/HelpHint';
 import { CommandPalette } from './ui/CommandPalette';
+import { UserMenu } from './components/auth/UserMenu';
 
 export default function App() {
   try {
@@ -154,6 +155,17 @@ export default function App() {
   // Global shortcuts: T opens dialogue, H toggles contrast, '?' shows legend
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const isEditable =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement ||
+          target.isContentEditable ||
+          target.getAttribute('role') === 'textbox';
+        if (isEditable) return;
+      }
       if (e.key.toLowerCase() === 't') {
         e.preventDefault();
         lastOpenSourceRef.current = 'shortcut';
@@ -234,31 +246,115 @@ export default function App() {
         source: lastOpenSourceRef.current,
         villageId,
       });
-      // reset source after logging to avoid stale attribution
       lastOpenSourceRef.current = 'unknown';
     }
   }, [panelOpen, villageId]);
+
+  const resetTimerRef = useRef<number | null>(null);
+  const [resetDeadline, setResetDeadline] = useState<number | null>(null);
+  const [resetCountdown, setResetCountdown] = useState<number>(0);
+
+  useEffect(() => {
+    if (!resetDeadline) return;
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((resetDeadline - Date.now()) / 1000));
+      setResetCountdown(remaining);
+      if (remaining <= 0) {
+        setResetDeadline(null);
+      }
+    };
+    tick();
+    const id = window.setInterval(tick, 400);
+    return () => window.clearInterval(id);
+  }, [resetDeadline]);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) window.clearTimeout(resetTimerRef.current);
+    };
+  }, []);
+
+  const cancelScheduledReset = () => {
+    if (resetTimerRef.current) {
+      window.clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+    setResetDeadline(null);
+    setResetCountdown(0);
+    eventBus.emit('toast', { type: 'info', message: 'Layout reset cancelled.' });
+  };
+
+  const performLayoutReset = async () => {
+    if (!villageId) return;
+    try {
+      await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout/reset`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      eventBus.emit('toast', {
+        type: 'success',
+        message: 'Layout reset. Houses return to default positions.',
+      });
+      track({ type: 'layout_reset', ts: Date.now(), villageId });
+    } catch (err) {
+      eventBus.emit('toast', {
+        type: 'error',
+        message: 'Reset failed. Please try again or check your connection.',
+      });
+      void err;
+    } finally {
+      setResetDeadline(null);
+      setResetCountdown(0);
+      resetTimerRef.current = null;
+    }
+  };
+
+  const scheduleLayoutReset = () => {
+    if (!villageId || viewerRole !== 'owner') return;
+    const confirmed = window.confirm(
+      'Reset the village layout? This will move all houses back to their default positions.',
+    );
+    if (!confirmed) return;
+    const deadline = Date.now() + 5000;
+    setResetDeadline(deadline);
+    eventBus.emit('toast', {
+      type: 'info',
+      message: 'Layout reset in 5 seconds. Select "Undo" to keep current placement.',
+    });
+    if (resetTimerRef.current) window.clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = window.setTimeout(() => {
+      void performLayoutReset();
+    }, 5000);
+  };
+
   return (
     <ToastProvider>
       <EventToastBridge />
       <GlobalErrorHooks />
+      <a href="#accessible-dashboard" className="skip-link">
+        Skip to accessible dashboard view
+      </a>
       <div
         style={{
           color: highContrast ? '#ffffff' : '#e2e8f0',
           fontFamily: 'system-ui, sans-serif',
           background: highContrast ? '#000' : undefined,
+          padding: 'var(--space-md)',
+          minHeight: '100vh',
+          boxSizing: 'border-box',
         }}
       >
         <OfflineBanner />
-        <h1>AI Agent Village Monitor</h1>
-        <LocaleSwitcher />
-        {villageId && (
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <RoleBadge role={viewerRole} />
-          </div>
-        )}
-        <p>Loaded at: {nowIso()}</p>
-        <div style={{ position: 'relative' }}>
+        <header style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-sm)', alignItems: 'center' }}>
+          <h1 style={{ margin: 0, fontSize: 'var(--font-title)' }}>AI Agent Village Monitor</h1>
+          <LocaleSwitcher />
+          {villageId && <RoleBadge role={viewerRole} />}
+          <span aria-live="polite" style={{ marginLeft: 'auto', color: '#94a3b8' }}>
+            Loaded at: {nowIso()}
+          </span>
+          <UserMenu />
+        </header>
+        <div style={{ position: 'relative', marginTop: 'var(--space-md)' }}>
           <GameProvider
             config={{
               type: 0 as any,
@@ -284,88 +380,134 @@ export default function App() {
             <LegendOverlay open={legendOpen} onClose={() => setLegendOpen(false)} />
           </Suspense>
           {villageId && viewerRole === 'owner' && (
-            // Lightweight admin widget for sync health; endpoint enforces access
             <Suspense fallback={null}>
               <SyncHealth villageId={villageId} />
             </Suspense>
-          )}
-          {villageId && (
-            <button
-              type="button"
-              onClick={() => setSettingsOpen(true)}
-              style={{
-                position: 'absolute',
-                right: 12,
-                top: 12,
-                padding: '8px 12px',
-                background: '#1f2937',
-                color: '#e5e7eb',
-                border: '1px solid #374151',
-                borderRadius: 8,
-                cursor: viewerRole === 'owner' ? 'pointer' : 'not-allowed',
-                opacity: viewerRole === 'owner' ? 1 : 0.6,
-              }}
-              disabled={viewerRole !== 'owner'}
-            >
-              Settings
-            </button>
-          )}
-          {villageId && viewerRole === 'owner' && (
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout/reset`, {
-                    method: 'POST',
-                    credentials: 'include',
-                  });
-                } catch (e) {
-                  void e;
-                }
-              }}
-              style={{
-                position: 'absolute',
-                right: 100,
-                top: 12,
-                padding: '8px 12px',
-                background: '#0b1220',
-                color: '#e5e7eb',
-                border: '1px solid #334155',
-                borderRadius: 8,
-                cursor: 'pointer',
-              }}
-            >
-              Reset Layout
-            </button>
           )}
           {villageId && viewerRole === 'owner' && (
             <Suspense fallback={null}>
               <FastTravelMetrics />
             </Suspense>
           )}
-          <button
-            type="button"
-            onClick={() => setFeedbackOpen(true)}
-            style={{
-              position: 'absolute',
-              right: villageId ? 180 : 92,
-              top: 12,
-              padding: '8px 12px',
-              background: '#0b1220',
-              color: '#e5e7eb',
-              border: '1px solid #334155',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-          >
-            Feedback
-          </button>
-          <Suspense fallback={null}>
-            <HelpMenu
-              onOpenFeedback={() => setFeedbackOpen(true)}
-              onOpenLegend={() => setHelpOpen(true)}
-            />
-          </Suspense>
+          <div className="control-cluster">
+            {villageId && (
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(true)}
+                disabled={viewerRole !== 'owner'}
+                style={{
+                  padding: '10px 16px',
+                  background: '#1f2937',
+                  color: '#e5e7eb',
+                  border: '1px solid #374151',
+                  borderRadius: 10,
+                  cursor: viewerRole === 'owner' ? 'pointer' : 'not-allowed',
+                  opacity: viewerRole === 'owner' ? 1 : 0.6,
+                }}
+              >
+                Settings
+              </button>
+            )}
+            {villageId && viewerRole === 'owner' && !resetDeadline && (
+              <button
+                type="button"
+                onClick={scheduleLayoutReset}
+                style={{
+                  padding: '10px 16px',
+                  background: '#0b1220',
+                  color: '#e5e7eb',
+                  border: '1px solid #334155',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                }}
+              >
+                Reset layout
+              </button>
+            )}
+            {resetDeadline && (
+              <button
+                type="button"
+                onClick={cancelScheduledReset}
+                style={{
+                  padding: '10px 16px',
+                  background: '#f97316',
+                  color: '#0f172a',
+                  border: '1px solid #fb923c',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                }}
+              >
+                Undo reset ({resetCountdown}s)
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setFeedbackOpen(true)}
+              style={{
+                padding: '10px 16px',
+                background: '#0b1220',
+                color: '#e5e7eb',
+                border: '1px solid #334155',
+                borderRadius: 10,
+                cursor: 'pointer',
+              }}
+            >
+              Feedback
+            </button>
+            <Suspense fallback={null}>
+              <HelpMenu
+                style={{ marginTop: 'var(--space-xs)' }}
+                onOpenFeedback={() => setFeedbackOpen(true)}
+                onOpenLegend={() => setHelpOpen(true)}
+              />
+            </Suspense>
+          </div>
+          <div className="control-cluster control-cluster--left">
+            <button
+              type="button"
+              onClick={() => setHighContrast((v) => !v)}
+              aria-pressed={highContrast}
+              aria-label="Toggle high contrast mode (H)"
+              style={{
+                padding: '10px 16px',
+                background: '#0b1220',
+                color: '#e5e7eb',
+                border: '1px solid #334155',
+                borderRadius: 10,
+                cursor: 'pointer',
+              }}
+            >
+              {highContrast ? 'High contrast on' : 'High contrast off'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrefsOpen(true)}
+              style={{
+                padding: '10px 16px',
+                background: '#1f2937',
+                color: '#e5e7eb',
+                border: '1px solid #374151',
+                borderRadius: 10,
+                cursor: 'pointer',
+              }}
+            >
+              Preferences
+            </button>
+            <button
+              type="button"
+              onClick={() => setOnboardingOpen(true)}
+              style={{
+                padding: '10px 16px',
+                background: '#2563eb',
+                color: '#fff',
+                border: '1px solid #1d4ed8',
+                borderRadius: 10,
+                cursor: 'pointer',
+              }}
+            >
+              Onboarding
+            </button>
+          </div>
           <Suspense fallback={null}>
             <HelpHint onOpen={() => setHelpOpen(true)} />
           </Suspense>
@@ -375,85 +517,10 @@ export default function App() {
             onClose={() => setHouseDashboard(null)}
             viewerRole={viewerRole}
           />
-          <button
-            type="button"
-            onClick={() => {
-              // attribute opening via button
-              if (!panelOpen) lastOpenSourceRef.current = 'button';
-              setPanelOpen((v) => !v);
-            }}
-            style={{
-              position: 'absolute',
-              right: 12,
-              bottom: 12,
-              padding: '8px 12px',
-              background: '#1f2937',
-              color: '#e5e7eb',
-              border: '1px solid #374151',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-          >
-            {panelOpen ? 'Close' : 'Dialogue'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setHighContrast((v) => !v)}
-            style={{
-              position: 'absolute',
-              left: 12,
-              top: 12,
-              padding: '6px 10px',
-              background: '#0b1220',
-              color: '#e5e7eb',
-              border: '1px solid #334155',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-            aria-pressed={highContrast}
-            aria-label="Toggle high contrast mode (H)"
-          >
-            {highContrast ? 'High Contrast: On' : 'High Contrast: Off'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setOnboardingOpen(true)}
-            style={{
-              position: 'absolute',
-              left: 12,
-              bottom: 12,
-              padding: '8px 12px',
-              background: '#1f2937',
-              color: '#e5e7eb',
-              border: '1px solid #374151',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-          >
-            Onboard
-          </button>
-          <button
-            type="button"
-            onClick={() => setPrefsOpen(true)}
-            style={{
-              position: 'absolute',
-              left: 12,
-              top: 52,
-              padding: '8px 12px',
-              background: '#1f2937',
-              color: '#e5e7eb',
-              border: '1px solid #374151',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-          >
-            Preferences
-          </button>
           <OnboardingStepper
             open={onboardingOpen}
             onClose={() => setOnboardingOpen(false)}
             onEnterVillage={(villageId) => {
-              // Switch to the MainScene with village, close overlay
               try {
                 const game = (document.querySelector('canvas') as any)?._phaserGame || null;
                 if (game) {
@@ -467,6 +534,53 @@ export default function App() {
             }}
           />
         </div>
+        <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            aria-label="Dialogue"
+            aria-expanded={panelOpen}
+            onClick={() => {
+              if (!panelOpen) lastOpenSourceRef.current = 'button';
+              setPanelOpen((v) => !v);
+            }}
+            style={{
+              padding: '10px 16px',
+              background: '#1f2937',
+              color: '#e5e7eb',
+              border: '1px solid #374151',
+              borderRadius: 10,
+              cursor: 'pointer',
+            }}
+          >
+            {panelOpen ? 'Hide dialogue' : 'Open dialogue'}
+          </button>
+        </div>
+        <details id="accessible-dashboard" className="accessible-dashboard">
+          <summary>Accessible dashboard view</summary>
+          <div>
+            <p>Selected agent: {selectedAgent || 'None selected'}</p>
+            {houseDashboard ? (
+              <dl>
+                <dt>House</dt>
+                <dd>{houseDashboard.name}</dd>
+                {houseDashboard.metrics && (
+                  <>
+                    <dt>Commands (24h)</dt>
+                    <dd>{houseDashboard.metrics.commands}</dd>
+                    <dt>Error rate</dt>
+                    <dd>{Math.round((houseDashboard.metrics.errorRate || 0) * 100)}%</dd>
+                  </>
+                )}
+              </dl>
+            ) : (
+              <p>No house selected. Click a house in the world or open the dialogue to choose an agent.</p>
+            )}
+            <p>
+              Keyboard tip: press T to open the dialogue, ? for controls, H for high contrast, and Esc to
+              close overlays.
+            </p>
+          </div>
+        </details>
         <DialogueUI
           open={panelOpen}
           onClose={() => setPanelOpen(false)}

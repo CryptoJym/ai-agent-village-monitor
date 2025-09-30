@@ -2,1020 +2,1144 @@
 // Do not edit manually.
 
 export const pixellabAnimationMetadata = {
-  agents: {
-    artisan: {
-      walking: {
-        south: 6,
-        east: 6,
-        'south-east': 6,
-        'north-west': 6,
-        west: 6,
-        north: 6,
-        'south-west': 6,
-        'north-east': 6,
-      },
+  "agents": {
+    "artisan": {
+      "walking": {
+        "south": 6,
+        "east": 6,
+        "south-east": 6,
+        "north-west": 6,
+        "west": 6,
+        "north": 6,
+        "south-west": 6,
+        "north-east": 6
+      }
     },
-    explorer: {
-      walking: {
-        south: 6,
-        west: 6,
-        'south-west': 6,
-        'south-east': 6,
-        'north-west': 6,
-        north: 6,
-      },
+    "explorer": {
+      "walking": {
+        "south": 6,
+        "west": 6,
+        "south-west": 6,
+        "south-east": 6,
+        "north-west": 6,
+        "north": 6
+      }
     },
-    guardian: {},
-    mystic: {
-      walking: {
-        north: 6,
-        south: 6,
-        'north-east': 6,
-        'south-west': 6,
-        'north-west': 6,
-        west: 6,
-      },
+    "guardian": {},
+    "mystic": {
+      "walking": {
+        "north": 6,
+        "south": 6,
+        "north-east": 6,
+        "south-west": 6,
+        "north-west": 6,
+        "west": 6
+      }
     },
-    scholar: {
-      walking: {
-        'south-east': 6,
-        'south-west': 6,
-        'north-west': 6,
-        south: 6,
-        north: 6,
-        west: 6,
-        east: 6,
-        'north-east': 6,
-      },
+    "scholar": {
+      "walking": {
+        "south-east": 6,
+        "south-west": 6,
+        "north-west": 6,
+        "south": 6,
+        "north": 6,
+        "west": 6,
+        "east": 6,
+        "north-east": 6
+      }
     },
-    'signal-weaver': {},
+    "signal-weaver": {}
   },
-  emotes: {
-    awakening: {
-      'breathing-idle': {
-        south: 4,
-        east: 4,
-        north: 4,
-        west: 4,
-      },
+  "emotes": {
+    "awakening": {
+      "breathing-idle": {
+        "south": 4,
+        "east": 4,
+        "north": 4,
+        "west": 4
+      }
     },
-    communication: {
-      'breathing-idle': {
-        north: 4,
-        west: 4,
-        south: 4,
-      },
+    "communication": {
+      "breathing-idle": {
+        "north": 4,
+        "west": 4,
+        "south": 4
+      }
     },
-    'deep-thinking': {},
-    dreaming: {
-      'breathing-idle': {
-        east: 4,
-        north: 4,
-        south: 4,
-        west: 4,
-      },
+    "deep-thinking": {},
+    "dreaming": {
+      "breathing-idle": {
+        "east": 4,
+        "north": 4,
+        "south": 4,
+        "west": 4
+      }
     },
-    eureka: {
-      fireball: {
-        south: 6,
-        west: 6,
-        east: 6,
-        north: 6,
-      },
+    "eureka": {
+      "fireball": {
+        "south": 6,
+        "west": 6,
+        "east": 6,
+        "north": 6
+      }
     },
-    'flow-state': {},
-    frustration: {
-      'cross-punch': {
-        south: 6,
-        east: 6,
-        west: 6,
-        north: 6,
-      },
+    "flow-state": {},
+    "frustration": {
+      "cross-punch": {
+        "south": 6,
+        "east": 6,
+        "west": 6,
+        "north": 6
+      }
     },
-    'learning-growth': {
-      'breathing-idle': {
-        east: 4,
-        west: 4,
-        south: 4,
-        north: 4,
-      },
-    },
+    "learning-growth": {
+      "breathing-idle": {
+        "east": 4,
+        "west": 4,
+        "south": 4,
+        "north": 4
+      }
+    }
   },
-  'bug-bots': {
-    assigned: {
-      'breathing-idle': {
-        east: 4,
-        north: 4,
-        west: 4,
-        south: 4,
-      },
+  "bug-bots": {
+    "assigned": {
+      "breathing-idle": {
+        "east": 4,
+        "north": 4,
+        "west": 4,
+        "south": 4
+      }
     },
-    progress: {
-      'fight-stance-idle-8-frames': {
-        north: 8,
-        east: 8,
-        south: 8,
-        west: 8,
-      },
+    "progress": {
+      "fight-stance-idle-8-frames": {
+        "north": 8,
+        "east": 8,
+        "south": 8,
+        "west": 8
+      }
     },
-    resolved: {
-      fireball: {
-        east: 6,
-        west: 6,
-        south: 6,
-        north: 6,
-      },
+    "resolved": {
+      "fireball": {
+        "east": 6,
+        "west": 6,
+        "south": 6,
+        "north": 6
+      }
     },
-    spawn: {
-      'breathing-idle': {
-        east: 4,
-        north: 4,
-        south: 4,
-        west: 4,
-      },
-    },
+    "spawn": {
+      "breathing-idle": {
+        "east": 4,
+        "north": 4,
+        "south": 4,
+        "west": 4
+      }
+    }
   },
-  houses: {
-    cs: {},
-    generic: {},
-    go: {},
-    java: {},
-    js: {},
-    py: {},
-    rb: {},
-    ts: {},
-  },
+  "houses": {
+    "cs": {},
+    "generic": {},
+    "go": {},
+    "java": {},
+    "js": {},
+    "py": {},
+    "rb": {},
+    "ts": {}
+  }
 } as const;
 
 export type PixellabAnimationMetadata = typeof pixellabAnimationMetadata;
 
 export const pixellabTileMetadata = {
-  biome: {
-    'beach-grass': {
-      tilesetId: '4252e14a-71ab-44a9-915e-8b075c96be83',
-      title: 'Beach ↔ Meadow Grass',
-      category: 'biome',
-      key: 'beach-grass',
-      lower: {
-        description: 'warm sandy beach with scattered shells and tide lines',
-        passable: true,
-        tags: ['sand'],
-        baseTileId: '22370d94-7368-4d2e-9a81-d5b70bd1fdba',
+  "biome": {
+    "beach-grass": {
+      "tilesetId": "4252e14a-71ab-44a9-915e-8b075c96be83",
+      "title": "Beach ↔ Meadow Grass",
+      "category": "biome",
+      "key": "beach-grass",
+      "lower": {
+        "description": "warm sandy beach with scattered shells and tide lines",
+        "passable": true,
+        "tags": [
+          "sand"
+        ],
+        "baseTileId": "22370d94-7368-4d2e-9a81-d5b70bd1fdba"
       },
-      upper: {
-        description: 'lush meadow grass with wildflowers and clover patches',
-        passable: true,
-        tags: ['grass'],
-        baseTileId: '02b76d4e-888d-499e-b774-8f56483b322f',
+      "upper": {
+        "description": "lush meadow grass with wildflowers and clover patches",
+        "passable": true,
+        "tags": [
+          "grass"
+        ],
+        "baseTileId": "02b76d4e-888d-499e-b774-8f56483b322f"
       },
-      transition: {
-        size: 0.25,
-        description: 'damp sand blending into grass tufts with seaweed accents',
+      "transition": {
+        "size": 0.25,
+        "description": "damp sand blending into grass tufts with seaweed accents"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-22T22:10:30.868Z',
+      "notes": null,
+      "generatedAt": "2025-09-22T22:10:30.868Z"
     },
-    'grass-forest': {
-      tilesetId: '3c2b811c-40a5-4b29-8941-2eb95e4dd962',
-      title: 'Grassland ↔ Forest Floor',
-      category: 'biome',
-      key: 'grass-forest',
-      lower: {
-        description: 'sunlit meadow grass with subtle texture and scattered petals',
-        passable: true,
-        tags: ['grass'],
-        baseTileId: '29019014-bd7e-4deb-9202-aaef0f55c62a',
+    "grass-forest": {
+      "tilesetId": "3c2b811c-40a5-4b29-8941-2eb95e4dd962",
+      "title": "Grassland ↔ Forest Floor",
+      "category": "biome",
+      "key": "grass-forest",
+      "lower": {
+        "description": "sunlit meadow grass with subtle texture and scattered petals",
+        "passable": true,
+        "tags": [
+          "grass"
+        ],
+        "baseTileId": "29019014-bd7e-4deb-9202-aaef0f55c62a"
       },
-      upper: {
-        description: 'mossy forest floor with roots, ferns, and leaf litter',
-        passable: false,
-        tags: ['forest'],
-        baseTileId: '76d473fc-4c0c-4dec-adc3-e0299bf3b131',
+      "upper": {
+        "description": "mossy forest floor with roots, ferns, and leaf litter",
+        "passable": false,
+        "tags": [
+          "forest"
+        ],
+        "baseTileId": "76d473fc-4c0c-4dec-adc3-e0299bf3b131"
       },
-      transition: {
-        size: 0.5,
-        description: 'gradual blend of grass into mossy underbrush with exposed roots',
+      "transition": {
+        "size": 0.5,
+        "description": "gradual blend of grass into mossy underbrush with exposed roots"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-22T22:11:34.721Z',
+      "notes": null,
+      "generatedAt": "2025-09-22T22:11:34.721Z"
     },
-    'grass-road': {
-      tilesetId: '92a8a5db-a284-40f9-ac71-ea36f9a03b16',
-      title: 'Grassland ↔ Village Road',
-      category: 'biome',
-      key: 'grass-road',
-      lower: {
-        description: 'soft meadow grass with trimmed edges',
-        passable: true,
-        tags: ['grass'],
-        baseTileId: '923e89b2-03d3-41d0-a758-eae681f5aa6e',
+    "grass-road": {
+      "tilesetId": "92a8a5db-a284-40f9-ac71-ea36f9a03b16",
+      "title": "Grassland ↔ Village Road",
+      "category": "biome",
+      "key": "grass-road",
+      "lower": {
+        "description": "soft meadow grass with trimmed edges",
+        "passable": true,
+        "tags": [
+          "grass"
+        ],
+        "baseTileId": "923e89b2-03d3-41d0-a758-eae681f5aa6e"
       },
-      upper: {
-        description: 'cobbled village road with stones and moss between joints',
-        passable: true,
-        tags: ['road', 'cobblestone'],
-        baseTileId: '2f8e05cc-948e-4f84-866b-d92b7dfca02d',
+      "upper": {
+        "description": "cobbled village road with stones and moss between joints",
+        "passable": true,
+        "tags": [
+          "road",
+          "cobblestone"
+        ],
+        "baseTileId": "2f8e05cc-948e-4f84-866b-d92b7dfca02d"
       },
-      transition: {
-        size: 0,
-        description: 'trimmed grass bordering cobbled road with wooden edging',
+      "transition": {
+        "size": 0,
+        "description": "trimmed grass bordering cobbled road with wooden edging"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-22T22:13:26.286Z',
+      "notes": null,
+      "generatedAt": "2025-09-22T22:13:26.286Z"
     },
-    'grass-rock': {
-      tilesetId: '7f7265b5-b3b1-40d1-9fe9-7a960168e411',
-      title: 'Grassland ↔ Rocky Cliff',
-      category: 'biome',
-      key: 'grass-rock',
-      lower: {
-        description: 'rolling grass field with small flowers and dew sparkle',
-        passable: true,
-        tags: ['grass'],
-        baseTileId: '42f32f49-5d2a-4044-9edc-50b2c61e3472',
+    "grass-rock": {
+      "tilesetId": "7f7265b5-b3b1-40d1-9fe9-7a960168e411",
+      "title": "Grassland ↔ Rocky Cliff",
+      "category": "biome",
+      "key": "grass-rock",
+      "lower": {
+        "description": "rolling grass field with small flowers and dew sparkle",
+        "passable": true,
+        "tags": [
+          "grass"
+        ],
+        "baseTileId": "42f32f49-5d2a-4044-9edc-50b2c61e3472"
       },
-      upper: {
-        description: 'weathered stone plateau with cracks, lichen, and cliff edge',
-        passable: false,
-        tags: ['rock', 'cliff'],
-        baseTileId: '0a60881d-7bcc-4803-b63a-5f66c423ad8d',
+      "upper": {
+        "description": "weathered stone plateau with cracks, lichen, and cliff edge",
+        "passable": false,
+        "tags": [
+          "rock",
+          "cliff"
+        ],
+        "baseTileId": "0a60881d-7bcc-4803-b63a-5f66c423ad8d"
       },
-      transition: {
-        size: 0.5,
-        description: 'tufts of grass giving way to rocky outcrop with erosion',
+      "transition": {
+        "size": 0.5,
+        "description": "tufts of grass giving way to rocky outcrop with erosion"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-22T22:12:38.269Z',
+      "notes": null,
+      "generatedAt": "2025-09-22T22:12:38.269Z"
     },
-    'ocean-beach': {
-      tilesetId: '57f5401e-8308-4113-8fec-a89b59b553b4',
-      title: 'Ocean ↔ Beach Shoreline',
-      category: 'biome',
-      key: 'ocean-beach',
-      lower: {
-        description: 'ocean water with gentle waves, deep teal, subtle foam',
-        passable: false,
-        tags: ['water', 'coast'],
-        baseTileId: 'a82d57a3-39b4-484e-89b3-e54266d4582a',
+    "ocean-beach": {
+      "tilesetId": "57f5401e-8308-4113-8fec-a89b59b553b4",
+      "title": "Ocean ↔ Beach Shoreline",
+      "category": "biome",
+      "key": "ocean-beach",
+      "lower": {
+        "description": "ocean water with gentle waves, deep teal, subtle foam",
+        "passable": false,
+        "tags": [
+          "water",
+          "coast"
+        ],
+        "baseTileId": "a82d57a3-39b4-484e-89b3-e54266d4582a"
       },
-      upper: {
-        description: 'sunlit sandy beach shoreline with shell fragments and wet sand',
-        passable: true,
-        tags: ['sand', 'shore'],
-        baseTileId: '22370d94-7368-4d2e-9a81-d5b70bd1fdba',
+      "upper": {
+        "description": "sunlit sandy beach shoreline with shell fragments and wet sand",
+        "passable": true,
+        "tags": [
+          "sand",
+          "shore"
+        ],
+        "baseTileId": "22370d94-7368-4d2e-9a81-d5b70bd1fdba"
       },
-      transition: {
-        size: 0.25,
-        description: 'foamy water meeting sand with sparkling highlights',
+      "transition": {
+        "size": 0.25,
+        "description": "foamy water meeting sand with sparkling highlights"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-22T22:07:51.963Z',
+      "notes": null,
+      "generatedAt": "2025-09-22T22:07:51.963Z"
     },
-    'river-grass': {
-      tilesetId: 'e7076c1d-4354-43c9-8215-d809436b6bb5',
-      title: 'Freshwater River ↔ Meadow',
-      category: 'biome',
-      key: 'river-grass',
-      lower: {
-        description: 'clear freshwater river with visible stones and shimmering highlights',
-        passable: false,
-        tags: ['water', 'river'],
-        baseTileId: '4e9c5691-de1d-455d-8a50-12bc2c1b3cfc',
+    "river-grass": {
+      "tilesetId": "e7076c1d-4354-43c9-8215-d809436b6bb5",
+      "title": "Freshwater River ↔ Meadow",
+      "category": "biome",
+      "key": "river-grass",
+      "lower": {
+        "description": "clear freshwater river with visible stones and shimmering highlights",
+        "passable": false,
+        "tags": [
+          "water",
+          "river"
+        ],
+        "baseTileId": "4e9c5691-de1d-455d-8a50-12bc2c1b3cfc"
       },
-      upper: {
-        description: 'lush meadow grass with reeds and small blue flowers',
-        passable: true,
-        tags: ['grass'],
-        baseTileId: '44a69e2d-919e-4e20-ba10-c2abef643815',
+      "upper": {
+        "description": "lush meadow grass with reeds and small blue flowers",
+        "passable": true,
+        "tags": [
+          "grass"
+        ],
+        "baseTileId": "44a69e2d-919e-4e20-ba10-c2abef643815"
       },
-      transition: {
-        size: 0.25,
-        description: 'riverbank mud with reeds, stones, and ripples meeting grass',
+      "transition": {
+        "size": 0.25,
+        "description": "riverbank mud with reeds, stones, and ripples meeting grass"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-22T22:14:29.877Z',
-    },
+      "notes": null,
+      "generatedAt": "2025-09-22T22:14:29.877Z"
+    }
   },
-  interior: {
-    'csharp-conservatory': {
-      tilesetId: '1ef6fc09-e525-4b5b-879c-302d9c7160ca',
-      title: 'C# Azure Conservatory',
-      category: 'interior',
-      key: 'csharp-conservatory',
-      lower: {
-        description: 'frosted azure glass floor with bracket-shaped metal framing',
-        passable: true,
-        tags: ['glass', 'azure'],
-        baseTileId: '2130b967-4f87-455b-8b74-0ea8ac231393',
+  "interior": {
+    "csharp-conservatory": {
+      "tilesetId": "1ef6fc09-e525-4b5b-879c-302d9c7160ca",
+      "title": "C# Azure Conservatory",
+      "category": "interior",
+      "key": "csharp-conservatory",
+      "lower": {
+        "description": "frosted azure glass floor with bracket-shaped metal framing",
+        "passable": true,
+        "tags": [
+          "glass",
+          "azure"
+        ],
+        "baseTileId": "2130b967-4f87-455b-8b74-0ea8ac231393"
       },
-      upper: {
-        description: 'illuminated glass walkway with cool white light panels and organ pipes',
-        passable: true,
-        tags: ['glass', 'light'],
-        baseTileId: '969a6c5a-37f9-45f9-88b0-39cacc5fb2dd',
+      "upper": {
+        "description": "illuminated glass walkway with cool white light panels and organ pipes",
+        "passable": true,
+        "tags": [
+          "glass",
+          "light"
+        ],
+        "baseTileId": "969a6c5a-37f9-45f9-88b0-39cacc5fb2dd"
       },
-      transition: {
-        size: 0.25,
-        description: 'brushed steel channels and glowing bracket glyphs blending glass levels',
+      "transition": {
+        "size": 0.25,
+        "description": "brushed steel channels and glowing bracket glyphs blending glass levels"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:37:26.190Z',
+      "notes": null,
+      "generatedAt": "2025-09-23T01:37:26.190Z"
     },
-    'generic-commons': {
-      tilesetId: 'ae9f69dc-cddd-4910-ad3a-f2c880f3b886',
-      title: 'Commons Guild Hall',
-      category: 'interior',
-      key: 'generic-commons',
-      lower: {
-        description: 'neutral stone tiles with gentle wear and community crest engravings',
-        passable: true,
-        tags: ['stone', 'neutral'],
-        baseTileId: 'd0f3b9ad-4d5c-4ef2-8018-ab0b196f6b26',
+    "generic-commons": {
+      "tilesetId": "ae9f69dc-cddd-4910-ad3a-f2c880f3b886",
+      "title": "Commons Guild Hall",
+      "category": "interior",
+      "key": "generic-commons",
+      "lower": {
+        "description": "neutral stone tiles with gentle wear and community crest engravings",
+        "passable": true,
+        "tags": [
+          "stone",
+          "neutral"
+        ],
+        "baseTileId": "d0f3b9ad-4d5c-4ef2-8018-ab0b196f6b26"
       },
-      upper: {
-        description: 'woven tatami mats with understated pattern and warm lantern glow',
-        passable: true,
-        tags: ['tatami', 'commons'],
-        baseTileId: 'dd04187f-245c-4ba5-9b5b-fa70b95a1c99',
+      "upper": {
+        "description": "woven tatami mats with understated pattern and warm lantern glow",
+        "passable": true,
+        "tags": [
+          "tatami",
+          "commons"
+        ],
+        "baseTileId": "dd04187f-245c-4ba5-9b5b-fa70b95a1c99"
       },
-      transition: {
-        size: 0.25,
-        description: 'wooden trim and paper lantern bases easing stone into tatami',
+      "transition": {
+        "size": 0.25,
+        "description": "wooden trim and paper lantern bases easing stone into tatami"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:38:29.749Z',
+      "notes": null,
+      "generatedAt": "2025-09-23T01:38:29.749Z"
     },
-    'go-lodge': {
-      tilesetId: 'b38ce549-241f-4f37-8274-96c15c0992fe',
-      title: 'Go Coastal Lodge',
-      category: 'interior',
-      key: 'go-lodge',
-      lower: {
-        description: 'seashell-infused driftwood planks with salt-washed texture',
-        passable: true,
-        tags: ['wood', 'coastal'],
-        baseTileId: 'b2aef3db-8c38-4aae-9f11-abef5f1a0dc5',
+    "go-lodge": {
+      "tilesetId": "b38ce549-241f-4f37-8274-96c15c0992fe",
+      "title": "Go Coastal Lodge",
+      "category": "interior",
+      "key": "go-lodge",
+      "lower": {
+        "description": "seashell-infused driftwood planks with salt-washed texture",
+        "passable": true,
+        "tags": [
+          "wood",
+          "coastal"
+        ],
+        "baseTileId": "b2aef3db-8c38-4aae-9f11-abef5f1a0dc5"
       },
-      upper: {
-        description: 'woven rope runner with nautical knots and teal accents',
-        passable: true,
-        tags: ['rope', 'runner'],
-        baseTileId: 'b02c4a19-0e15-48a8-b719-eafe47426156',
+      "upper": {
+        "description": "woven rope runner with nautical knots and teal accents",
+        "passable": true,
+        "tags": [
+          "rope",
+          "runner"
+        ],
+        "baseTileId": "b02c4a19-0e15-48a8-b719-eafe47426156"
       },
-      transition: {
-        size: 0,
-        description: 'whitewashed plinths and braided rope trim separating driftwood and runner',
+      "transition": {
+        "size": 0,
+        "description": "whitewashed plinths and braided rope trim separating driftwood and runner"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:34:30.198Z',
+      "notes": null,
+      "generatedAt": "2025-09-23T01:34:30.198Z"
     },
-    'java-brew': {
-      tilesetId: '3329ad88-a788-4493-8d81-fc0ad525096c',
-      title: 'Java Brew Guild Floor',
-      category: 'interior',
-      key: 'java-brew',
-      lower: {
-        description: 'dark cobblestone floor warmed with coffee stain patina and steam marks',
-        passable: true,
-        tags: ['stone', 'coffee'],
-        baseTileId: '1a37a190-b965-465d-a2a0-907470859089',
+    "java-brew": {
+      "tilesetId": "3329ad88-a788-4493-8d81-fc0ad525096c",
+      "title": "Java Brew Guild Floor",
+      "category": "interior",
+      "key": "java-brew",
+      "lower": {
+        "description": "dark cobblestone floor warmed with coffee stain patina and steam marks",
+        "passable": true,
+        "tags": [
+          "stone",
+          "coffee"
+        ],
+        "baseTileId": "1a37a190-b965-465d-a2a0-907470859089"
       },
-      upper: {
-        description: 'coffee bean mosaic tile with latte art swirls and brass accents',
-        passable: true,
-        tags: ['mosaic', 'coffee'],
-        baseTileId: '569a0974-ab6a-48c9-a182-04ea728dd0a9',
+      "upper": {
+        "description": "coffee bean mosaic tile with latte art swirls and brass accents",
+        "passable": true,
+        "tags": [
+          "mosaic",
+          "coffee"
+        ],
+        "baseTileId": "569a0974-ab6a-48c9-a182-04ea728dd0a9"
       },
-      transition: {
-        size: 0.25,
-        description: 'copper piping and burlap runners guiding from stone to coffee mosaic',
+      "transition": {
+        "size": 0.25,
+        "description": "copper piping and burlap runners guiding from stone to coffee mosaic"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:36:22.395Z',
+      "notes": null,
+      "generatedAt": "2025-09-23T01:36:22.395Z"
     },
-    'javascript-neon': {
-      tilesetId: '82b50c29-9939-4d5a-bd25-3a06a13b3807',
-      title: 'JavaScript Neon Lab Floor',
-      category: 'interior',
-      key: 'javascript-neon',
-      lower: {
-        description: 'obsidian glass floor with embedded cyan and magenta LED traces',
-        passable: true,
-        tags: ['tech', 'glass'],
-        baseTileId: '2400a228-97a7-4892-b215-5c81b508c428',
+    "javascript-neon": {
+      "tilesetId": "82b50c29-9939-4d5a-bd25-3a06a13b3807",
+      "title": "JavaScript Neon Lab Floor",
+      "category": "interior",
+      "key": "javascript-neon",
+      "lower": {
+        "description": "obsidian glass floor with embedded cyan and magenta LED traces",
+        "passable": true,
+        "tags": [
+          "tech",
+          "glass"
+        ],
+        "baseTileId": "2400a228-97a7-4892-b215-5c81b508c428"
       },
-      upper: {
-        description: 'transparent holo walkway with luminous circuitry and neon edge glow',
-        passable: true,
-        tags: ['tech', 'hologram'],
-        baseTileId: '0ef41e60-d795-47c0-8253-46923c393c23',
+      "upper": {
+        "description": "transparent holo walkway with luminous circuitry and neon edge glow",
+        "passable": true,
+        "tags": [
+          "tech",
+          "hologram"
+        ],
+        "baseTileId": "0ef41e60-d795-47c0-8253-46923c393c23"
       },
-      transition: {
-        size: 0.25,
-        description:
-          'plated metal rails and glowing cables bridging obsidian glass and holo walkway',
+      "transition": {
+        "size": 0.25,
+        "description": "plated metal rails and glowing cables bridging obsidian glass and holo walkway"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:31:33.760Z',
+      "notes": null,
+      "generatedAt": "2025-09-23T01:31:33.760Z"
     },
-    'python-observatory': {
-      tilesetId: '5316d6fa-49b1-470c-82d9-279421ba62f9',
-      title: 'Python Observatory Cottage',
-      category: 'interior',
-      key: 'python-observatory',
-      lower: {
-        description: 'warm stone tiles with spiral motifs and candlelight highlights',
-        passable: true,
-        tags: ['stone', 'spiral'],
-        baseTileId: 'acd7296c-000f-46dd-bcd9-e3fbcb561976',
+    "python-observatory": {
+      "tilesetId": "5316d6fa-49b1-470c-82d9-279421ba62f9",
+      "title": "Python Observatory Cottage",
+      "category": "interior",
+      "key": "python-observatory",
+      "lower": {
+        "description": "warm stone tiles with spiral motifs and candlelight highlights",
+        "passable": true,
+        "tags": [
+          "stone",
+          "spiral"
+        ],
+        "baseTileId": "acd7296c-000f-46dd-bcd9-e3fbcb561976"
       },
-      upper: {
-        description: 'star map floor in indigo and gold with constellation inlays',
-        passable: true,
-        tags: ['astronomy', 'mosaic'],
-        baseTileId: '713aea0f-e065-44d6-8708-7cffd4464455',
+      "upper": {
+        "description": "star map floor in indigo and gold with constellation inlays",
+        "passable": true,
+        "tags": [
+          "astronomy",
+          "mosaic"
+        ],
+        "baseTileId": "713aea0f-e065-44d6-8708-7cffd4464455"
       },
-      transition: {
-        size: 0.5,
-        description: 'etched bronze rings and flowing script connecting stone to star map',
+      "transition": {
+        "size": 0.5,
+        "description": "etched bronze rings and flowing script connecting stone to star map"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:33:41.354Z',
+      "notes": null,
+      "generatedAt": "2025-09-23T01:33:41.354Z"
     },
-    'ruby-workshop': {
-      tilesetId: 'f0476dd1-c1d8-4454-9948-77c5ac2ae6b8',
-      title: 'Ruby Artisan Workshop',
-      category: 'interior',
-      key: 'ruby-workshop',
-      lower: {
-        description: 'hand-oiled cherrywood planks with ruby inlay pegs and soft sheen',
-        passable: true,
-        tags: ['wood', 'artisan'],
-        baseTileId: 'e87b8973-6eba-41f2-9e0a-8a7cd8fee24a',
+    "ruby-workshop": {
+      "tilesetId": "f0476dd1-c1d8-4454-9948-77c5ac2ae6b8",
+      "title": "Ruby Artisan Workshop",
+      "category": "interior",
+      "key": "ruby-workshop",
+      "lower": {
+        "description": "hand-oiled cherrywood planks with ruby inlay pegs and soft sheen",
+        "passable": true,
+        "tags": [
+          "wood",
+          "artisan"
+        ],
+        "baseTileId": "e87b8973-6eba-41f2-9e0a-8a7cd8fee24a"
       },
-      upper: {
-        description: 'crimson velvet carpet with stitched geometric patterns and gold thread',
-        passable: true,
-        tags: ['carpet', 'velvet'],
-        baseTileId: '62a7394e-b7e0-443f-a81c-b6d2effc6b52',
+      "upper": {
+        "description": "crimson velvet carpet with stitched geometric patterns and gold thread",
+        "passable": true,
+        "tags": [
+          "carpet",
+          "velvet"
+        ],
+        "baseTileId": "62a7394e-b7e0-443f-a81c-b6d2effc6b52"
       },
-      transition: {
-        size: 0.25,
-        description: 'carved wooden moulding with brass studs framing wood and velvet',
+      "transition": {
+        "size": 0.25,
+        "description": "carved wooden moulding with brass studs framing wood and velvet"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:35:18.492Z',
+      "notes": null,
+      "generatedAt": "2025-09-23T01:35:18.492Z"
     },
-    'typescript-blueprint': {
-      tilesetId: '6700a671-0dde-4449-b62e-4706c6c9f1aa',
-      title: 'TypeScript Blueprint Hall',
-      category: 'interior',
-      key: 'typescript-blueprint',
-      lower: {
-        description: 'polished slate floor with painted type annotations and blueprint markings',
-        passable: true,
-        tags: ['slate', 'blueprint'],
-        baseTileId: 'ddf9804d-259b-4583-a9a1-c83e32230fa8',
+    "typescript-blueprint": {
+      "tilesetId": "6700a671-0dde-4449-b62e-4706c6c9f1aa",
+      "title": "TypeScript Blueprint Hall",
+      "category": "interior",
+      "key": "typescript-blueprint",
+      "lower": {
+        "description": "polished slate floor with painted type annotations and blueprint markings",
+        "passable": true,
+        "tags": [
+          "slate",
+          "blueprint"
+        ],
+        "baseTileId": "ddf9804d-259b-4583-a9a1-c83e32230fa8"
       },
-      upper: {
-        description: 'rolled blueprint rugs with precise grid lines and glowing node markers',
-        passable: true,
-        tags: ['blueprint', 'rug'],
-        baseTileId: 'bbf0d264-162a-4ea3-b0fb-e904be203bd1',
+      "upper": {
+        "description": "rolled blueprint rugs with precise grid lines and glowing node markers",
+        "passable": true,
+        "tags": [
+          "blueprint",
+          "rug"
+        ],
+        "baseTileId": "bbf0d264-162a-4ea3-b0fb-e904be203bd1"
       },
-      transition: {
-        size: 0.25,
-        description: 'brass drafting rulers and parchment trim blending slate into blueprint rugs',
+      "transition": {
+        "size": 0.25,
+        "description": "brass drafting rulers and parchment trim blending slate into blueprint rugs"
       },
-      tileSize: {
-        width: 32,
-        height: 32,
+      "tileSize": {
+        "width": 32,
+        "height": 32
       },
-      files: {
-        image: 'tileset.png',
-        definition: 'wang-metadata.json',
+      "files": {
+        "image": "tileset.png",
+        "definition": "wang-metadata.json"
       },
-      notes: null,
-      generatedAt: '2025-09-23T01:32:37.633Z',
-    },
-  },
+      "notes": null,
+      "generatedAt": "2025-09-23T01:32:37.633Z"
+    }
+  }
 } as const;
 
 export type PixellabTileMetadata = typeof pixellabTileMetadata;
 
 export const pixellabInteriorMetadata = {
-  commons: {
-    theme: 'commons',
-    tilesetKey: 'interior/generic-commons',
-    props: [
+  "commons": {
+    "theme": "commons",
+    "tilesetKey": "interior/generic-commons",
+    "props": [
       {
-        key: 'commons-table',
-        description:
-          '32x32 isometric pixel art communal table with board games, tea set, and scrolls, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['table', 'commons'],
-        tileId: '868ac9fd-a1ce-4ad2-accf-7232be3faa89',
-        file: 'props/commons-table.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "commons-table",
+        "description": "32x32 isometric pixel art communal table with board games, tea set, and scrolls, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "table",
+          "commons"
+        ],
+        "tileId": "868ac9fd-a1ce-4ad2-accf-7232be3faa89",
+        "file": "props/commons-table.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:16:07.068107+00:00',
+        "generatedAt": "2025-09-23T02:16:07.068107+00:00"
       },
       {
-        key: 'lantern-hearth',
-        description:
-          '32x32 isometric pixel art stone hearth with suspended paper lanterns and seating cushions, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['hearth', 'lantern'],
-        tileId: 'cb92ea8d-487e-4c86-9314-f8eef2ed80ec',
-        file: 'props/lantern-hearth.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "lantern-hearth",
+        "description": "32x32 isometric pixel art stone hearth with suspended paper lanterns and seating cushions, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "hearth",
+          "lantern"
+        ],
+        "tileId": "cb92ea8d-487e-4c86-9314-f8eef2ed80ec",
+        "file": "props/lantern-hearth.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:16:53.547940+00:00',
+        "generatedAt": "2025-09-23T02:16:53.547940+00:00"
       },
       {
-        key: 'notice-board',
-        description:
-          '32x32 isometric pixel art bulletin board covered in quest notices, strings, and lanterns, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['board', 'quests'],
-        tileId: '59a4920f-a5e3-4a9b-b8bf-f45f0d42d6a0',
-        file: 'props/notice-board.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "notice-board",
+        "description": "32x32 isometric pixel art bulletin board covered in quest notices, strings, and lanterns, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "board",
+          "quests"
+        ],
+        "tileId": "59a4920f-a5e3-4a9b-b8bf-f45f0d42d6a0",
+        "file": "props/notice-board.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:16:30.295513+00:00',
-      },
-    ],
+        "generatedAt": "2025-09-23T02:16:30.295513+00:00"
+      }
+    ]
   },
-  csharp: {
-    theme: 'csharp',
-    tilesetKey: 'interior/csharp-conservatory',
-    props: [
+  "csharp": {
+    "theme": "csharp",
+    "tilesetKey": "interior/csharp-conservatory",
+    "props": [
       {
-        key: 'azure-planter',
-        description:
-          '32x32 isometric pixel art crystal planter with bioluminescent azure flora and light prism stand, transparent background',
-        passable: true,
-        orientation: 'south',
-        tags: ['planter', 'decor'],
-        tileId: '0ca879cb-8e23-49f9-ac92-300866242d89',
-        file: 'props/azure-planter.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "azure-planter",
+        "description": "32x32 isometric pixel art crystal planter with bioluminescent azure flora and light prism stand, transparent background",
+        "passable": true,
+        "orientation": "south",
+        "tags": [
+          "planter",
+          "decor"
+        ],
+        "tileId": "0ca879cb-8e23-49f9-ac92-300866242d89",
+        "file": "props/azure-planter.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:15:20.551925+00:00',
+        "generatedAt": "2025-09-23T02:15:20.551925+00:00"
       },
       {
-        key: 'control-dais',
-        description:
-          '32x32 isometric pixel art elevated control dais with holographic displays and bracket sigils, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['platform', 'control'],
-        tileId: 'd0c01df5-0feb-4b0f-a481-67a36799be4f',
-        file: 'props/control-dais.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "control-dais",
+        "description": "32x32 isometric pixel art elevated control dais with holographic displays and bracket sigils, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "platform",
+          "control"
+        ],
+        "tileId": "d0c01df5-0feb-4b0f-a481-67a36799be4f",
+        "file": "props/control-dais.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:15:43.903897+00:00',
+        "generatedAt": "2025-09-23T02:15:43.903897+00:00"
       },
       {
-        key: 'organ-console',
-        description:
-          '32x32 isometric pixel art azure pipe-organ console with bracket-shaped keys and glowing stops, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['instrument', 'console'],
-        tileId: 'cc0903eb-780a-44f4-a50e-b4607cec7ea3',
-        file: 'props/organ-console.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "organ-console",
+        "description": "32x32 isometric pixel art azure pipe-organ console with bracket-shaped keys and glowing stops, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "instrument",
+          "console"
+        ],
+        "tileId": "cc0903eb-780a-44f4-a50e-b4607cec7ea3",
+        "file": "props/organ-console.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:15:02.713414+00:00',
-      },
-    ],
+        "generatedAt": "2025-09-23T02:15:02.713414+00:00"
+      }
+    ]
   },
-  go: {
-    theme: 'go',
-    tilesetKey: 'interior/go-lodge',
-    props: [
+  "go": {
+    "theme": "go",
+    "tilesetKey": "interior/go-lodge",
+    "props": [
       {
-        key: 'coastal-hammock',
-        description:
-          '32x32 isometric pixel art rope hammock with soft teal cushions suspended on wooden frame, transparent background',
-        passable: true,
-        orientation: 'south',
-        tags: ['hammock', 'relax'],
-        tileId: '8eee5645-c5d1-4ecd-b9ff-f77dae3ce784',
-        file: 'props/coastal-hammock.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "coastal-hammock",
+        "description": "32x32 isometric pixel art rope hammock with soft teal cushions suspended on wooden frame, transparent background",
+        "passable": true,
+        "orientation": "south",
+        "tags": [
+          "hammock",
+          "relax"
+        ],
+        "tileId": "8eee5645-c5d1-4ecd-b9ff-f77dae3ce784",
+        "file": "props/coastal-hammock.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:12:07.970198+00:00',
+        "generatedAt": "2025-09-23T02:12:07.970198+00:00"
       },
       {
-        key: 'nautical-chart-table',
-        description:
-          '32x32 isometric pixel art driftwood table with nautical charts, compass, and coiled rope, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['table', 'nautical'],
-        tileId: '1a947200-355f-4ef9-9dd0-13142d924930',
-        file: 'props/nautical-chart-table.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "nautical-chart-table",
+        "description": "32x32 isometric pixel art driftwood table with nautical charts, compass, and coiled rope, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "table",
+          "nautical"
+        ],
+        "tileId": "1a947200-355f-4ef9-9dd0-13142d924930",
+        "file": "props/nautical-chart-table.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:11:44.670053+00:00',
+        "generatedAt": "2025-09-23T02:11:44.670053+00:00"
       },
       {
-        key: 'shell-cabinet',
-        description:
-          '32x32 isometric pixel art display cabinet with shells, bottled currents, and lantern, transparent background',
-        passable: false,
-        orientation: 'west',
-        tags: ['cabinet', 'decor'],
-        tileId: '592f3406-2b5d-4a64-b626-a97d8b82845d',
-        file: 'props/shell-cabinet.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "shell-cabinet",
+        "description": "32x32 isometric pixel art display cabinet with shells, bottled currents, and lantern, transparent background",
+        "passable": false,
+        "orientation": "west",
+        "tags": [
+          "cabinet",
+          "decor"
+        ],
+        "tileId": "592f3406-2b5d-4a64-b626-a97d8b82845d",
+        "file": "props/shell-cabinet.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:12:31.070896+00:00',
-      },
-    ],
+        "generatedAt": "2025-09-23T02:12:31.070896+00:00"
+      }
+    ]
   },
-  java: {
-    theme: 'java',
-    tilesetKey: 'interior/java-brew',
-    props: [
+  "java": {
+    "theme": "java",
+    "tilesetKey": "interior/java-brew",
+    "props": [
       {
-        key: 'bean-barrel',
-        description:
-          '32x32 isometric pixel art burlap coffee bean barrel with scoop and spilled beans, transparent background',
-        passable: true,
-        orientation: 'south',
-        tags: ['barrel', 'coffee'],
-        tileId: '6b883b7b-6a98-4665-85fe-f6cbf6c0399e',
-        file: 'props/bean-barrel.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "bean-barrel",
+        "description": "32x32 isometric pixel art burlap coffee bean barrel with scoop and spilled beans, transparent background",
+        "passable": true,
+        "orientation": "south",
+        "tags": [
+          "barrel",
+          "coffee"
+        ],
+        "tileId": "6b883b7b-6a98-4665-85fe-f6cbf6c0399e",
+        "file": "props/bean-barrel.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:14:21.750549+00:00',
+        "generatedAt": "2025-09-23T02:14:21.750549+00:00"
       },
       {
-        key: 'brew-tasting-table',
-        description:
-          '32x32 isometric pixel art tasting table with sampler flights, mugs, and brewing notes, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['table', 'coffee'],
-        tileId: 'b12f65f9-6e47-4264-925b-a51a9203f7ab',
-        file: 'props/brew-tasting-table.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "brew-tasting-table",
+        "description": "32x32 isometric pixel art tasting table with sampler flights, mugs, and brewing notes, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "table",
+          "coffee"
+        ],
+        "tileId": "b12f65f9-6e47-4264-925b-a51a9203f7ab",
+        "file": "props/brew-tasting-table.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:14:39.371032+00:00',
+        "generatedAt": "2025-09-23T02:14:39.371032+00:00"
       },
       {
-        key: 'espresso-bar',
-        description:
-          '32x32 isometric pixel art espresso bar with steaming machines, cups, and pastries, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['bar', 'coffee'],
-        tileId: '2f337195-b15f-4cbb-a11b-7cb3a2deb212',
-        file: 'props/espresso-bar.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "espresso-bar",
+        "description": "32x32 isometric pixel art espresso bar with steaming machines, cups, and pastries, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "bar",
+          "coffee"
+        ],
+        "tileId": "2f337195-b15f-4cbb-a11b-7cb3a2deb212",
+        "file": "props/espresso-bar.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:13:58.510478+00:00',
-      },
-    ],
+        "generatedAt": "2025-09-23T02:13:58.510478+00:00"
+      }
+    ]
   },
-  javascript: {
-    theme: 'javascript',
-    tilesetKey: 'interior/javascript-neon',
-    props: [
+  "javascript": {
+    "theme": "javascript",
+    "tilesetKey": "interior/javascript-neon",
+    "props": [
       {
-        key: 'neon-planter',
-        description:
-          '32x32 isometric pixel art futuristic planter with bioluminescent plants, neon rim, and soft glow, transparent background',
-        passable: true,
-        orientation: 'south',
-        tags: ['decor', 'plant'],
-        tileId: '5dd63743-3669-43a6-a06b-3eb562c3bba8',
-        file: 'props/neon-planter.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "neon-planter",
+        "description": "32x32 isometric pixel art futuristic planter with bioluminescent plants, neon rim, and soft glow, transparent background",
+        "passable": true,
+        "orientation": "south",
+        "tags": [
+          "decor",
+          "plant"
+        ],
+        "tileId": "5dd63743-3669-43a6-a06b-3eb562c3bba8",
+        "file": "props/neon-planter.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:09:24.329242+00:00',
+        "generatedAt": "2025-09-23T02:09:24.329242+00:00"
       },
       {
-        key: 'neon-workbench',
-        description:
-          '32x32 isometric pixel art neon lab workbench with holographic screens, glowing cables, and scattered components, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['workbench', 'tech'],
-        tileId: '601d000e-9a7a-4590-9da9-e597a2cf571c',
-        file: 'props/neon-workbench.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "neon-workbench",
+        "description": "32x32 isometric pixel art neon lab workbench with holographic screens, glowing cables, and scattered components, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "workbench",
+          "tech"
+        ],
+        "tileId": "601d000e-9a7a-4590-9da9-e597a2cf571c",
+        "file": "props/neon-workbench.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:08:36.902071+00:00',
+        "generatedAt": "2025-09-23T02:08:36.902071+00:00"
       },
       {
-        key: 'quantum-server',
-        description:
-          '32x32 isometric pixel art server pillar with pulsating cyan lights, glass panels, and cable harness, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['server', 'tech'],
-        tileId: 'ae3b047f-23f6-4cff-9df8-ebf29dd40b47',
-        file: 'props/quantum-server.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "quantum-server",
+        "description": "32x32 isometric pixel art server pillar with pulsating cyan lights, glass panels, and cable harness, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "server",
+          "tech"
+        ],
+        "tileId": "ae3b047f-23f6-4cff-9df8-ebf29dd40b47",
+        "file": "props/quantum-server.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:09:01.060351+00:00',
-      },
-    ],
+        "generatedAt": "2025-09-23T02:09:01.060351+00:00"
+      }
+    ]
   },
-  python: {
-    theme: 'python',
-    tilesetKey: 'interior/python-observatory',
-    props: [
+  "python": {
+    "theme": "python",
+    "tilesetKey": "interior/python-observatory",
+    "props": [
       {
-        key: 'alchemy-table',
-        description:
-          '32x32 isometric pixel art alchemy worktable with crystal orbs, potions, and rune carvings, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['table', 'alchemy'],
-        tileId: '81ee1b6a-7103-4a66-9585-5bc3002ccce0',
-        file: 'props/alchemy-table.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "alchemy-table",
+        "description": "32x32 isometric pixel art alchemy worktable with crystal orbs, potions, and rune carvings, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "table",
+          "alchemy"
+        ],
+        "tileId": "81ee1b6a-7103-4a66-9585-5bc3002ccce0",
+        "file": "props/alchemy-table.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:11:26.995303+00:00',
+        "generatedAt": "2025-09-23T02:11:26.995303+00:00"
       },
       {
-        key: 'serpent-bookshelf',
-        description:
-          '32x32 isometric pixel art curved bookshelf with glowing tomes, serpent carvings, and candles, transparent background',
-        passable: false,
-        orientation: 'west',
-        tags: ['bookshelf', 'library'],
-        tileId: '70bcc976-3d0d-44bf-b9a2-b88899fbe807',
-        file: 'props/serpent-bookshelf.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "serpent-bookshelf",
+        "description": "32x32 isometric pixel art curved bookshelf with glowing tomes, serpent carvings, and candles, transparent background",
+        "passable": false,
+        "orientation": "west",
+        "tags": [
+          "bookshelf",
+          "library"
+        ],
+        "tileId": "70bcc976-3d0d-44bf-b9a2-b88899fbe807",
+        "file": "props/serpent-bookshelf.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:11:09.469490+00:00',
+        "generatedAt": "2025-09-23T02:11:09.469490+00:00"
       },
       {
-        key: 'star-telescope',
-        description:
-          '32x32 isometric pixel art brass observatory telescope on carved base with star scrolls, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['telescope', 'astronomy'],
-        tileId: 'f587f4f7-59a3-4720-935a-84fd188c7ce8',
-        file: 'props/star-telescope.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "star-telescope",
+        "description": "32x32 isometric pixel art brass observatory telescope on carved base with star scrolls, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "telescope",
+          "astronomy"
+        ],
+        "tileId": "f587f4f7-59a3-4720-935a-84fd188c7ce8",
+        "file": "props/star-telescope.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:10:46.404176+00:00',
-      },
-    ],
+        "generatedAt": "2025-09-23T02:10:46.404176+00:00"
+      }
+    ]
   },
-  ruby: {
-    theme: 'ruby',
-    tilesetKey: 'interior/ruby-workshop',
-    props: [
+  "ruby": {
+    "theme": "ruby",
+    "tilesetKey": "interior/ruby-workshop",
+    "props": [
       {
-        key: 'forge-hearth',
-        description:
-          '32x32 isometric pixel art small forge hearth with ember coals and hanging tools, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['forge', 'heat'],
-        tileId: 'c44ae976-3b6d-42b8-b161-61fb4e9d4051',
-        file: 'props/forge-hearth.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "forge-hearth",
+        "description": "32x32 isometric pixel art small forge hearth with ember coals and hanging tools, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "forge",
+          "heat"
+        ],
+        "tileId": "c44ae976-3b6d-42b8-b161-61fb4e9d4051",
+        "file": "props/forge-hearth.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:13:35.159339+00:00',
+        "generatedAt": "2025-09-23T02:13:35.159339+00:00"
       },
       {
-        key: 'gem-display',
-        description:
-          '32x32 isometric pixel art glass display case filled with glowing ruby artifacts, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['display', 'gem'],
-        tileId: '31f27642-c416-42cb-98e7-7884942d7931',
-        file: 'props/gem-display.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "gem-display",
+        "description": "32x32 isometric pixel art glass display case filled with glowing ruby artifacts, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "display",
+          "gem"
+        ],
+        "tileId": "31f27642-c416-42cb-98e7-7884942d7931",
+        "file": "props/gem-display.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:13:17.504035+00:00',
+        "generatedAt": "2025-09-23T02:13:17.504035+00:00"
       },
       {
-        key: 'jewelers-bench',
-        description:
-          '32x32 isometric pixel art jeweler bench with magnifier lamp, gemstones, and engraving tools, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['bench', 'artisan'],
-        tileId: 'eb2c09ed-86d2-4c30-a700-1989e45384ad',
-        file: 'props/jewelers-bench.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "jewelers-bench",
+        "description": "32x32 isometric pixel art jeweler bench with magnifier lamp, gemstones, and engraving tools, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "bench",
+          "artisan"
+        ],
+        "tileId": "eb2c09ed-86d2-4c30-a700-1989e45384ad",
+        "file": "props/jewelers-bench.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:12:54.345849+00:00',
-      },
-    ],
+        "generatedAt": "2025-09-23T02:12:54.345849+00:00"
+      }
+    ]
   },
-  typescript: {
-    theme: 'typescript',
-    tilesetKey: 'interior/typescript-blueprint',
-    props: [
+  "typescript": {
+    "theme": "typescript",
+    "tilesetKey": "interior/typescript-blueprint",
+    "props": [
       {
-        key: 'drafting-table',
-        description:
-          '32x32 isometric pixel art drafting table covered in blueprints, measuring tools, and lamp, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['table', 'drafting'],
-        tileId: '1c893b8b-33f8-4440-abfd-11795917ebb9',
-        file: 'props/drafting-table.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "drafting-table",
+        "description": "32x32 isometric pixel art drafting table covered in blueprints, measuring tools, and lamp, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "table",
+          "drafting"
+        ],
+        "tileId": "1c893b8b-33f8-4440-abfd-11795917ebb9",
+        "file": "props/drafting-table.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:09:47.647804+00:00',
+        "generatedAt": "2025-09-23T02:09:47.647804+00:00"
       },
       {
-        key: 'plan-cabinet',
-        description:
-          '32x32 isometric pixel art blueprint cabinet with rolled plans, pigeonholes, and brass handles, transparent background',
-        passable: false,
-        orientation: 'west',
-        tags: ['storage', 'plans'],
-        tileId: '2fe651b4-7c8c-408b-bb80-eabbbe3d9100',
-        file: 'props/plan-cabinet.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "plan-cabinet",
+        "description": "32x32 isometric pixel art blueprint cabinet with rolled plans, pigeonholes, and brass handles, transparent background",
+        "passable": false,
+        "orientation": "west",
+        "tags": [
+          "storage",
+          "plans"
+        ],
+        "tileId": "2fe651b4-7c8c-408b-bb80-eabbbe3d9100",
+        "file": "props/plan-cabinet.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:10:11.004381+00:00',
+        "generatedAt": "2025-09-23T02:10:11.004381+00:00"
       },
       {
-        key: 'reference-lectern',
-        description:
-          '32x32 isometric pixel art lectern displaying glowing specification manuscript with quill and brass lamp, transparent background',
-        passable: false,
-        orientation: 'south',
-        tags: ['lectern', 'reference'],
-        tileId: '0961a98d-b5c4-4150-9acb-c5188148d547',
-        file: 'props/reference-lectern.png',
-        size: {
-          width: 32,
-          height: 32,
+        "key": "reference-lectern",
+        "description": "32x32 isometric pixel art lectern displaying glowing specification manuscript with quill and brass lamp, transparent background",
+        "passable": false,
+        "orientation": "south",
+        "tags": [
+          "lectern",
+          "reference"
+        ],
+        "tileId": "0961a98d-b5c4-4150-9acb-c5188148d547",
+        "file": "props/reference-lectern.png",
+        "size": {
+          "width": 32,
+          "height": 32
         },
-        generatedAt: '2025-09-23T02:10:28.691634+00:00',
-      },
-    ],
-  },
+        "generatedAt": "2025-09-23T02:10:28.691634+00:00"
+      }
+    ]
+  }
 } as const;
 
 export type PixellabInteriorMetadata = typeof pixellabInteriorMetadata;

@@ -1,0 +1,215 @@
+{
+  "config": {
+    "configFile": "/Users/jamesbrady/ai-agent-village-monitor/playwright.config.ts",
+    "rootDir": "/Users/jamesbrady/ai-agent-village-monitor/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/jamesbrady/ai-agent-village-monitor/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/jamesbrady/ai-agent-village-monitor/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.0",
+    "workers": 8,
+    "webServer": {
+      "command": "node scripts/preview-and-wait.mjs",
+      "url": "http://localhost:4173",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "world-assets.spec.ts",
+      "file": "world-assets.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "world immersion diagnostics",
+          "file": "world-assets.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "collects console and network issues on world load",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3059,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "capture world canvas screenshot",
+                          "duration": 94
+                        }
+                      ],
+                      "startTime": "2025-09-30T09:35:59.018Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "world-diagnostics",
+                          "contentType": "text/plain",
+                          "body": "Q29uc29sZSBlcnJvcnMgKGNvdW50PTApCgpub25lCgpDb25zb2xlIGVycm9ycyAoaWdub3JlZCBrbm93biBBUEkgZmFpbHVyZXMgY291bnQ9MSkKCltlcnJvcl0gRmFpbGVkIHRvIGxvYWQgcmVzb3VyY2U6IHRoZSBzZXJ2ZXIgcmVzcG9uZGVkIHdpdGggYSBzdGF0dXMgb2YgNTAwIChJbnRlcm5hbCBTZXJ2ZXIgRXJyb3IpCgpUZXh0dXJlIHdhcm5pbmdzIChjb3VudD0wKQoKbm9uZQoKV2ViR0wgd2FybmluZ3MgKGNvdW50PTApCgpub25lCgpXZWJHTCB3YXJuaW5ncyAoaWdub3JlZCBkcml2ZXIgbm9pc2UgY291bnQ9NCkKClt3YXJuaW5nXSBbLldlYkdMLTB4MTFjMDAxYzlhMDBdR0wgRHJpdmVyIE1lc3NhZ2UgKE9wZW5HTCwgUGVyZm9ybWFuY2UsIEdMX0NMT1NFX1BBVEhfTlYsIEhpZ2gpOiBHUFUgc3RhbGwgZHVlIHRvIFJlYWRQaXhlbHMKW3dhcm5pbmddIFsuV2ViR0wtMHgxMWMwM2Q4M2IwMF1HTCBEcml2ZXIgTWVzc2FnZSAoT3BlbkdMLCBQZXJmb3JtYW5jZSwgR0xfQ0xPU0VfUEFUSF9OViwgSGlnaCk6IEdQVSBzdGFsbCBkdWUgdG8gUmVhZFBpeGVscwpbd2FybmluZ10gWy5XZWJHTC0weDExYzAzZDgzYjAwXUdMIERyaXZlciBNZXNzYWdlIChPcGVuR0wsIFBlcmZvcm1hbmNlLCBHTF9DTE9TRV9QQVRIX05WLCBIaWdoKTogR1BVIHN0YWxsIGR1ZSB0byBSZWFkUGl4ZWxzClt3YXJuaW5nXSBbLldlYkdMLTB4MTFjMDNkODNiMDBdR0wgRHJpdmVyIE1lc3NhZ2UgKE9wZW5HTCwgUGVyZm9ybWFuY2UsIEdMX0NMT1NFX1BBVEhfTlYsIEhpZ2gpOiBHUFUgc3RhbGwgZHVlIHRvIFJlYWRQaXhlbHMgKHRoaXMgbWVzc2FnZSB3aWxsIG5vIGxvbmdlciByZXBlYXQpCgpSZWFjdCBSb3V0ZXIgd2FybmluZ3MgKGNvdW50PTApCgpub25lCgpPdGhlciB3YXJuaW5ncyAoY291bnQ9MCkKCm5vbmUKCkZhaWxlZCByZXF1ZXN0cyAoY291bnQ9MCkKCm5vbmUKCkZhaWxlZCByZXF1ZXN0cyAoaWdub3JlZCBrbm93biBBUEkgZmFpbHVyZXMgY291bnQ9MikKCltyZXNwb25zZSA1MDBdIGh0dHA6Ly9sb2NhbGhvc3Q6NDE3My9hcGkvdmlsbGFnZXMKW3JlcXVlc3RmYWlsZWRdIGh0dHA6Ly9sb2NhbGhvc3Q6NDE3My9hcGkvdmlsbGFnZXMgOjogbmV0OjpFUlJfQUJPUlRFRA=="
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c186462017927bdc5b6f-61684b82ec28acdf03ab",
+              "file": "world-assets.spec.ts",
+              "line": 9,
+              "column": 7
+            },
+            {
+              "title": "reports NPC population summary",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "fail",
+                      "description": "Pending asset pipeline fixes for NPC readiness",
+                      "location": {
+                        "file": "/Users/jamesbrady/ai-agent-village-monitor/tests/e2e/world-assets.spec.ts",
+                        "line": 108,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "failed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 15287,
+                      "error": {
+                        "message": "TimeoutError: page.waitForFunction: Timeout 15000ms exceeded.",
+                        "stack": "TimeoutError: page.waitForFunction: Timeout 15000ms exceeded.\n    at /Users/jamesbrady/ai-agent-village-monitor/tests/e2e/world-assets.spec.ts:111:16",
+                        "location": {
+                          "file": "/Users/jamesbrady/ai-agent-village-monitor/tests/e2e/world-assets.spec.ts",
+                          "column": 16,
+                          "line": 111
+                        },
+                        "snippet": "  109 |     await page.goto('/');\n  110 |\n> 111 |     await page.waitForFunction(\n      |                ^\n  112 |       () => {\n  113 |         const game = (window as any)._phaserGame;\n  114 |         if (!game?.scene?.getScene) return false;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/jamesbrady/ai-agent-village-monitor/tests/e2e/world-assets.spec.ts",
+                            "column": 16,
+                            "line": 111
+                          },
+                          "message": "TimeoutError: page.waitForFunction: Timeout 15000ms exceeded.\n\n  109 |     await page.goto('/');\n  110 |\n> 111 |     await page.waitForFunction(\n      |                ^\n  112 |       () => {\n  113 |         const game = (window as any)._phaserGame;\n  114 |         if (!game?.scene?.getScene) return false;\n    at /Users/jamesbrady/ai-agent-village-monitor/tests/e2e/world-assets.spec.ts:111:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-09-30T09:36:02.172Z",
+                      "annotations": [
+                        {
+                          "type": "fail",
+                          "description": "Pending asset pipeline fixes for NPC readiness",
+                          "location": {
+                            "file": "/Users/jamesbrady/ai-agent-village-monitor/tests/e2e/world-assets.spec.ts",
+                            "line": 108,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/jamesbrady/ai-agent-village-monitor/test-results/world-assets-world-immersi-6148b-orts-NPC-population-summary/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/jamesbrady/ai-agent-village-monitor/tests/e2e/world-assets.spec.ts",
+                        "column": 16,
+                        "line": 111
+                      }
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c186462017927bdc5b6f-5ff756e6281b73629d98",
+              "file": "world-assets.spec.ts",
+              "line": 107,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-09-30T09:35:57.503Z",
+    "duration": 20013.7,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

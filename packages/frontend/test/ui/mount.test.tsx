@@ -35,6 +35,6 @@ describe('App mount', () => {
 
     const btn = screen.getByRole('button', { name: 'Dialogue' });
     fireEvent.click(btn);
-    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
   });
 });

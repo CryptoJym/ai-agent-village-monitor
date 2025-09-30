@@ -41,6 +41,8 @@ export function OnboardingStepper({
   onClose: () => void;
   onEnterVillage: (villageId: string) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const firstFocusableRef = useRef<HTMLButtonElement | null>(null);
   const [user, setUser] = useState<User>(null);
   const [step, setStep] = useState<StepKey>('login');
   const [orgs, setOrgs] = useState<Org[]>([]);
@@ -51,8 +53,37 @@ export function OnboardingStepper({
   const [createdVillageId, setCreatedVillageId] = useState<string>('');
   const [installing, setInstalling] = useState(false);
   const [installMsg, setInstallMsg] = useState('');
+  const [popupBlocked, setPopupBlocked] = useState(false);
   const timings = useRef<{ [k in StepKey]?: number }>({});
   const startedAt = useRef<number>(Date.now());
+  const liveRegionRef = useRef<HTMLDivElement | null>(null);
+
+  // Trap focus within the dialog while open
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const node = containerRef.current;
+      if (!node) return;
+      const focusable = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden'));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
 
   // Track step timing
   useEffect(() => {
@@ -66,18 +97,14 @@ export function OnboardingStepper({
       startedAt: startedAt.current,
       timings: timings.current,
     };
-    // Best-effort beacon (optional)
     try {
       const blob = new Blob([JSON.stringify({ type: 'onboarding_timings', data })], {
         type: 'application/json',
       });
-      // This endpoint may not exist; it's OK if it fails silently
       navigator.sendBeacon?.('/analytics', blob);
     } catch (e) {
       void e;
     }
-    // Always log to console for dev visibility
-
     console.info('[analytics] onboarding_timings', data);
   }
 
@@ -96,6 +123,24 @@ export function OnboardingStepper({
     }
   }, [open, step]);
 
+  useEffect(() => {
+    if (!open) return;
+    const timeout = window.setTimeout(() => firstFocusableRef.current?.focus(), 0);
+    return () => window.clearTimeout(timeout);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !containerRef.current) return;
+    const focusable = Array.from(
+      containerRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => !el.hasAttribute('disabled'));
+    if (focusable.length > 0) {
+      focusable[0].focus();
+    }
+  }, [step, open]);
+
   const steps = useMemo(
     () => [
       { key: 'login', title: 'Login' },
@@ -111,10 +156,19 @@ export function OnboardingStepper({
 
   if (!open) return null;
 
+  function announce(message: string) {
+    if (!liveRegionRef.current) return;
+    liveRegionRef.current.textContent = message;
+  }
+
   function doLogin() {
     setError('');
-    // Open GitHub OAuth in a popup and poll /auth/me until authenticated
+    setPopupBlocked(false);
     const w = window.open('/auth/login', 'gh_login', 'width=680,height=760,noopener');
+    if (!w) {
+      setPopupBlocked(true);
+      announce('Pop-up was blocked. Use the open in this tab option.');
+    }
     const start = Date.now();
     const tick = async () => {
       const me = await fetchMe();
@@ -126,16 +180,17 @@ export function OnboardingStepper({
         } catch (e) {
           void e;
         }
+        announce('GitHub login detected. Continue to organization selection.');
         return;
       }
-      // Cancelled by closing popup
       if (!w || w.closed) {
-        setError('Login cancelled. You can try again.');
+        setError('GitHub login window closed. You can reopen it or continue with the fallback option.');
+        announce('GitHub login window closed. Use fallback button to proceed.');
         return;
       }
-      // Timeout after ~60s
       if (Date.now() - start > 60_000) {
-        setError('Login timed out. Please try again.');
+        setError('Login timed out. Please try again or use the fallback link.');
+        announce('Login timed out. Choose retry or fallback.');
         try {
           if (w && !w.closed) w.close();
         } catch (e) {
@@ -149,7 +204,6 @@ export function OnboardingStepper({
   }
 
   function getAppInstallUrl(): string | null {
-    // Prefer explicit install URL; otherwise build from app slug if provided
     const env: any =
       (import.meta as unknown as { env?: Record<string, string> })?.env || ({} as any);
     const url = env.VITE_GITHUB_APP_INSTALL_URL as string | undefined;
@@ -160,8 +214,6 @@ export function OnboardingStepper({
   }
 
   async function verifyScopesAndInstall(): Promise<boolean> {
-    // Basic check: can we list orgs with current session? If yes, required read:org is present.
-    // If this fails due to network or missing backend, treat as inconclusive.
     try {
       const r = await fetch('/api/github/orgs', { credentials: 'include' });
       if (!r.ok) return false;
@@ -176,21 +228,26 @@ export function OnboardingStepper({
     const url = getAppInstallUrl();
     setError('');
     setInstallMsg('Waiting for installation to complete…');
+    announce('Waiting for GitHub installation to complete.');
     setInstalling(true);
     let w: Window | null = null;
     if (url) {
       try {
         w = window.open(url, 'gh_install', 'width=980,height=840,noopener');
+        if (!w) {
+          setPopupBlocked(true);
+          announce('Installation window blocked. Use open in current tab.');
+        }
       } catch (e) {
         void e;
       }
     }
     const start = Date.now();
     const tick = async () => {
-      // If user closed the window, we still keep polling for a short while
       const ok = await verifyScopesAndInstall();
       if (ok) {
         setInstallMsg('Installation detected. Continuing…');
+        announce('Installation detected. Moving to create village step.');
         try {
           if (w && !w.closed) w.close();
         } catch (e) {
@@ -204,8 +261,9 @@ export function OnboardingStepper({
         setInstalling(false);
         setInstallMsg('');
         setError(
-          'We could not confirm the install/scopes. You can try again, grant scopes via OAuth, or continue anyway.',
+          'We could not confirm the install/scopes. Retry, review the GitHub app scopes, or continue anyway.',
         );
+        announce('Could not confirm installation. Provide scopes or retry.');
         return;
       }
       setTimeout(tick, 1000);
@@ -231,7 +289,7 @@ export function OnboardingStepper({
       const vid = String(body.id);
       setCreatedVillageId(vid);
       setStep('sync');
-      // kick off background sync and then enter
+      announce('Village created. Syncing repositories.');
       try {
         await fetch(`/api/villages/${encodeURIComponent(vid)}/houses/sync`, {
           method: 'POST',
@@ -240,11 +298,11 @@ export function OnboardingStepper({
       } catch (e) {
         void e;
       }
-      // Poll status until lastSynced present or timeout
       const start = Date.now();
       const poll = async () => {
         try {
           setSyncMsg('Syncing repositories…');
+          announce('Syncing repositories. This may take up to a minute.');
           const r = await fetch(`/api/villages/${encodeURIComponent(vid)}`, {
             credentials: 'include',
           });
@@ -253,6 +311,7 @@ export function OnboardingStepper({
             if (j?.lastSynced) {
               setStep('enter');
               reportTimings('success');
+              announce('Sync complete. Entering village.');
               onEnterVillage(vid);
               return;
             }
@@ -261,8 +320,9 @@ export function OnboardingStepper({
           void e;
         }
         if (Date.now() - start > 60_000) {
-          setError('Sync timed out. You can retry or continue to demo.');
+          setError('Sync timed out. Retry or continue to demo mode.');
           setSyncMsg('');
+          announce('Sync timed out. Retry sync or continue in demo mode.');
           return;
         }
         setTimeout(poll, 1000);
@@ -270,8 +330,8 @@ export function OnboardingStepper({
       setTimeout(poll, 1200);
     } catch (e: any) {
       void e;
-      // Fallback to demo mode when API is missing or unauthorized
-      setError('Create failed, switching to demo mode.');
+      setError('Create failed. Switching to demo mode.');
+      announce('Village creation failed. Opening demo mode.');
       setStep('demo');
     } finally {
       setBusy(false);
@@ -279,203 +339,294 @@ export function OnboardingStepper({
   }
 
   function doDemo() {
-    // generate a mock village id and enter
     reportTimings('demo');
+    announce('Entering demo village.');
     onEnterVillage('demo');
   }
+
+  const containerStyles: React.CSSProperties = {
+    width: 'min(720px, 96vw)',
+    background: '#0b1220',
+    border: '1px solid #1f2a3a',
+    borderRadius: 12,
+    padding: 'clamp(16px, 2vw, 32px)',
+    color: '#e2e8f0',
+    fontFamily: 'system-ui, sans-serif',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+  };
+
+  const headerStyles: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    flexWrap: 'wrap',
+  };
 
   return (
     <div
       style={{
-        position: 'absolute',
+        position: 'fixed',
         inset: 0,
         background: 'rgba(2,8,23,0.7)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 'clamp(16px, 3vw, 48px)',
         zIndex: 2000,
       }}
+      role="presentation"
     >
       <div
-        style={{
-          width: 680,
-          maxWidth: '96%',
-          background: '#0b1220',
-          border: '1px solid #1f2a3a',
-          borderRadius: 12,
-          padding: 16,
-          color: '#e2e8f0',
-          fontFamily: 'system-ui, sans-serif',
-        }}
+        ref={containerRef}
+        style={containerStyles}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboarding-title"
+        aria-describedby="onboarding-description"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0 }}>Onboarding</h2>
+        <div style={headerStyles}>
+          <h2 id="onboarding-title" style={{ margin: 0, fontSize: 'clamp(1.25rem, 2vw, 1.75rem)' }}>
+            Onboarding
+          </h2>
           <button
-            onClick={onClose}
+            onClick={() => {
+              reportTimings('cancel');
+              onClose();
+            }}
+            aria-label="Close onboarding"
             style={{
               background: 'transparent',
               color: '#94a3b8',
-              border: 'none',
+              border: '1px solid #334155',
+              borderRadius: 8,
               cursor: 'pointer',
+              padding: '6px 10px',
+              minHeight: 44,
             }}
           >
-            ✕
+            Close
           </button>
         </div>
 
-        <ol
-          style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: '8px 0 12px 0' }}
+        <p id="onboarding-description" style={{ margin: 0, color: '#94a3b8' }}>
+          Connect GitHub, sync your repositories, and enter your village. Steps adapt to your
+          permissions, and all progress is saved.
+        </p>
+
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+          }}
         >
           {steps.map((s, i) => (
-            <li key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: 999,
-                  background: s.key === step ? '#1f2937' : '#0f172a',
-                  border: '1px solid #334155',
-                }}
-              >
-                {i + 1}. {s.title}
-              </span>
-              {i < steps.length - 1 && <span style={{ color: '#475569' }}>→</span>}
-            </li>
+            <span
+              key={s.key}
+              style={{
+                padding: '4px 10px',
+                borderRadius: 999,
+                background: s.key === step ? '#1f2937' : '#0f172a',
+                border: '1px solid #334155',
+                fontSize: 12,
+              }}
+              aria-current={s.key === step}
+            >
+              {i + 1}. {s.title}
+            </span>
           ))}
-        </ol>
+        </div>
 
         {error && (
-          <div style={{ color: '#fca5a5', marginBottom: 8 }}>
+          <div style={{ color: '#fca5a5' }} role="alert">
             {error}
-            <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+            <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               <button
                 onClick={() => {
                   setError('');
-                  /* simple retry: reload current step */ if (step === 'org') {
+                  if (step === 'org') {
                     (async () => setOrgs(await fetchOrgs()))();
                   }
-                  if (step === 'create') {
-                    /* no-op */
-                  }
                 }}
-                style={{ padding: '6px 10px' }}
+                style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #334155' }}
               >
-                Retry
+                Retry current step
               </button>
-              <button onClick={() => setStep('login')} style={{ padding: '6px 10px' }}>
-                Back to Login
+              <button
+                onClick={() => setStep('login')}
+                style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid #334155' }}
+              >
+                Back to login
               </button>
             </div>
           </div>
         )}
 
-        {/* Step content */}
+        <div ref={liveRegionRef} role="status" aria-live="polite" style={{ minHeight: 20 }} />
+
         {step === 'login' && (
-          <div>
-            <p>Sign in with GitHub to continue.</p>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <section style={{ display: 'grid', gap: 16 }}>
+            <p>
+              Sign in with GitHub. If your browser blocks pop-ups, use “Open in this tab” or allow
+              pop-ups for this site.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
               <button
+                ref={firstFocusableRef}
                 onClick={doLogin}
                 style={{
-                  padding: '8px 12px',
+                  padding: '12px 16px',
                   background: '#1f2937',
                   color: '#e5e7eb',
                   border: '1px solid #334155',
-                  borderRadius: 8,
+                  borderRadius: 12,
                   cursor: 'pointer',
+                  minHeight: 44,
                 }}
               >
-                Login with GitHub
+                Login with GitHub (pop-up)
               </button>
-              {user && (
-                <button
-                  onClick={() => setStep('org')}
-                  style={{
-                    padding: '8px 12px',
-                    background: '#2563eb',
-                    color: '#fff',
-                    border: '1px solid #1d4ed8',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Continue as {user.username}
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  setStep('demo');
-                }}
+              <a
+                href="/auth/login"
                 style={{
-                  padding: '8px 12px',
+                  padding: '12px 16px',
+                  background: '#0b1220',
+                  color: '#e5e7eb',
+                  border: '1px solid #334155',
+                  borderRadius: 12,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: 44,
+                }}
+                onClick={() => setPopupBlocked(false)}
+              >
+                Open GitHub in this tab
+              </a>
+              <button
+                type="button"
+                onClick={() => setStep('demo')}
+                style={{
+                  padding: '12px 16px',
                   background: '#0f172a',
                   color: '#e5e7eb',
                   border: '1px solid #334155',
-                  borderRadius: 8,
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  minHeight: 44,
+                }}
+              >
+                Explore demo first
+              </button>
+            </div>
+            {user && (
+              <button
+                onClick={() => setStep('org')}
+                style={{
+                  justifySelf: 'start',
+                  padding: '10px 16px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: '1px solid #1d4ed8',
+                  borderRadius: 10,
                   cursor: 'pointer',
                 }}
               >
-                Try Demo
+                Continue as {user.username}
               </button>
-            </div>
-          </div>
+            )}
+            {popupBlocked && (
+              <p style={{ color: '#facc15', margin: 0 }}>
+                Pop-up blocked. Allow pop-ups or use “Open GitHub in this tab”.
+              </p>
+            )}
+          </section>
         )}
 
         {step === 'org' && (
-          <div>
-            <p>Select your organization.</p>
+          <section style={{ display: 'grid', gap: 12 }}>
+            <label htmlFor="org-select" style={{ fontWeight: 600 }}>
+              Choose the GitHub organization to visualize
+            </label>
             <select
+              id="org-select"
               value={selectedOrg?.login || ''}
               onChange={(e) => {
                 const login = e.target.value;
                 const found = orgs.find((o) => o.login === login) || null;
                 setSelectedOrg(found);
+                announce(`${login} selected`);
               }}
               style={{
-                padding: 8,
+                padding: '10px 12px',
                 background: '#0f172a',
                 color: '#e2e8f0',
                 border: '1px solid #334155',
-                borderRadius: 6,
+                borderRadius: 8,
+                minHeight: 44,
               }}
             >
-              <option value="">Choose…</option>
+              <option value="">Select an organization…</option>
               {orgs.map((o) => (
                 <option key={String(o.id)} value={o.login}>
                   {o.login}
                 </option>
               ))}
             </select>
-            <div style={{ marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button
                 onClick={() => setStep('install')}
                 disabled={!selectedOrg}
                 style={{
-                  padding: '8px 12px',
-                  background: '#1f2937',
+                  padding: '10px 16px',
+                  background: selectedOrg ? '#1f2937' : '#1e293b',
                   color: '#e5e7eb',
                   border: '1px solid #334155',
-                  borderRadius: 8,
+                  borderRadius: 10,
+                  cursor: selectedOrg ? 'pointer' : 'not-allowed',
+                  opacity: selectedOrg ? 1 : 0.6,
+                }}
+              >
+                Continue to install
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep('demo')}
+                style={{
+                  padding: '10px 16px',
+                  background: 'transparent',
+                  color: '#93c5fd',
+                  border: '1px solid #334155',
+                  borderRadius: 10,
                   cursor: 'pointer',
                 }}
               >
-                Continue
+                View demo instead
               </button>
             </div>
-          </div>
+          </section>
         )}
 
         {step === 'install' && (
-          <div>
+          <section style={{ display: 'grid', gap: 12 }}>
             <p>
-              Install the GitHub App or grant OAuth scopes for repository visibility and workflow
-              control.
+              Install the GitHub App or grant the required scopes so we can read repos and orchestrate
+              workflows. You’ll only need to do this once per organization.
             </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '8px 0' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {['read:user', 'read:org', 'workflow'].map((s) => (
                 <span
                   key={s}
                   style={{
-                    padding: '4px 8px',
+                    padding: '4px 10px',
                     borderRadius: 999,
                     background: '#0f172a',
                     border: '1px solid #334155',
@@ -487,183 +638,193 @@ export function OnboardingStepper({
                 </span>
               ))}
               <span style={{ color: '#64748b', fontSize: 12 }}>
-                (add &apos;repo&apos; only if private repos are required)
+                Add <code>repo</code> only if you need private repositories.
               </span>
             </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {getAppInstallUrl() && (
                 <button
                   onClick={openInstall}
                   disabled={installing}
                   style={{
-                    padding: '8px 12px',
+                    padding: '10px 16px',
                     background: '#1f2937',
                     color: '#e5e7eb',
                     border: '1px solid #334155',
-                    borderRadius: 8,
-                    cursor: 'pointer',
+                    borderRadius: 10,
+                    cursor: installing ? 'wait' : 'pointer',
+                    minHeight: 44,
                   }}
                 >
-                  {installing ? 'Waiting…' : 'Open GitHub App Installation'}
+                  {installing ? 'Waiting for installation…' : 'Open GitHub App install'}
                 </button>
               )}
+              <a
+                href={getAppInstallUrl() ?? 'https://github.com/apps'}
+                onClick={() => announce('Opening install in current tab')}
+                style={{
+                  padding: '10px 16px',
+                  background: '#0b1220',
+                  color: '#e5e7eb',
+                  border: '1px solid #334155',
+                  borderRadius: 10,
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  minHeight: 44,
+                }}
+              >
+                Open install in this tab
+              </a>
               <button
                 onClick={doLogin}
                 disabled={installing}
                 style={{
-                  padding: '8px 12px',
+                  padding: '10px 16px',
                   background: '#0f172a',
                   color: '#e5e7eb',
                   border: '1px solid #334155',
-                  borderRadius: 8,
-                  cursor: 'pointer',
+                  borderRadius: 10,
+                  cursor: installing ? 'wait' : 'pointer',
+                  minHeight: 44,
                 }}
               >
-                Grant Scopes via OAuth
+                Re-check OAuth scopes
               </button>
               <button
                 onClick={() => setStep('create')}
                 disabled={installing}
                 style={{
-                  padding: '8px 12px',
+                  padding: '10px 16px',
                   background: '#2563eb',
                   color: '#fff',
                   border: '1px solid #1d4ed8',
-                  borderRadius: 8,
-                  cursor: 'pointer',
+                  borderRadius: 10,
+                  cursor: installing ? 'wait' : 'pointer',
+                  minHeight: 44,
                 }}
               >
-                I’ve granted scopes
+                Scopes granted — continue
               </button>
             </div>
-            {installMsg && (
-              <p style={{ color: '#94a3b8', fontSize: 12, marginTop: 6 }}>{installMsg}</p>
-            )}
+            {installMsg && <p style={{ color: '#94a3b8', margin: 0 }}>{installMsg}</p>}
             {!getAppInstallUrl() && (
-              <p style={{ color: '#94a3b8', fontSize: 12, marginTop: 8 }}>
-                Tip: set VITE_GITHUB_APP_INSTALL_URL or VITE_GITHUB_APP_SLUG to show a direct
-                &quot;Open Installation&quot; button.
+              <p style={{ color: '#64748b', fontSize: 12 }}>
+                Tip: set <code>VITE_GITHUB_APP_INSTALL_URL</code> or <code>VITE_GITHUB_APP_SLUG</code>{' '}
+                to show a direct install button.
               </p>
             )}
-            <p style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>
-              Having trouble? See troubleshooting in README or try{' '}
-              <button
-                onClick={() => setStep('demo')}
-                style={{
-                  color: '#93c5fd',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                  padding: 0,
-                }}
-              >
-                Demo Mode
-              </button>
-              .
+            <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>
+              Need help? Review the troubleshooting doc or jump into demo mode while you configure
+              scopes.
             </p>
-          </div>
+          </section>
         )}
 
         {step === 'create' && (
-          <div>
+          <section style={{ display: 'grid', gap: 12 }}>
             <p>
-              Create a village for <strong>{selectedOrg?.login || 'your org'}</strong>.
+              Create a village for <strong>{selectedOrg?.login || 'your organization'}</strong>. This
+              sets up houses for each repo found during sync.
             </p>
             <button
               onClick={doCreateVillage}
               disabled={busy}
               style={{
-                padding: '8px 12px',
+                padding: '10px 16px',
                 background: '#1f2937',
                 color: '#e5e7eb',
                 border: '1px solid #334155',
-                borderRadius: 8,
-                cursor: 'pointer',
+                borderRadius: 10,
+                cursor: busy ? 'wait' : 'pointer',
+                minHeight: 44,
               }}
             >
-              {busy ? 'Creating…' : 'Create Village'}
+              {busy ? 'Creating village…' : 'Create village'}
             </button>
-          </div>
+          </section>
         )}
 
         {step === 'sync' && (
-          <div>
-            <p>Syncing repositories and building your village layout…</p>
-            <p style={{ color: '#94a3b8' }}>{syncMsg || 'This usually takes about a minute.'}</p>
-            {error && createdVillageId && (
-              <div style={{ marginTop: 8 }}>
+          <section style={{ display: 'grid', gap: 12 }}>
+            <p>Syncing repositories and building your village layout. This usually takes under a minute.</p>
+            <p style={{ color: '#94a3b8', margin: 0 }}>{syncMsg || 'Fetching repository metadata…'}</p>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setStep('demo')}
+                style={{
+                  padding: '10px 16px',
+                  background: 'transparent',
+                  color: '#93c5fd',
+                  border: '1px solid #334155',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                }}
+              >
+                Explore demo while you wait
+              </button>
+              {createdVillageId && (
                 <button
                   onClick={() => {
                     setError('');
-                    const vid = createdVillageId;
-                    const start = Date.now();
-                    const poll = async () => {
-                      try {
-                        setSyncMsg('Retrying…');
-                        const r = await fetch(`/api/villages/${encodeURIComponent(vid)}`, {
-                          credentials: 'include',
-                        });
-                        if (r.ok) {
-                          const j = await r.json();
-                          if (j?.lastSynced) {
-                            setStep('enter');
-                            reportTimings('success');
-                            onEnterVillage(vid);
-                            return;
-                          }
-                        }
-                      } catch {
-                        // Polling fallback errors are expected (village may not exist yet)
-                      }
-                      if (Date.now() - start > 60_000) {
-                        setError('Sync timed out again. You can try demo mode.');
-                        setSyncMsg('');
-                        return;
-                      }
-                      setTimeout(poll, 1000);
-                    };
-                    setTimeout(poll, 600);
+                    setSyncMsg('Retrying sync…');
+                    doCreateVillage();
                   }}
                   style={{
-                    padding: '8px 12px',
+                    padding: '10px 16px',
                     background: '#0f172a',
                     color: '#e5e7eb',
                     border: '1px solid #334155',
-                    borderRadius: 8,
+                    borderRadius: 10,
                     cursor: 'pointer',
                   }}
                 >
-                  Retry
+                  Retry sync
                 </button>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </section>
         )}
 
         {step === 'enter' && (
-          <div>
-            <p>Village ready. Entering now…</p>
-          </div>
-        )}
-
-        {step === 'demo' && (
-          <div>
-            <p>Explore a demo village with mock data.</p>
+          <section style={{ display: 'grid', gap: 12 }}>
+            <p>Village ready! Jump in whenever you’re ready.</p>
             <button
-              onClick={doDemo}
+              onClick={() => createdVillageId && onEnterVillage(createdVillageId)}
               style={{
-                padding: '8px 12px',
-                background: '#1f2937',
-                color: '#e5e7eb',
-                border: '1px solid #334155',
-                borderRadius: 8,
+                padding: '10px 16px',
+                background: '#2563eb',
+                color: '#fff',
+                border: '1px solid #1d4ed8',
+                borderRadius: 10,
                 cursor: 'pointer',
               }}
             >
-              Enter Demo
+              Enter village
             </button>
-          </div>
+          </section>
+        )}
+
+        {step === 'demo' && (
+          <section style={{ display: 'grid', gap: 12 }}>
+            <p>
+              Explore a demo village with mock data. You can return to onboarding anytime from the
+              footer.
+            </p>
+            <button
+              onClick={doDemo}
+              style={{
+                padding: '10px 16px',
+                background: '#1f2937',
+                color: '#e5e7eb',
+                border: '1px solid #334155',
+                borderRadius: 10,
+                cursor: 'pointer',
+              }}
+            >
+              Enter demo village
+            </button>
+          </section>
         )}
       </div>
     </div>

@@ -59,8 +59,8 @@ export function AnalyticsConsentBanner() {
       aria-label="Analytics consent"
     >
       <div style={{ maxWidth: '60%' }}>
-        Help us improve with anonymous usage analytics (dialogue opens, session duration, etc.). See
-        our{' '}
+        Help us improve with optional usage analytics (dialogue opens, session duration, etc.). We only
+        start collecting after you opt in. See our{' '}
         <a href="/docs/privacy" style={{ color: '#93c5fd' }}>
           privacy policy
         </a>{' '}
