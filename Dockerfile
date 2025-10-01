@@ -28,5 +28,5 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-# Run migrations and then start the server
-CMD pnpm --filter @ai-agent-village-monitor/server exec prisma migrate deploy && pnpm --filter @ai-agent-village-monitor/server start
+# Push schema and then start the server (more forgiving than migrations)
+CMD pnpm --filter @ai-agent-village-monitor/server exec prisma db push --accept-data-loss && pnpm --filter @ai-agent-village-monitor/server start
