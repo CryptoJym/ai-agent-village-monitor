@@ -97,7 +97,7 @@ export class NpcSprite extends BaseContainer {
       .setOrigin(0.5, 0.5);
     this.addAt(this.ring, 0);
 
-    scene.add.existing(this);
+    scene.add.existing(this as any);
   }
 
   setState(next: NpcState) {

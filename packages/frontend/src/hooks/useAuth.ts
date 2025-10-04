@@ -121,6 +121,7 @@ export function useAuthState(): AuthState & {
   // Check authentication status on mount
   useEffect(() => {
     checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Set up automatic token refresh
@@ -128,11 +129,15 @@ export function useAuthState(): AuthState & {
     if (!user) return;
 
     // Refresh token every 50 minutes (access token expires in 1 hour)
-    const refreshInterval = setInterval(() => {
-      refresh();
-    }, 50 * 60 * 1000);
+    const refreshInterval = setInterval(
+      () => {
+        refresh();
+      },
+      50 * 60 * 1000,
+    );
 
     return () => clearInterval(refreshInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return {

@@ -3,7 +3,9 @@ export type HealthStatus = {
   timestamp: string;
 };
 
-export const nowIso = () => new Date().toISOString();
+export function nowIso(): string {
+  return new Date().toISOString();
+}
 
 // Analytics
 export type AnalyticsEvent =
@@ -20,6 +22,7 @@ export type AnalyticsEvent =
       latencyMs?: number;
       villageId?: string;
     }
-  | { type: 'village_view'; ts: number; villageId: string };
+  | { type: 'village_view'; ts: number; villageId: string }
+  | { type: 'layout_reset'; ts: number; villageId?: string };
 
 export type AnalyticsBatch = { events: AnalyticsEvent[]; clientId?: string; consent?: boolean };

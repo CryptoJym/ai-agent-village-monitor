@@ -22,13 +22,20 @@ const url = process.env.LIVE_BASE_URL || 'https://ai-agent-village-monitor-vupli
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.waitForTimeout(5000);
 
-  const canvasCount = await page.evaluate(() => document.querySelectorAll('canvas').length);
+  const canvasCount = await page.evaluate(() => {
+    // eslint-disable-next-line no-undef
+    return document.querySelectorAll('canvas').length;
+  });
   const visibleCanvas = await page.evaluate(() => {
-    const canvases = Array.from(document.querySelectorAll('canvas'));
-    return canvases.filter((c) => c.offsetParent !== null).length;
+    // eslint-disable-next-line no-undef
+    return Array.from(document.querySelectorAll('canvas')).filter((c) => c.offsetParent !== null)
+      .length;
   });
 
-  const dialogueOpen = await page.getByTestId('dialogue-panel').isVisible().catch(() => false);
+  const dialogueOpen = await page
+    .getByTestId('dialogue-panel')
+    .isVisible()
+    .catch(() => false);
 
   console.log('canvasCount', canvasCount);
   console.log('visibleCanvas', visibleCanvas);

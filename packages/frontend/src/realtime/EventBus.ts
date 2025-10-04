@@ -34,7 +34,7 @@ type Events = {
     stars?: number;
     buildStatus?: string;
   };
-  connection_status: { status: 'connecting' | 'connected' | 'disconnected' };
+  connection_status: { status: 'connecting' | 'connected' | 'disconnected'; error?: string };
   latency: { rttMs: number };
   toast: { type: 'success' | 'error' | 'info'; message: string };
   // Emitted when the main camera finishes an instant snap or a short pan
@@ -55,6 +55,7 @@ type Events = {
     version: number;
     ts: number;
   };
+  npc_population: Record<string, any[]>;
 };
 
 export const eventBus = mitt<Events>();

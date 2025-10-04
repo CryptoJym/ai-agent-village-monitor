@@ -12,9 +12,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
       // Ensure TS source is used during Vite build to avoid CJS interop issues
       '@shared': path.resolve(__dirname, '../shared/src/index.ts'),
-      '@shared/index': path.resolve(__dirname, '../shared/src/index.ts'),
       '@sentry/browser': path.resolve(__dirname, 'src/observability/sentry.browser.stub.ts'),
     },
+    extensions: ['.ts', '.tsx', '.js', '.jsx'],
   },
   build: {
     chunkSizeWarningLimit: 1800,

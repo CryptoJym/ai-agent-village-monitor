@@ -86,7 +86,7 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
       if (!response.ok) throw new Error('Failed to fetch organizations');
       const data = await response.json();
       setOrgs(Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch {
       setError('Unable to fetch organizations. Please check your GitHub connection.');
       // Fallback to demo data for beta testing
       setOrgs([
@@ -115,16 +115,16 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
   };
 
   const toggleOrg = (orgId: string) => {
-    setSetupData(prev => ({
+    setSetupData((prev) => ({
       ...prev,
       selectedOrgs: prev.selectedOrgs.includes(orgId)
-        ? prev.selectedOrgs.filter(id => id !== orgId)
-        : [...prev.selectedOrgs, orgId]
+        ? prev.selectedOrgs.filter((id) => id !== orgId)
+        : [...prev.selectedOrgs, orgId],
     }));
   };
 
   const updatePreferences = (key: keyof SetupData['preferences'], value: any) => {
-    setSetupData(prev => ({
+    setSetupData((prev) => ({
       ...prev,
       preferences: {
         ...prev.preferences,
@@ -134,11 +134,11 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
   };
 
   const toggleBetaFeature = (featureId: string) => {
-    setSetupData(prev => ({
+    setSetupData((prev) => ({
       ...prev,
       betaFeatures: prev.betaFeatures.includes(featureId)
-        ? prev.betaFeatures.filter(id => id !== featureId)
-        : [...prev.betaFeatures, featureId]
+        ? prev.betaFeatures.filter((id) => id !== featureId)
+        : [...prev.betaFeatures, featureId],
     }));
   };
 
@@ -223,10 +223,12 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
               }}
             >
               <span>{step.icon}</span>
-              <span style={{
-                color: index === currentStep ? '#e2e8f0' : '#64748b',
-                fontWeight: index === currentStep ? 600 : 400,
-              }}>
+              <span
+                style={{
+                  color: index === currentStep ? '#e2e8f0' : '#64748b',
+                  fontWeight: index === currentStep ? 600 : 400,
+                }}
+              >
                 {step.title}
               </span>
             </div>
@@ -241,15 +243,18 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
                 Connect Your GitHub Account
               </h2>
               <p style={{ color: '#94a3b8', marginBottom: 24 }}>
-                We'll connect to your GitHub account to sync your repositories and create your village.
+                We&apos;ll connect to your GitHub account to sync your repositories and create your
+                village.
               </p>
-              <div style={{
-                padding: 24,
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid #334155',
-                borderRadius: 12,
-                marginBottom: 24,
-              }}>
+              <div
+                style={{
+                  padding: 24,
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  border: '1px solid #334155',
+                  borderRadius: 12,
+                  marginBottom: 24,
+                }}
+              >
                 <h3 style={{ margin: '0 0 12px 0', color: '#60a5fa' }}>Required Permissions</h3>
                 <ul style={{ textAlign: 'left', color: '#cbd5e1', lineHeight: 1.6 }}>
                   <li>Read access to repositories and organizations</li>
@@ -262,11 +267,9 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
 
           {currentStep === 1 && (
             <div>
-              <h2 style={{ margin: '0 0 16px 0', fontSize: 24 }}>
-                Select Organizations
-              </h2>
+              <h2 style={{ margin: '0 0 16px 0', fontSize: 24 }}>Select Organizations</h2>
               <p style={{ color: '#94a3b8', marginBottom: 24 }}>
-                Choose which GitHub organizations you'd like to monitor in your village.
+                Choose which GitHub organizations you&apos;d like to monitor in your village.
               </p>
 
               {loading && (
@@ -277,14 +280,16 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
               )}
 
               {error && (
-                <div style={{
-                  padding: 16,
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: 8,
-                  color: '#fca5a5',
-                  marginBottom: 16,
-                }}>
+                <div
+                  style={{
+                    padding: 16,
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: 8,
+                    color: '#fca5a5',
+                    marginBottom: 16,
+                  }}
+                >
                   {error}
                 </div>
               )}
@@ -333,9 +338,7 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
 
           {currentStep === 2 && (
             <div>
-              <h2 style={{ margin: '0 0 16px 0', fontSize: 24 }}>
-                Configure Preferences
-              </h2>
+              <h2 style={{ margin: '0 0 16px 0', fontSize: 24 }}>Configure Preferences</h2>
               <p style={{ color: '#94a3b8', marginBottom: 24 }}>
                 Customize your AI Agent Village Monitor experience.
               </p>
@@ -399,9 +402,7 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
 
           {currentStep === 3 && (
             <div>
-              <h2 style={{ margin: '0 0 16px 0', fontSize: 24 }}>
-                Beta Features
-              </h2>
+              <h2 style={{ margin: '0 0 16px 0', fontSize: 24 }}>Beta Features</h2>
               <p style={{ color: '#94a3b8', marginBottom: 24 }}>
                 Enable experimental features and help us test cutting-edge functionality.
               </p>
@@ -435,38 +436,46 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
                       style={{ width: 18, height: 18, marginTop: 2 }}
                     />
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}
+                      >
                         <span style={{ fontWeight: 600 }}>{feature.title}</span>
-                        <span style={{
-                          padding: '2px 8px',
-                          borderRadius: 12,
-                          fontSize: 10,
-                          fontWeight: 600,
-                          textTransform: 'uppercase',
-                          background: feature.status === 'experimental' ? '#fbbf24' :
-                                     feature.status === 'preview' ? '#60a5fa' : '#6b7280',
-                          color: '#000',
-                        }}>
+                        <span
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: 12,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            background:
+                              feature.status === 'experimental'
+                                ? '#fbbf24'
+                                : feature.status === 'preview'
+                                  ? '#60a5fa'
+                                  : '#6b7280',
+                            color: '#000',
+                          }}
+                        >
                           {feature.status.replace('-', ' ')}
                         </span>
                       </div>
-                      <div style={{ fontSize: 14, color: '#94a3b8' }}>
-                        {feature.description}
-                      </div>
+                      <div style={{ fontSize: 14, color: '#94a3b8' }}>{feature.description}</div>
                     </div>
                   </label>
                 ))}
               </div>
 
-              <div style={{
-                marginTop: 20,
-                padding: 16,
-                background: 'rgba(139, 92, 246, 0.1)',
-                border: '1px solid rgba(139, 92, 246, 0.2)',
-                borderRadius: 8,
-                fontSize: 14,
-                color: '#cbd5e1',
-              }}>
+              <div
+                style={{
+                  marginTop: 20,
+                  padding: 16,
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  borderRadius: 8,
+                  fontSize: 14,
+                  color: '#cbd5e1',
+                }}
+              >
                 <strong>🧪 Beta Tester Note:</strong> Your feedback on these features is invaluable!
                 Please report any issues or suggestions through the feedback system.
               </div>
@@ -475,16 +484,15 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
         </div>
 
         {/* Navigation */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: 32,
-          gap: 16,
-        }}>
-          <button
-            onClick={prevStep}
-            style={buttonSecondaryStyles}
-          >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: 32,
+            gap: 16,
+          }}
+        >
+          <button onClick={prevStep} style={buttonSecondaryStyles}>
             {currentStep === 0 ? 'Back to Welcome' : 'Previous'}
           </button>
 
@@ -494,7 +502,10 @@ export function SetupWizard({ onComplete, onBack }: SetupWizardProps) {
             style={{
               ...buttonPrimaryStyles,
               opacity: currentStep === 1 && setupData.selectedOrgs.length === 0 ? 0.6 : 1,
-              cursor: currentStep === 1 && setupData.selectedOrgs.length === 0 ? 'not-allowed' : 'pointer',
+              cursor:
+                currentStep === 1 && setupData.selectedOrgs.length === 0
+                  ? 'not-allowed'
+                  : 'pointer',
             }}
           >
             {currentStep === steps.length - 1 ? 'Complete Setup' : 'Next'}

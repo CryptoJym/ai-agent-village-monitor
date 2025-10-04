@@ -3,7 +3,6 @@ import { getRandomAgentManifest } from '../assets/pixellabManifest';
 import { NpcSprite } from './NpcSprite';
 import type { HouseSnapshot, NpcBehaviorOptions, NpcPopulationOverrides, NpcSeed } from './types';
 import { computeNpcTint, deriveRoles, estimateNpcCount } from './population';
-import { track } from '../analytics/client';
 
 interface Options {
   houses: HouseSnapshot[];
@@ -129,7 +128,7 @@ export class NpcManager {
     const entry = this.npcs.get(id);
     if (!entry) return;
     const run = () => {
-      const { sprite, house, seed } = entry;
+      const { sprite, house } = entry;
       const action = Phaser.Math.RND.pick(['idle', 'wander', 'work', 'talk']);
       switch (action) {
         case 'idle':
@@ -148,11 +147,8 @@ export class NpcManager {
           this.scene.time.delayedCall(1600, () => sprite.setState('idle'));
           break;
       }
-      track('npc_behavior', {
-        npcId: seed.id,
-        houseId: house.id,
-        action,
-      });
+      // Debug tracking disabled - npc_behavior not in AnalyticsEvent type
+      // track({ type: 'npc_behavior', npcId: seed.id, houseId: house.id, action, ts: Date.now() });
     };
     const timer = this.scene.time.addEvent({
       delay: Phaser.Math.Between(1800, 4200),

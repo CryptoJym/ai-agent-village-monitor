@@ -1194,22 +1194,22 @@ export class MainScene extends Phaser.Scene {
 
   private enableCameraControls() {
     const _cam = this.cameras.main;
-    if (!cam) return;
-    cam.setBounds(0, 0, this.scale.width * 2, this.scale.height * 2);
+    if (!_cam) return;
+    _cam.setBounds(0, 0, this.scale.width * 2, this.scale.height * 2);
     let isPanning = false;
     let startX = 0,
       startY = 0,
       baseX = 0,
       baseY = 0;
     // Track pinch gesture for mobile zoom
-    const pinch = { active: false, startDist: 0, startZoom: cam.zoom, midX: 0, midY: 0 };
+    const pinch = { active: false, startDist: 0, startZoom: _cam.zoom, midX: 0, midY: 0 };
     this.input.on('pointerdown', (p: Phaser.Input.Pointer, _targets: any[]) => {
       if ((p as any).dragState) return; // don't pan while dragging objects
       const p1 = this.input.pointer1;
       const p2 = this.input.pointer2;
       if (p1.isDown && p2.isDown) {
         pinch.active = true;
-        pinch.startZoom = cam.zoom;
+        pinch.startZoom = _cam.zoom;
         pinch.startDist = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
         pinch.midX = (p1.x + p2.x) / 2;
         pinch.midY = (p1.y + p2.y) / 2;
@@ -1218,8 +1218,8 @@ export class MainScene extends Phaser.Scene {
         isPanning = true;
         startX = p.x;
         startY = p.y;
-        baseX = cam.scrollX;
-        baseY = cam.scrollY;
+        baseX = _cam.scrollX;
+        baseY = _cam.scrollY;
       }
     });
     this.input.on('pointerup', () => {
@@ -1236,41 +1236,41 @@ export class MainScene extends Phaser.Scene {
       if (pinch.active && p1.isDown && p2.isDown) {
         const midX = (p1.x + p2.x) / 2;
         const midY = (p1.y + p2.y) / 2;
-        const before = cam.getWorldPoint(midX, midY);
+        const before = _cam.getWorldPoint(midX, midY);
         const newDist = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
         if (pinch.startDist > 0) {
           const scale = newDist / pinch.startDist;
           const next = Phaser.Math.Clamp(pinch.startZoom * scale, this.minZoom, this.maxZoom);
-          if (Math.abs(next - cam.zoom) > 1e-4) {
-            cam.setZoom(next);
-            const after = cam.getWorldPoint(midX, midY);
-            cam.scrollX += before.x - after.x;
-            cam.scrollY += before.y - after.y;
+          if (Math.abs(next - _cam.zoom) > 1e-4) {
+            _cam.setZoom(next);
+            const after = _cam.getWorldPoint(midX, midY);
+            _cam.scrollX += before.x - after.x;
+            _cam.scrollY += before.y - after.y;
           }
         }
         return;
       }
       if (!isPanning || !p.isDown) return;
-      const dx = (p.x - startX) / cam.zoom;
-      const dy = (p.y - startY) / cam.zoom;
-      cam.scrollX = baseX - dx;
-      cam.scrollY = baseY - dy;
+      const dx = (p.x - startX) / _cam.zoom;
+      const dy = (p.y - startY) / _cam.zoom;
+      _cam.scrollX = baseX - dx;
+      _cam.scrollY = baseY - dy;
     });
     // Wheel zoom with cursor anchoring
     this.input.on('wheel', (p: Phaser.Input.Pointer, _dx: number, dy: number) => {
-      const before = cam.getWorldPoint(p.x, p.y);
-      const next = Phaser.Math.Clamp(cam.zoom - dy * 0.001, this.minZoom, this.maxZoom);
-      if (Math.abs(next - cam.zoom) < 1e-4) return;
-      cam.setZoom(next);
-      const after = cam.getWorldPoint(p.x, p.y);
-      cam.scrollX += before.x - after.x;
-      cam.scrollY += before.y - after.y;
+      const before = _cam.getWorldPoint(p.x, p.y);
+      const next = Phaser.Math.Clamp(_cam.zoom - dy * 0.001, this.minZoom, this.maxZoom);
+      if (Math.abs(next - _cam.zoom) < 1e-4) return;
+      _cam.setZoom(next);
+      const after = _cam.getWorldPoint(p.x, p.y);
+      _cam.scrollX += before.x - after.x;
+      _cam.scrollY += before.y - after.y;
     });
     // Double-click to center camera (prefer nearest registered house)
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       const now = p.downTime || Date.now();
       if (now - this.lastClickAt < 250) {
-        const world = cam.getWorldPoint(p.x, p.y);
+        const world = _cam.getWorldPoint(p.x, p.y);
         const house = this.findNearestHouse(world.x, world.y, 80);
         let tx = world.x;
         let ty = world.y;

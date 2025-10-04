@@ -34,7 +34,8 @@ export function PerformanceOverlay() {
       setTravel({ last: s.last, p95: s.p95, count: s.count });
     };
     update();
-    return subscribe(update);
+    const unsubscribe = subscribe(update);
+    return unsubscribe;
   }, []);
   return (
     <div

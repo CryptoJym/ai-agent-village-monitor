@@ -9,6 +9,7 @@ import { playAmbient, stopAmbient, type AmbientConfig } from '../audio/ambient';
 
 const TILE_SIZE_DEFAULT = 32;
 const RETURN_SCENE_DEFAULT = 'MainScene';
+const TILE_CATEGORY = 'interior';
 
 const LANGUAGE_TO_THEME: Record<string, string> = {
   js: 'javascript',
@@ -201,7 +202,11 @@ export class InteriorScene extends Phaser.Scene {
     if (!entry) return;
 
     const lowerFrame = entry.lower?.baseTileId;
-    const transitionFrame = entry.transition?.size ? entry.transition.baseTileId : undefined;
+    const transitionFrame: number | undefined = (
+      entry.transition?.size && 'baseTileId' in entry.transition
+        ? entry.transition.baseTileId
+        : undefined
+    ) as number | undefined;
 
     const grid = this.blueprint.vertexGrid;
     const { width, height } = this.blueprint.dimensions;
@@ -237,7 +242,7 @@ export class InteriorScene extends Phaser.Scene {
     const interiorMeta = getInteriorMetadata(this.theme);
     const propsByKey = new Map<string, InteriorPropMeta>();
     for (const prop of interiorMeta.props || []) {
-      propsByKey.set(prop.key, prop);
+      propsByKey.set(prop.key, prop as InteriorPropMeta);
     }
 
     for (const prop of this.blueprint.props || []) {

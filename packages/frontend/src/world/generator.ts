@@ -58,10 +58,12 @@ function getTileMetadata(config: BiomeConfig) {
   if (!meta) throw new Error(`Missing tile metadata for biome ${config.biome}`);
   const variantMeta = meta[config.variant];
   if (!variantMeta) throw new Error(`Missing variant ${config.variant} in biome ${config.biome}`);
+  if (!('baseTileId' in variantMeta))
+    throw new Error(`Variant ${config.variant} has no baseTileId`);
   return {
     textureKey: `${TILE_TEXTURE_PREFIX}${config.biome}`,
     frame: variantMeta.baseTileId,
-    passable: config.passableOverride ?? variantMeta.passable ?? true,
+    passable: config.passableOverride ?? ('passable' in variantMeta ? variantMeta.passable : true),
   };
 }
 

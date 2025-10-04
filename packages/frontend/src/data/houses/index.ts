@@ -10,14 +10,14 @@ import commonsBlueprint from './commons.json';
 import type { HouseBlueprint } from './types';
 
 export const houseBlueprints: HouseBlueprint[] = [
-  javascriptBlueprint,
-  typescriptBlueprint,
-  pythonBlueprint,
-  goBlueprint,
-  rubyBlueprint,
-  javaBlueprint,
-  csharpBlueprint,
-  commonsBlueprint,
+  javascriptBlueprint as HouseBlueprint,
+  typescriptBlueprint as HouseBlueprint,
+  pythonBlueprint as HouseBlueprint,
+  goBlueprint as HouseBlueprint,
+  rubyBlueprint as HouseBlueprint,
+  javaBlueprint as HouseBlueprint,
+  csharpBlueprint as HouseBlueprint,
+  commonsBlueprint as HouseBlueprint,
 ];
 
 export type { HouseBlueprint };

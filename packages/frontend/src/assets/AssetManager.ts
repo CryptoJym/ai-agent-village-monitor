@@ -56,7 +56,7 @@ const getAnimationDirections = (entry: CharacterManifest): Array<Direction4 | Di
   if (entry.animation?.framesByDirection) {
     return Object.keys(entry.animation.framesByDirection) as Array<Direction4 | Direction8>;
   }
-  return entry.directions;
+  return [...entry.directions] as Array<Direction4 | Direction8>;
 };
 
 const buildTileTextureKey = (category: string, key: string) => `pixellabTile:${category}:${key}`;

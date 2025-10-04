@@ -32,6 +32,7 @@ export interface CharacterManifest {
   category: 'agent' | 'emote' | 'bug-bot';
   directions: ReadonlyArray<Direction4 | Direction8>;
   animation?: AnimationConfig;
+  [key: string]: unknown; // Allow indexing with string
 }
 
 type AssetCategory = keyof typeof pixellabAnimationMetadata;
@@ -43,7 +44,7 @@ function deriveAnimationMetadata(
 ): { frameCount: number; framesByDirection: Record<string, number> } | undefined {
   const categoryData = pixellabAnimationMetadata[category];
   if (!categoryData) return undefined;
-  const animationData = categoryData[key]?.[animationName];
+  const animationData = (categoryData as Record<string, any>)[key]?.[animationName];
   if (!animationData) return undefined;
   const framesByDirection: Record<string, number> = {};
   for (const [direction, count] of Object.entries(animationData)) {
@@ -99,7 +100,7 @@ function getAvailableDirections(
   key: string,
   fallback: ReadonlyArray<Direction4 | Direction8>,
 ): ReadonlyArray<Direction4 | Direction8> {
-  const metadata = pixellabAnimationMetadata[category]?.[key];
+  const metadata = (pixellabAnimationMetadata[category] as Record<string, any>)?.[key];
   if (!metadata) return fallback;
   const dirSet = new Set<Direction4 | Direction8>();
   for (const framesByDirection of Object.values(metadata)) {
@@ -108,7 +109,9 @@ function getAvailableDirections(
       dirSet.add(dir as Direction4 | Direction8);
     }
   }
-  return dirSet.size > 0 ? (Array.from(dirSet) as ReadonlyArray<Direction4 | Direction8>) : fallback;
+  return dirSet.size > 0
+    ? (Array.from(dirSet) as ReadonlyArray<Direction4 | Direction8>)
+    : fallback;
 }
 
 const DEFAULT_EMOTE_CALM: AnimationConfig = {

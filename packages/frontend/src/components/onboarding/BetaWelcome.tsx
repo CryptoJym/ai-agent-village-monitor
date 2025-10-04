@@ -105,23 +105,26 @@ export function BetaWelcome({ onContinue, onSkip }: BetaWelcomeProps) {
     {
       icon: '🏘️',
       title: 'AI Agent Villages',
-      description: 'Visualize your GitHub organizations as interactive villages where each repository becomes a house.'
+      description:
+        'Visualize your GitHub organizations as interactive villages where each repository becomes a house.',
     },
     {
       icon: '🤖',
       title: 'Agent Monitoring',
-      description: 'Track AI agents working across your codebase with real-time activity monitoring.'
+      description:
+        'Track AI agents working across your codebase with real-time activity monitoring.',
     },
     {
       icon: '📊',
       title: 'Workflow Insights',
-      description: 'Gain insights into development patterns, collaboration, and project health.'
+      description: 'Gain insights into development patterns, collaboration, and project health.',
     },
     {
       icon: '🔄',
       title: 'Real-time Sync',
-      description: 'Stay up-to-date with live synchronization of repository changes and agent activities.'
-    }
+      description:
+        'Stay up-to-date with live synchronization of repository changes and agent activities.',
+    },
   ];
 
   return (
@@ -152,14 +155,15 @@ export function BetaWelcome({ onContinue, onSkip }: BetaWelcomeProps) {
             Welcome to AI Agent Village Monitor
           </h1>
           <p style={subtitleStyles}>
-            You're among the first to experience the future of development visualization
+            You&apos;re among the first to experience the future of development visualization
           </p>
         </div>
 
         <div style={{ textAlign: 'center' as const, marginBottom: 24 }}>
           <p style={{ fontSize: 18, color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
-            Transform how you monitor and understand AI agents working across your GitHub repositories.
-            Our beta platform provides unprecedented visibility into automated development workflows.
+            Transform how you monitor and understand AI agents working across your GitHub
+            repositories. Our beta platform provides unprecedented visibility into automated
+            development workflows.
           </p>
         </div>
 
@@ -179,29 +183,34 @@ export function BetaWelcome({ onContinue, onSkip }: BetaWelcomeProps) {
           </div>
         )}
 
-        <div style={{
-          textAlign: 'center' as const,
-          marginBottom: 24,
-          padding: '16px 20px',
-          background: 'rgba(59, 130, 246, 0.1)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
-          borderRadius: 12,
-        }}>
+        <div
+          style={{
+            textAlign: 'center' as const,
+            marginBottom: 24,
+            padding: '16px 20px',
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.2)',
+            borderRadius: 12,
+          }}
+        >
           <h3 style={{ margin: '0 0 8px 0', color: '#60a5fa' }}>
             🎯 Your Mission as a Beta Tester
           </h3>
           <p style={{ margin: 0, color: '#cbd5e1', fontSize: 14 }}>
-            Help us refine the experience by exploring features, providing feedback, and reporting any issues you encounter.
-            Your insights will shape the future of AI development monitoring.
+            Help us refine the experience by exploring features, providing feedback, and reporting
+            any issues you encounter. Your insights will shape the future of AI development
+            monitoring.
           </p>
         </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 12,
-          marginBottom: 16,
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
           <button
             onClick={() => setShowDetails(!showDetails)}
             style={{
@@ -214,12 +223,14 @@ export function BetaWelcome({ onContinue, onSkip }: BetaWelcomeProps) {
           </button>
         </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 16,
-          flexWrap: 'wrap' as const,
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 16,
+            flexWrap: 'wrap' as const,
+          }}
+        >
           <button
             onClick={onContinue}
             style={buttonPrimaryStyles}
@@ -250,16 +261,19 @@ export function BetaWelcome({ onContinue, onSkip }: BetaWelcomeProps) {
           </button>
         </div>
 
-        <div style={{
-          marginTop: 24,
-          padding: 16,
-          background: 'rgba(15, 23, 42, 0.4)',
-          borderRadius: 8,
-          fontSize: 12,
-          color: '#64748b',
-          textAlign: 'center' as const,
-        }}>
-          💡 <strong>Tip:</strong> You can access the beta feedback form anytime from the user menu to share your thoughts and suggestions.
+        <div
+          style={{
+            marginTop: 24,
+            padding: 16,
+            background: 'rgba(15, 23, 42, 0.4)',
+            borderRadius: 8,
+            fontSize: 12,
+            color: '#64748b',
+            textAlign: 'center' as const,
+          }}
+        >
+          💡 <strong>Tip:</strong> You can access the beta feedback form anytime from the user menu
+          to share your thoughts and suggestions.
         </div>
       </div>
     </div>

@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import process from 'node:process';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 const GENERATED_ROOT = path.resolve(__dirname, '..', 'generated', 'pixellab');

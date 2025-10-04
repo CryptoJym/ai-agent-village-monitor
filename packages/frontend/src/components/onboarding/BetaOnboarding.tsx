@@ -18,7 +18,7 @@ interface UserState {
   hasCompletedTour: boolean;
 }
 
-export function BetaOnboarding({ isOpen, onClose, onComplete }: BetaOnboardingProps) {
+export function BetaOnboarding({ isOpen, onComplete }: BetaOnboardingProps) {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [userState, setUserState] = useState<UserState>({
     isFirstTime: true,
@@ -153,25 +153,15 @@ export function BetaOnboarding({ isOpen, onClose, onComplete }: BetaOnboardingPr
   return (
     <>
       {currentStep === 'welcome' && (
-        <BetaWelcome
-          onContinue={handleWelcomeComplete}
-          onSkip={handleWelcomeSkip}
-        />
+        <BetaWelcome onContinue={handleWelcomeComplete} onSkip={handleWelcomeSkip} />
       )}
 
       {currentStep === 'setup' && (
-        <SetupWizard
-          onComplete={handleSetupComplete}
-          onBack={handleSetupBack}
-        />
+        <SetupWizard onComplete={handleSetupComplete} onBack={handleSetupBack} />
       )}
 
       {currentStep === 'tour' && (
-        <VillageTour
-          isVisible={true}
-          onComplete={handleTourComplete}
-          onSkip={handleTourSkip}
-        />
+        <VillageTour isVisible={true} onComplete={handleTourComplete} onSkip={handleTourSkip} />
       )}
     </>
   );
