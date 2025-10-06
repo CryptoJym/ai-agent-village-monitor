@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "mitt": "^3.0.1",
-    "i18next": "^23.11.5",
+    "i18next": "^25.5.3",
     "react-i18next": "^15.0.1",
     "phaser": "^3.80.1",
     "react": "^18.3.1",
