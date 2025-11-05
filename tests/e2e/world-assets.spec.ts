@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test';
 
 const KNOWN_API_FAILURES = ['/api/villages', '/api/analytics/collect'];
 
-const isKnownApiFailure = (message: string) => KNOWN_API_FAILURES.some((path) => message.includes(path));
+const isKnownApiFailure = (message: string) =>
+  KNOWN_API_FAILURES.some((path) => message.includes(path));
 
 test.describe('world immersion diagnostics', () => {
   test('collects console and network issues on world load', async ({ page }, testInfo) => {
@@ -54,18 +55,26 @@ test.describe('world immersion diagnostics', () => {
     const textureWarnings = consoleWarnings.filter((msg) => msg.includes('Texture'));
     const routerWarnings = consoleWarnings.filter((msg) => msg.includes('React Router'));
     const otherWarnings = consoleWarnings.filter(
-      (msg) => !glWarnings.includes(msg) && !textureWarnings.includes(msg) && !routerWarnings.includes(msg),
+      (msg) =>
+        !glWarnings.includes(msg) &&
+        !textureWarnings.includes(msg) &&
+        !routerWarnings.includes(msg),
     );
 
     const ignoredGlWarnings = glWarnings.filter((msg) => msg.includes('ReadPixels'));
     const actionableGlWarnings = glWarnings.filter((msg) => !ignoredGlWarnings.includes(msg));
     const networkConsoleErrors = consoleErrors.filter(
       (msg) =>
-        isKnownApiFailure(msg) || msg.includes('Failed to load resource: the server responded with a status of 500'),
+        isKnownApiFailure(msg) ||
+        msg.includes('Failed to load resource: the server responded with a status of 500'),
     );
-    const actionableConsoleErrors = consoleErrors.filter((msg) => !networkConsoleErrors.includes(msg));
+    const actionableConsoleErrors = consoleErrors.filter(
+      (msg) => !networkConsoleErrors.includes(msg),
+    );
     const ignoredFailedRequests = failedRequests.filter((msg) => isKnownApiFailure(msg));
-    const actionableFailedRequests = failedRequests.filter((msg) => !ignoredFailedRequests.includes(msg));
+    const actionableFailedRequests = failedRequests.filter(
+      (msg) => !ignoredFailedRequests.includes(msg),
+    );
 
     const diagnostics = [
       `Console errors (count=${actionableConsoleErrors.length})`,
@@ -115,7 +124,7 @@ test.describe('world immersion diagnostics', () => {
         try {
           const main = game.scene.getScene('MainScene');
           return Boolean((main as any)?.npcManager);
-        } catch (err) {
+        } catch {
           return false;
         }
       },
@@ -128,8 +137,10 @@ test.describe('world immersion diagnostics', () => {
       const main = game.scene.getScene('MainScene');
       const interior = game.scene.getScene('InteriorScene');
       const npcManager = (main as any)?.npcManager;
-      const population = npcManager ? (npcManager as any).npcs?.size ?? null : null;
-      const houses = npcManager ? Array.from(((npcManager as any).houseMap?.keys?.() as Iterable<string>) ?? []) : [];
+      const population = npcManager ? ((npcManager as any).npcs?.size ?? null) : null;
+      const houses = npcManager
+        ? Array.from(((npcManager as any).houseMap?.keys?.() as Iterable<string>) ?? [])
+        : [];
       return {
         sceneKeys: Object.keys(game.scene.keys || {}),
         population,

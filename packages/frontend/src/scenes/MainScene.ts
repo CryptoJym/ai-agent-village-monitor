@@ -977,7 +977,6 @@ export class MainScene extends Phaser.Scene {
       this.bugs.set(id, bot);
       this.bugBotsGroup?.add(bot);
       this.bugIndex.insert({ id, x: bot.x, y: bot.y });
-      this.bugIndex.insert({ id, x: bot.x, y: bot.y });
       if (!this.focusOrder.includes(id)) this.focusOrder.push(id);
       announce(`Bug ${id} spawned with ${severity} severity`);
       this.ensureFocusVisible();
