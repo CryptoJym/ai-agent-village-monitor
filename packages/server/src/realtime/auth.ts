@@ -4,10 +4,8 @@ import { config } from '../config';
 import { verifyAccessToken, type JwtPayload } from '../auth/jwt';
 
 declare module 'socket.io' {
-  interface Socket {
-    data: Socket['data'] & {
-      user?: JwtPayload;
-    };
+  interface SocketData {
+    user?: JwtPayload;
   }
 }
 
@@ -18,7 +16,7 @@ declare module 'socket.io' {
  * In development, if no JWT secret is configured, the middleware allows
  * connections but logs a warning for visibility.
  */
-export function socketAuth(socket: Socket, next: NextFunction) {
+export function socketAuth(socket: Socket, next: (err?: Error) => void) {
   const token =
     (socket.handshake.auth as Record<string, unknown> | undefined)?.token ??
     (socket.handshake.query?.token as string | undefined);

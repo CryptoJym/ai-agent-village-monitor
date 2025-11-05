@@ -23,13 +23,12 @@ export function createQueues(): AppQueues | null {
 
   const agentCommands = new Queue('agent-commands', {
     connection,
-    defaultJobOptions: { ...defaultJobOpts, attempts: 5, timeout: 30_000 },
+    defaultJobOptions: { ...defaultJobOpts, attempts: 5 },
   });
   const githubSync = new Queue('github-sync', {
     connection,
-    defaultJobOptions: { ...defaultJobOpts, attempts: 8, timeout: 120_000 },
-    limiter: { max: 5, duration: 1000 },
-  });
+    defaultJobOptions: { ...defaultJobOpts, attempts: 8 },
+  } as any);
 
   const events = {
     agentCommands: new QueueEvents('agent-commands', { connection }),

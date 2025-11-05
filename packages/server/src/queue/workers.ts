@@ -241,12 +241,12 @@ export function startWorkers(log = console): WorkerHandles | null {
       throw new Error('invalid job payload');
     const result = await syncVillageNow(villageId, org);
     try {
-      await setVillageLastSynced(villageId, new Date());
+      await setVillageLastSynced(String(villageId), new Date());
     } catch (e: any) {
       log.error?.('[worker] github-sync lastSynced update failed', { villageId, err: e?.message });
     }
     log.info?.('[worker] github-sync completed', { jobId: job.id, ...result });
-    return { ok: true, jobId: job.id, ...result };
+    return { jobId: job.id, ...result };
   };
 
   const agentCommands = new Worker('agent-commands', agentProc, baseOpts);

@@ -116,7 +116,7 @@ export function getPrometheus(): string {
         '{' +
         Object.keys(allLabels)
           .sort()
-          .map((lk) => `${lk}="${allLabels[lk]}"`)
+          .map((lk) => `${lk}="${(allLabels as any)[lk]}"`)
           .join(',') +
         '}';
       lines.push(`${name}_bucket${lbls} ${cum}`);

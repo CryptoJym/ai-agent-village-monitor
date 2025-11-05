@@ -30,8 +30,8 @@ export async function syncVillageNow(villageId: number, org: string) {
 
   // Build existing houses map and used positions set
   const existing = await prisma.house.findMany({ where: { villageId } });
-  const byRepoId = new Map(existing.map((h) => [String(h.githubRepoId), h]));
-  const used = new Set(existing.map((h) => `${h.positionX ?? 'n'}:${h.positionY ?? 'n'}`));
+  const byRepoId = new Map(existing.map((h: any) => [String(h.githubRepoId), h]));
+  const used = new Set(existing.map((h: any) => `${h.positionX ?? 'n'}:${h.positionY ?? 'n'}`));
 
   // Resolve missing languages with limited concurrency
   const needsLang = repos.filter((r) => !r.primaryLanguage);
@@ -70,7 +70,7 @@ export async function syncVillageNow(villageId: number, org: string) {
 
   // Sort for deterministic assignment of new positions
   const sorted = [...repos].sort(
-    (a, b) => b.stargazers - a.stargazers || a.name.localeCompare(b.name),
+    (a, b) => (b.stargazers ?? 0) - (a.stargazers ?? 0) || a.name.localeCompare(b.name),
   );
 
   let created = 0;
@@ -101,7 +101,7 @@ export async function syncVillageNow(villageId: number, org: string) {
       created++;
     } else {
       await prisma.house.update({
-        where: { id: exists.id },
+        where: { id: (exists as any).id },
         data: {
           repoName: r.owner ? `${r.owner}/${r.name}` : r.name,
           primaryLanguage: r.primaryLanguage ?? null,

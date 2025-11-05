@@ -106,6 +106,6 @@ export async function getProbotMiddleware() {
     );
   }
   const probot = new Probot({ appId, privateKey, secret });
-  const middleware = createNodeMiddleware(appFn as any, { probot } as ApplicationFunctionOptions);
+  const middleware = createNodeMiddleware(appFn as any, { probot } as any);
   return middleware;
 }

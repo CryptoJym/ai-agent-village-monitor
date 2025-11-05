@@ -54,7 +54,7 @@ export function createSocketServer(server: HttpServer) {
       const origin = req.headers.origin as string | undefined;
       if (!origin) return fn(null, true);
       const ok = allowedOrigins.includes(origin);
-      return fn(ok ? null : new Error('CORS origin not allowed'), ok);
+      return fn(ok ? null : 'CORS origin not allowed', ok);
     },
   });
 

@@ -61,7 +61,7 @@ async function computeVillageAnalytics(ids: string[]): Promise<Map<string, Villa
     }),
   ]);
 
-  counts.forEach((entry) => {
+  counts.forEach((entry: any) => {
     result.set(entry.villageId, {
       houseCount: entry._count._all ?? 0,
       totalStars: entry._sum.stars ?? 0,
@@ -71,7 +71,7 @@ async function computeVillageAnalytics(ids: string[]): Promise<Map<string, Villa
     });
   });
 
-  languages.forEach((entry) => {
+  languages.forEach((entry: any) => {
     const current = result.get(entry.villageId) ?? {
       houseCount: 0,
       totalStars: 0,
@@ -112,10 +112,10 @@ villagesRouter.get('/', requireAuth, async (req, res, next) => {
       where: { OR: [{ ownerId: userId }, { access: { some: { userId } } }] },
       orderBy: { createdAt: 'desc' },
     });
-    const analytics = await computeVillageAnalytics(villages.map((v) => v.id));
+    const analytics = await computeVillageAnalytics(villages.map((v: any) => v.id));
 
     res.json(
-      villages.map((v) => {
+      villages.map((v: any) => {
         const stat = analytics.get(v.id);
         return {
           id: v.id,
@@ -383,7 +383,7 @@ villagesRouter.get(
         orderBy: { grantedAt: 'desc' },
       });
       res.json(
-        rows.map((r) => ({
+        rows.map((r: any) => ({
           userId: r.userId,
           username: r.user?.username,
           githubId: r.user?.githubId?.toString?.(),

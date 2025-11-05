@@ -111,7 +111,7 @@ export class GitHubClient {
       (this._octokit as any).rest.repos.listForOrg({ org, per_page: 100 }),
     );
     this.trackRate((res as any)?.headers);
-    return res.data;
+    return (res as any).data;
   }
 
   async listOrgReposGraphQL(org: string, cursor?: string) {
@@ -183,7 +183,7 @@ export class GitHubClient {
       this.trackRate((res as any)?.headers);
       const etag = (res as any)?.headers?.etag;
       if (etag) this.etags.set(key, etag);
-      const data = res.data as unknown as Record<string, number>;
+      const data = (res as any).data as unknown as Record<string, number>;
       this.languagesCache.set(key, data);
       return data;
     } catch (e: any) {
@@ -245,7 +245,7 @@ export class GitHubClient {
       (this._octokit as any).orgs.listForAuthenticatedUser({ per_page: 100 }),
     );
     this.trackRate((res as any)?.headers);
-    return (res.data || []).map((o: any) => ({ id: o.id, login: o.login }));
+    return ((res as any).data || []).map((o: any) => ({ id: o.id, login: o.login }));
   }
 
   async triggerDispatch(
