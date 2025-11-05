@@ -46,36 +46,43 @@ model BugBot {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  email          String?  @unique @db.Citext
-  githubId       BigInt?  @unique
-  username       String?  @unique
-  name           String?
-  avatarUrl      String?
+  id              String          @id @default(cuid())
+  email           String?         @unique @db.Citext
+  githubId        BigInt?         @unique
+  username        String?         @unique
+  name            String?
+  avatarUrl       String?
   accessTokenHash String?
-  preferences    Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  preferences     Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
-  villages VillageAccess[]
-  agents   Agent[]
+  ownedVillages   Village[]       // Villages owned by this user
+  villages        VillageAccess[] // Villages this user has access to
+  agents          Agent[]
 }
 
 model Village {
-  id          String   @id @default(cuid())
-  orgName     String
-  githubOrgId BigInt?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  config      Json?
+  id            String    @id @default(cuid())
+  name          String    // User-friendly display name
+  orgName       String    // GitHub org name
+  githubOrgId   BigInt?   @unique
+  ownerId       String?   // Owner user ID (nullable for migration compatibility)
+  owner         User?     @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  isPublic      Boolean   @default(false)
+  lastSynced    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  config        Json?
   // Layout concurrency/versioning
-  layoutVersion Int     @default(0)
+  layoutVersion Int       @default(0)
 
   houses  House[]
   bugBots BugBot[]
   access  VillageAccess[]
 
   @@index([orgName])
+  @@index([ownerId])
 }
 
 model House {
@@ -155,7 +162,8 @@ model WorkStreamEvent {
 model VillageAccess {
   villageId String
   userId    String
-  role      String @default("viewer")
+  role      String   @default("viewer")
+  grantedAt DateTime @default(now())
 
   village Village @relation(fields: [villageId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)

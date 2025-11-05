@@ -173,6 +173,14 @@ export async function syncVillageNow(villageId: number, org: string) {
   } catch {
     // Metrics emission is best effort.
   }
+  // Update lastSynced timestamp
+  try {
+    const { setVillageLastSynced } = await import('./service');
+    await setVillageLastSynced(villageId, new Date());
+  } catch {
+    // Non-fatal if lastSynced update fails
+  }
+
   console.info('[sync] village repos synced', {
     villageId,
     org,

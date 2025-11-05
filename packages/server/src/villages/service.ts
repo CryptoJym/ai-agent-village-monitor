@@ -1,7 +1,10 @@
 import { prisma } from '../db/client';
 
-export async function setVillageLastSynced(_villageId: string, _at: Date = new Date()) {
-  // No-op alignment: the schema has no lastSynced; consider persisting a timestamp in config if needed.
-  const v = await prisma.village.findFirst({});
+export async function setVillageLastSynced(villageId: number, at: Date = new Date()) {
+  // Update the lastSynced field on the village
+  const v = await prisma.village.update({
+    where: { id: villageId },
+    data: { lastSynced: at },
+  });
   return v;
 }

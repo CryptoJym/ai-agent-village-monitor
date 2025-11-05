@@ -107,7 +107,7 @@ async function computeVillageAnalytics(ids: string[]): Promise<Map<string, Villa
 // List villages accessible to current user
 villagesRouter.get('/', requireAuth, async (req, res, next) => {
   try {
-    const userId = Number(req.user!.sub);
+    const userId = req.user!.sub; // String ID from JWT
     const villages = await prisma.village.findMany({
       where: { OR: [{ ownerId: userId }, { access: { some: { userId } } }] },
       orderBy: { createdAt: 'desc' },
@@ -163,11 +163,11 @@ villagesRouter.get('/:id', async (req, res, next) => {
     const id = Number(req.params.id);
     const v = await prisma.village.findUnique({ where: { id } });
     if (!v) return res.status(404).json({ error: 'Not Found', code: 'NOT_FOUND' });
-    const authedUserId = Number((req as any).user?.sub || NaN);
+    const authedUserId = (req as any).user?.sub as string | undefined;
     // Determine viewer role when possible
     let viewerRole: 'owner' | 'member' | 'visitor' | 'none' = 'none';
-    if (Number.isFinite(authedUserId)) {
-      if ((v as any).ownerId === authedUserId) viewerRole = 'owner';
+    if (authedUserId) {
+      if (v.ownerId === authedUserId) viewerRole = 'owner';
       else {
         const access = await prisma.villageAccess.findUnique({
           where: { villageId_userId: { villageId: id, userId: authedUserId } },
@@ -183,7 +183,7 @@ villagesRouter.get('/:id', async (req, res, next) => {
     }
     // If not public, enforce auth and membership; if public, set light caching
     if (!v.isPublic) {
-      if (!Number.isFinite(authedUserId)) return res.status(401).json({ error: 'unauthorized' });
+      if (!authedUserId) return res.status(401).json({ error: 'unauthorized' });
       if (viewerRole === 'none') return res.status(403).json({ error: 'forbidden' });
     } else {
       res.setHeader('Cache-Control', 'public, max-age=60');
@@ -193,7 +193,7 @@ villagesRouter.get('/:id', async (req, res, next) => {
 
     res.json({
       id: v.id,
-      name: (v as any).name ?? (v as any).orgName ?? `Village ${v.id}`,
+      name: v.name, // Now properly defined in schema
       githubOrgId: v.githubOrgId.toString(),
       isPublic: v.isPublic,
       lastSynced: v.lastSynced,
@@ -216,12 +216,12 @@ villagesRouter.get('/:id/role', requireAuth, async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id))
     return res.status(400).json({ error: 'invalid id', code: 'BAD_REQUEST' });
-  const authedUserId = Number((req as any).user?.sub || NaN);
-  if (!Number.isFinite(authedUserId)) return res.status(401).json({ error: 'unauthorized' });
+  const authedUserId = req.user!.sub; // String ID from JWT
+  if (!authedUserId) return res.status(401).json({ error: 'unauthorized' });
   const v = await prisma.village.findUnique({ where: { id } });
   if (!v) return res.status(404).json({ error: 'Not Found', code: 'NOT_FOUND' });
   let role: 'owner' | 'member' | 'visitor' | null = null;
-  if ((v as any).ownerId === authedUserId) role = 'owner';
+  if (v.ownerId === authedUserId) role = 'owner';
   else {
     const access = await prisma.villageAccess.findUnique({
       where: { villageId_userId: { villageId: id, userId: authedUserId } },
@@ -268,14 +268,15 @@ villagesRouter.post('/', requireAuth, async (req, res, next) => {
         return res.status(400).json({ error: 'invalid github_org_id' });
       }
     }
-    const ownerId = Number(req.user!.sub);
+    const ownerId = req.user!.sub; // Keep as string (Prisma uses String for IDs)
     const created = await prisma.village.create({
       data: {
         name,
+        orgName: name, // Also set orgName for backwards compatibility
         githubOrgId,
         ownerId,
         isPublic: false,
-        villageConfig: { org: typeof rawOrg === 'string' ? rawOrg : name },
+        config: { org: typeof rawOrg === 'string' ? rawOrg : name },
       },
     });
     return res
