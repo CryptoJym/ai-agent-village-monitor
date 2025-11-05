@@ -422,7 +422,6 @@ villagesRouter.post(
 );
 
 // Invite by GitHub username (owner only)
-import { sanitizeString } from '../middleware/sanitize';
 const InviteSchema = z
   .object({
     username: z

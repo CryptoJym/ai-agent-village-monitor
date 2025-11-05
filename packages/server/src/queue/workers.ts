@@ -2,7 +2,7 @@ import { Worker, type Processor, type WorkerOptions } from 'bullmq';
 import { getRedis } from './redis';
 import { setVillageLastSynced } from '../villages/service';
 import { syncVillageNow } from '../villages/sync';
-import { getAgentController } from '../agents/controller';
+import { getAgentController, type CommandResult } from '../agents/controller';
 import { getPrisma } from '../db';
 import { audit } from '../audit/logger';
 import { appendEvent, endActiveSession, ensureActiveSession } from '../agents/session';
@@ -47,12 +47,10 @@ export function startWorkers(log = console): WorkerHandles | null {
           }
           await appendEvent(sessionId!, 'session_started', 'agent session started');
         }
-        audit('agent.session_starting', { agentId: agentIdStr, jobId: String(job.id), sessionId });
+        audit.log('agent.session_starting', { agentId: agentIdStr, jobId: String(job.id), sessionId });
         await controller.start(agentIdRaw);
         try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: 'session_started',
+          audit.log('session_started', {
             agentId: agentIdStr,
             sessionId,
             jobId: String(job.id),
@@ -71,9 +69,9 @@ export function startWorkers(log = console): WorkerHandles | null {
           message: 'session started',
           ts: Date.now(),
         });
-        audit('agent.session_started', { agentId: agentIdStr, jobId: String(job.id), sessionId });
+        audit.log('agent.session_started', { agentId: agentIdStr, jobId: String(job.id), sessionId });
       } else if (kind === 'stop') {
-        audit('agent.session_stopping', { agentId: agentIdStr, jobId: String(job.id) });
+        audit.log('agent.session_stopping', { agentId: agentIdStr, jobId: String(job.id) });
         await controller.stop(agentIdRaw);
         if (prisma) {
           await endActiveSession(agentIdStr);
@@ -84,9 +82,7 @@ export function startWorkers(log = console): WorkerHandles | null {
           }
         }
         try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: 'session_stopped',
+          audit.log('session_stopped', {
             agentId: agentIdStr,
             jobId: String(job.id),
             ts: Date.now(),
@@ -104,7 +100,7 @@ export function startWorkers(log = console): WorkerHandles | null {
           status: 'idle',
           ts: Date.now(),
         });
-        audit('agent.session_stopped', { agentId: agentIdStr, jobId: String(job.id) });
+        audit.log('agent.session_stopped', { agentId: agentIdStr, jobId: String(job.id) });
       } else if (kind === 'command') {
         const cmd = String(data?.command || '');
         const args = (data?.args || {}) as Record<string, unknown>;
@@ -112,12 +108,10 @@ export function startWorkers(log = console): WorkerHandles | null {
         if (prisma) {
           const session = await ensureActiveSession(agentIdStr);
           sessionId = (session as any).id as string;
-          await appendEvent(sessionId!, 'command_received', `command: ${cmd}`, { args });
+          await appendEvent(sessionId!, 'command_received', `command: ${cmd}`);
         }
         try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: 'command_enqueued',
+          audit.log('command_enqueued', {
             agentId: agentIdStr,
             sessionId,
             jobId: String(job.id),
@@ -127,7 +121,7 @@ export function startWorkers(log = console): WorkerHandles | null {
         } catch {
           // Audit logging failure should not block command execution.
         }
-        audit('agent.command_started', {
+        audit.log('agent.command_started', {
           agentId: agentIdStr,
           jobId: String(job.id),
           command: cmd,
@@ -151,7 +145,7 @@ export function startWorkers(log = console): WorkerHandles | null {
           return controller.runCommand(agentIdRaw, cmd, args, streamOpts);
         };
         const streamOpts = {
-          onEvent: async (evt) => {
+          onEvent: async (evt: any) => {
             try {
               if (evt.type === 'log' && evt.message) {
                 emitToAgent(agentIdStr, 'work_stream', {
@@ -168,10 +162,10 @@ export function startWorkers(log = console): WorkerHandles | null {
                   progress: evt.progress,
                 });
                 if (prisma && sessionId)
-                  await appendEvent(sessionId, 'progress', undefined, {
+                  await appendEvent(sessionId, 'progress', JSON.stringify({
                     progress: evt.progress,
                     data: evt.data,
-                  });
+                  }));
               } else if (evt.type === 'status') {
                 emitToAgent(agentIdStr, 'agent_update', {
                   agentId: agentIdStr,
@@ -186,7 +180,7 @@ export function startWorkers(log = console): WorkerHandles | null {
                   ts: Date.now(),
                 });
                 if (prisma && sessionId)
-                  await appendEvent(sessionId, 'error', evt.message, evt.data);
+                  await appendEvent(sessionId, 'error', evt.message);
               }
             } catch {
               // Ignore streaming side-effect failures; continue emitting events.
@@ -199,13 +193,10 @@ export function startWorkers(log = console): WorkerHandles | null {
             sessionId,
             result.ok ? 'command_completed' : 'command_failed',
             result.ok ? 'ok' : result.error || 'error',
-            result,
           );
         }
         try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: result.ok ? 'command_completed' : 'command_failed',
+          audit.log(result.ok ? 'command_completed' : 'command_failed', {
             agentId: agentIdStr,
             sessionId,
             jobId: String(job.id),
@@ -220,7 +211,7 @@ export function startWorkers(log = console): WorkerHandles | null {
           message: result.ok ? `command completed: ${cmd}` : `command failed: ${cmd}`,
           ts: Date.now(),
         });
-        audit(result.ok ? 'agent.command_completed' : 'agent.command_failed', {
+        audit.log(result.ok ? 'agent.command_completed' : 'agent.command_failed', {
           agentId: agentIdStr,
           jobId: String(job.id),
           command: cmd,
@@ -230,10 +221,9 @@ export function startWorkers(log = console): WorkerHandles | null {
     } catch (e: any) {
       log.error?.('[worker] agent-commands error', { jobId: job.id, err: e?.message });
       try {
-        audit(
+        audit.log(
           'agent.command_error',
           { agentId: agentIdStr, jobId: String(job.id), error: e?.message },
-          'error',
         );
       } catch {
         // Ignore audit logging failure here; rethrow original error.
@@ -286,10 +276,9 @@ export function startWorkers(log = console): WorkerHandles | null {
           ts: Date.now(),
         });
         try {
-          audit(
+          audit.log(
             'agent.command_dlq',
             { agentId, jobId: String(job?.id), name: job?.name, error: err?.message },
-            'error',
           );
         } catch {
           // Ignore audit logging failure; DLQ entry already recorded.
