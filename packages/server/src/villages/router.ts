@@ -139,13 +139,12 @@ villagesRouter.get('/', requireAuth, async (req, res, next) => {
 
 // Sync health (latest + recent runs) — public for owners/members; public visitors can read if village isPublic
 villagesRouter.get('/:id/sync/health', async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id)) return res.status(400).json({ error: 'invalid id' });
+  const id = req.params.id; // Use String ID directly
   const v = await prisma.village.findUnique({ where: { id }, select: { isPublic: true } });
   if (!v) return res.status(404).json({ error: 'Not Found' });
-  const authedUserId = Number((req as any).user?.sub || NaN);
+  const authedUserId = (req as any).user?.sub as string | undefined;
   if (!v.isPublic) {
-    if (!Number.isFinite(authedUserId)) return res.status(401).json({ error: 'unauthorized' });
+    if (!authedUserId) return res.status(401).json({ error: 'unauthorized' });
     const access = await prisma.villageAccess.findUnique({
       where: { villageId_userId: { villageId: id, userId: authedUserId } },
     });
@@ -160,7 +159,7 @@ villagesRouter.get('/:id/sync/health', async (req, res) => {
 // Get village details (public allowed if isPublic)
 villagesRouter.get('/:id', async (req, res, next) => {
   try {
-    const id = Number(req.params.id);
+    const id = req.params.id; // Use String ID directly
     const v = await prisma.village.findUnique({ where: { id } });
     if (!v) return res.status(404).json({ error: 'Not Found', code: 'NOT_FOUND' });
     const authedUserId = (req as any).user?.sub as string | undefined;
@@ -213,9 +212,7 @@ villagesRouter.get('/:id', async (req, res, next) => {
 
 // Current user's role for this village
 villagesRouter.get('/:id/role', requireAuth, async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id))
-    return res.status(400).json({ error: 'invalid id', code: 'BAD_REQUEST' });
+  const id = req.params.id; // Use String ID directly
   const authedUserId = req.user!.sub; // String ID from JWT
   if (!authedUserId) return res.status(401).json({ error: 'unauthorized' });
   const v = await prisma.village.findUnique({ where: { id } });
@@ -291,10 +288,10 @@ villagesRouter.post('/', requireAuth, async (req, res, next) => {
 villagesRouter.post(
   '/:id/houses/sync',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner', 'member']),
+  requireVillageRole((req) => req.params.id, ['owner', 'member']),
   async (req, res) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       const { jobId } = await enqueueVillageSync(id);
       return res.status(202).json({ status: 'enqueued', jobId });
     } catch (e: any) {
@@ -312,9 +309,9 @@ villagesRouter.post(
 villagesRouter.get(
   '/:id/houses/sync/status',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner', 'member']),
+  requireVillageRole((req) => req.params.id, ['owner', 'member']),
   async (req, res) => {
-    const id = Number(req.params.id);
+    const id = req.params.id; // Use String ID directly
     const connection = getRedis();
     if (!connection) return res.json({ state: 'unknown', progress: 0 });
     try {
@@ -341,10 +338,10 @@ const UpdateVillageSchema = z.object({
 villagesRouter.put(
   '/:id',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       const parsed = UpdateVillageSchema.safeParse(req.body ?? {});
       if (!parsed.success)
         return res.status(400).json({ error: 'invalid body', details: parsed.error.flatten() });
@@ -372,10 +369,10 @@ const UpsertAccessSchema = z.object({ userId: z.number().int().positive(), role:
 villagesRouter.get(
   '/:id/access',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       const rows = await prisma.villageAccess.findMany({
         where: { villageId: id },
         include: {
@@ -402,10 +399,10 @@ villagesRouter.get(
 villagesRouter.post(
   '/:id/access',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       const body = UpsertAccessSchema.safeParse(req.body ?? {});
       if (!body.success)
         return res.status(400).json({ error: 'invalid body', details: body.error.flatten() });
@@ -437,10 +434,10 @@ const InviteSchema = z
 villagesRouter.post(
   '/:id/invite',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       const body = InviteSchema.safeParse(req.body ?? {});
       if (!body.success)
         return res.status(400).json({ error: 'invalid body', details: body.error.flatten() });
@@ -466,11 +463,11 @@ villagesRouter.post(
 villagesRouter.put(
   '/:id/access/:userId',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
-      const userId = Number(req.params.userId);
+      const id = req.params.id; // Use String ID directly
+      const userId = req.params.userId; // Use String ID directly
       const body = z.object({ role: RoleSchema }).safeParse(req.body ?? {});
       if (!body.success)
         return res.status(400).json({ error: 'invalid body', details: body.error.flatten() });
@@ -493,11 +490,11 @@ villagesRouter.put(
 villagesRouter.delete(
   '/:id/access/:userId',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
-      const userId = Number(req.params.userId);
+      const id = req.params.id; // Use String ID directly
+      const userId = req.params.userId; // Use String ID directly
       await prisma.villageAccess
         .delete({ where: { villageId_userId: { villageId: id, userId } } })
         .catch(() => {});
@@ -513,10 +510,10 @@ villagesRouter.delete(
 villagesRouter.get(
   '/:id/layout',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner', 'member']),
+  requireVillageRole((req) => req.params.id, ['owner', 'member']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       const [agents, houses, village] = await Promise.all([
         prisma.agent.findMany({
           where: { villageId: String(id) },
@@ -545,10 +542,10 @@ villagesRouter.get(
 villagesRouter.put(
   '/:id/layout',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       const body = (req.body ?? {}) as {
         version?: number;
         agents?: Array<any>;
@@ -611,10 +608,10 @@ villagesRouter.put(
 villagesRouter.post(
   '/:id/layout/reset',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id; // Use String ID directly
       await prisma.house.updateMany({
         where: { villageId: String(id) },
         data: { positionX: null, positionY: null },
@@ -636,15 +633,51 @@ villagesRouter.post(
     }
   },
 );
+/**
+ * EMERGENCY HOTFIX: Disabled agent-village endpoints
+ * These endpoints are broken because Agent.villageId doesn't exist in the schema yet.
+ * TODO: Re-enable after migration adds Agent.villageId field.
+ */
+
+// List agents for a village (owner or member) - DISABLED
+villagesRouter.get(
+  '/:id/agents',
+  requireAuth,
+  requireVillageRole((req) => req.params.id, ['owner', 'member']),
+  async (_req, res) => {
+    res.status(501).json({
+      error: 'Not Implemented',
+      code: 'NOT_IMPLEMENTED',
+      message: 'Agent-village relationship not yet implemented. Use GET /agents to list all agents.'
+    });
+  },
+);
+
+// Create agent in a village (owner only) - DISABLED
+villagesRouter.post(
+  '/:id/agents',
+  requireAuth,
+  requireVillageRole((req) => req.params.id, ['owner']),
+  async (_req, res) => {
+    res.status(501).json({
+      error: 'Not Implemented',
+      code: 'NOT_IMPLEMENTED',
+      message: 'Agent-village relationship not yet implemented. Use POST /agents to create agents directly.'
+    });
+  },
+);
+
+/* COMMENTED OUT UNTIL Agent.villageId IS ADDED TO SCHEMA:
+
 // List agents for a village (owner or member)
 villagesRouter.get(
   '/:id/agents',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner', 'member']),
+  requireVillageRole((req) => req.params.id, ['owner', 'member']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
-      const list = await prisma.agent.findMany({ where: { villageId: id as any } as any });
+      const id = req.params.id;
+      const list = await prisma.agent.findMany({ where: { villageId: id } });
       res.json(list);
     } catch (e) {
       next(e);
@@ -656,15 +689,15 @@ villagesRouter.get(
 villagesRouter.post(
   '/:id/agents',
   requireAuth,
-  requireVillageRole((req) => Number(req.params.id), ['owner']),
+  requireVillageRole((req) => req.params.id, ['owner']),
   async (req, res, next) => {
     try {
-      const id = Number(req.params.id);
+      const id = req.params.id;
       const body = (req.body ?? {}) as any;
       const name = sanitizeString(String(body.name || ''), { maxLen: 200 });
       if (!name) return res.status(400).json({ error: 'invalid body', code: 'BAD_REQUEST' });
       const created = await prisma.agent.create({
-        data: { name, villageId: id as any, currentStatus: 'idle' } as any,
+        data: { name, villageId: id, currentStatus: 'idle' },
       });
       res.status(201).json(created);
     } catch (e) {
@@ -672,3 +705,4 @@ villagesRouter.post(
     }
   },
 );
+*/

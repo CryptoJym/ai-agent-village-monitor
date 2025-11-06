@@ -245,9 +245,9 @@ export function startWorkers(log = console): WorkerHandles | null {
 
   const syncProc: Processor = async (job) => {
     log.info?.(`[worker] github-sync processing ${job.id} ${job.name}`, { data: job.data });
-    const villageId = Number((job.data as any)?.villageId ?? NaN);
+    const villageId = String((job.data as any)?.villageId || '');
     const org = String((job.data as any)?.org || '');
-    if (!Number.isFinite(villageId) || villageId <= 0 || !org)
+    if (!villageId || !org)
       throw new Error('invalid job payload');
     const result = await syncVillageNow(villageId, org);
     try {

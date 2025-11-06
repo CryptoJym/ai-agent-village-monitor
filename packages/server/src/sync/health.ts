@@ -13,8 +13,8 @@ type SyncRun = {
 // In-memory fallback when Redis is not available (non-persistent)
 const mem = new Map<string, SyncRun[]>();
 
-export async function pushSyncRun(villageId: number | string, run: SyncRun, keep = 50) {
-  const key = String(villageId);
+export async function pushSyncRun(villageId: string, run: SyncRun, keep = 50) {
+  const key = villageId;
   const r = getRedis();
   if (!r) {
     const list = mem.get(key) || [];
@@ -33,8 +33,8 @@ export async function pushSyncRun(villageId: number | string, run: SyncRun, keep
   await r.set(`sync:latest:${key}`, s, 'EX', 3600 * 24);
 }
 
-export async function getLatestSync(villageId: number | string): Promise<SyncRun | null> {
-  const key = String(villageId);
+export async function getLatestSync(villageId: string): Promise<SyncRun | null> {
+  const key = villageId;
   const r = getRedis();
   if (!r) {
     const list = mem.get(key) || [];
@@ -48,8 +48,8 @@ export async function getLatestSync(villageId: number | string): Promise<SyncRun
   }
 }
 
-export async function getRecentSyncRuns(villageId: number | string, limit = 20): Promise<SyncRun[]> {
-  const key = String(villageId);
+export async function getRecentSyncRuns(villageId: string, limit = 20): Promise<SyncRun[]> {
+  const key = villageId;
   const r = getRedis();
   if (!r) {
     const list = mem.get(key) || [];

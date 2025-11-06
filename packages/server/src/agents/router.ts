@@ -15,16 +15,15 @@ const StreamQuery = z.object({
 
 agentsRouter.get('/agents/:id/stream', requireAuth, async (req, res, next) => {
   try {
-    const idParam = String(req.params.id);
-    const whereId: any = Number.isFinite(Number(idParam)) ? Number(idParam) : idParam;
-    const agent = await prisma.agent.findUnique({ where: { id: whereId } });
+    const id = String(req.params.id); // Use String ID directly
+    const agent = await prisma.agent.findUnique({ where: { id } });
     if (!agent) return res.status(404).json({ error: 'agent not found' });
 
     const q = StreamQuery.safeParse(req.query ?? {});
     if (!q.success) return res.status(400).json({ error: 'invalid query' });
     const { session, limit, before } = q.data;
 
-    const idStr = String(idParam);
+    const idStr = id;
     const whereNew: any = { session: { agentId: idStr } };
     const whereLegacy: any = { agentId: idStr };
     if (session) {
@@ -137,6 +136,20 @@ const CreateAgentInput = z
 
 const UpdateAgentInput = CreateAgentInput.partial();
 
+/**
+ * EMERGENCY HOTFIX: Temporary auth check until Agent.villageId is added to schema.
+ * Currently, agents don't have villageId field, so we can only check user ownership.
+ * TODO: Remove this after migration adds Agent.villageId field.
+ */
+async function userCanModifyAgent(userSub: string, agent: any): Promise<boolean> {
+  // If agent has userId, check if user owns it
+  if (agent.userId === userSub) return true;
+
+  // For now, deny access if user doesn't own the agent
+  // This is more restrictive but safer than the broken villageId check
+  return false;
+}
+
 async function userHasOwnerRole(userSub: any, villageId: any): Promise<boolean> {
   if (villageId == null) return false;
   try {
@@ -211,23 +224,28 @@ agentsRouter.post('/agents', requireAuth, async (req, res, next) => {
 // Update agent by id (owner-only on its village)
 agentsRouter.put('/agents/:id', requireAuth, async (req, res, next) => {
   try {
-    const idParam = String(req.params.id);
-    const whereId: any = Number.isFinite(Number(idParam)) ? Number(idParam) : idParam;
+    const id = String(req.params.id); // Use String ID directly (no Number conversion)
     const body = UpdateAgentInput.safeParse(req.body ?? {});
     if (!body.success)
       return res
         .status(400)
         .json({ error: 'invalid body', code: 'BAD_REQUEST', details: body.error.flatten() });
-    const exists = await prisma.agent.findUnique({ where: { id: whereId } });
+    const exists = await prisma.agent.findUnique({ where: { id } });
     if (!exists) return res.status(404).json({ error: 'agent not found', code: 'NOT_FOUND' });
-    // Enforce owner role on the agent's village when available
-    const villageId = (exists as any).villageId;
-    if (villageId != null) {
-      const hasOwnerRole = await userHasOwnerRole((req as any).user?.sub, villageId);
-      if (!hasOwnerRole) return res.status(403).json({ error: 'forbidden', code: 'FORBIDDEN' });
+
+    // EMERGENCY HOTFIX: Use temporary auth check (Agent.villageId doesn't exist in schema yet)
+    const userSub = req.user!.sub;
+    const canModify = await userCanModifyAgent(userSub, exists);
+    if (!canModify) {
+      return res.status(403).json({
+        error: 'forbidden',
+        code: 'FORBIDDEN',
+        message: 'You can only modify agents you own'
+      });
     }
+
     const updated = await prisma.agent.update({
-      where: { id: whereId },
+      where: { id },
       data: {
         name: body.data.name ?? undefined,
         spriteConfig: (body.data.spriteConfig as any) ?? undefined,
@@ -245,16 +263,22 @@ agentsRouter.put('/agents/:id', requireAuth, async (req, res, next) => {
 // Delete agent (owner-only)
 agentsRouter.delete('/agents/:id', requireAuth, async (req, res, next) => {
   try {
-    const idParam = String(req.params.id);
-    const whereId: any = Number.isFinite(Number(idParam)) ? Number(idParam) : idParam;
-    const exists = await prisma.agent.findUnique({ where: { id: whereId } });
+    const id = String(req.params.id); // Use String ID directly (no Number conversion)
+    const exists = await prisma.agent.findUnique({ where: { id } });
     if (!exists) return res.status(404).json({ error: 'agent not found', code: 'NOT_FOUND' });
-    const villageId = (exists as any).villageId;
-    if (villageId != null) {
-      const hasOwnerRole = await userHasOwnerRole((req as any).user?.sub, villageId);
-      if (!hasOwnerRole) return res.status(403).json({ error: 'forbidden', code: 'FORBIDDEN' });
+
+    // EMERGENCY HOTFIX: Use temporary auth check (Agent.villageId doesn't exist in schema yet)
+    const userSub = req.user!.sub;
+    const canModify = await userCanModifyAgent(userSub, exists);
+    if (!canModify) {
+      return res.status(403).json({
+        error: 'forbidden',
+        code: 'FORBIDDEN',
+        message: 'You can only delete agents you own'
+      });
     }
-    await prisma.agent.delete({ where: { id: whereId } });
+
+    await prisma.agent.delete({ where: { id } });
     res.status(204).end();
   } catch (e) {
     next(e);
