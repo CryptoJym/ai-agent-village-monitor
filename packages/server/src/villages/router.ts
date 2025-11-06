@@ -633,42 +633,6 @@ villagesRouter.post(
     }
   },
 );
-/**
- * EMERGENCY HOTFIX: Disabled agent-village endpoints
- * These endpoints are broken because Agent.villageId doesn't exist in the schema yet.
- * TODO: Re-enable after migration adds Agent.villageId field.
- */
-
-// List agents for a village (owner or member) - DISABLED
-villagesRouter.get(
-  '/:id/agents',
-  requireAuth,
-  requireVillageRole((req) => req.params.id, ['owner', 'member']),
-  async (_req, res) => {
-    res.status(501).json({
-      error: 'Not Implemented',
-      code: 'NOT_IMPLEMENTED',
-      message: 'Agent-village relationship not yet implemented. Use GET /agents to list all agents.'
-    });
-  },
-);
-
-// Create agent in a village (owner only) - DISABLED
-villagesRouter.post(
-  '/:id/agents',
-  requireAuth,
-  requireVillageRole((req) => req.params.id, ['owner']),
-  async (_req, res) => {
-    res.status(501).json({
-      error: 'Not Implemented',
-      code: 'NOT_IMPLEMENTED',
-      message: 'Agent-village relationship not yet implemented. Use POST /agents to create agents directly.'
-    });
-  },
-);
-
-/* COMMENTED OUT UNTIL Agent.villageId IS ADDED TO SCHEMA:
-
 // List agents for a village (owner or member)
 villagesRouter.get(
   '/:id/agents',
@@ -677,7 +641,10 @@ villagesRouter.get(
   async (req, res, next) => {
     try {
       const id = req.params.id;
-      const list = await prisma.agent.findMany({ where: { villageId: id } });
+      const list = await prisma.agent.findMany({
+        where: { villageId: id },
+        orderBy: { createdAt: 'desc' },
+      });
       res.json(list);
     } catch (e) {
       next(e);
@@ -697,7 +664,14 @@ villagesRouter.post(
       const name = sanitizeString(String(body.name || ''), { maxLen: 200 });
       if (!name) return res.status(400).json({ error: 'invalid body', code: 'BAD_REQUEST' });
       const created = await prisma.agent.create({
-        data: { name, villageId: id, currentStatus: 'idle' },
+        data: {
+          name,
+          villageId: id,
+          currentStatus: 'idle',
+          spriteConfig: body.spriteConfig,
+          positionX: body.positionX,
+          positionY: body.positionY,
+        },
       });
       res.status(201).json(created);
     } catch (e) {
@@ -705,4 +679,3 @@ villagesRouter.post(
     }
   },
 );
-*/

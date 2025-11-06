@@ -79,6 +79,7 @@ model Village {
 
   houses  House[]
   bugBots BugBot[]
+  agents  Agent[]
   access  VillageAccess[]
 
   @@index([orgName])
@@ -114,6 +115,8 @@ model Agent {
   id        String   @id @default(cuid())
   name      String
   status    String   @default("idle")
+  villageId String
+  village   Village  @relation(fields: [villageId], references: [id], onDelete: Cascade)
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
@@ -132,6 +135,9 @@ model Agent {
 
   sessions AgentSession[]
   events   WorkStreamEvent[]
+
+  @@index([villageId])
+  @@index([userId])
 }
 
 model AgentSession {

@@ -123,6 +123,7 @@ const CreateAgentInput = z
       .min(1)
       .max(200)
       .transform((v) => sanitizeString(v, { maxLen: 200 })),
+    villageId: z.string().min(1), // Required: agent must belong to a village
     spriteConfig: z.any().optional(),
     positionX: z.number().optional(),
     positionY: z.number().optional(),
@@ -137,17 +138,19 @@ const CreateAgentInput = z
 const UpdateAgentInput = CreateAgentInput.partial();
 
 /**
- * EMERGENCY HOTFIX: Temporary auth check until Agent.villageId is added to schema.
- * Currently, agents don't have villageId field, so we can only check user ownership.
- * TODO: Remove this after migration adds Agent.villageId field.
+ * Check if user can modify an agent based on village ownership.
+ * User must be the owner of the village that the agent belongs to.
  */
 async function userCanModifyAgent(userSub: string, agent: any): Promise<boolean> {
-  // If agent has userId, check if user owns it
-  if (agent.userId === userSub) return true;
+  if (!agent.villageId) return false;
 
-  // For now, deny access if user doesn't own the agent
-  // This is more restrictive but safer than the broken villageId check
-  return false;
+  try {
+    const role = await getUserVillageRole(userSub, agent.villageId);
+    return role === 'owner';
+  } catch (e) {
+    console.error('Error checking agent authorization:', e);
+    return false;
+  }
 }
 
 async function userHasOwnerRole(userSub: any, villageId: any): Promise<boolean> {
@@ -198,7 +201,7 @@ agentsRouter.get('/agents', requireAuth, async (_req, res, next) => {
   }
 });
 
-// Create agent (no village relation in schema)
+// Create agent (requires village ownership)
 agentsRouter.post('/agents', requireAuth, async (req, res, next) => {
   try {
     const body = CreateAgentInput.safeParse(req.body ?? {});
@@ -206,9 +209,22 @@ agentsRouter.post('/agents', requireAuth, async (req, res, next) => {
       return res
         .status(400)
         .json({ error: 'invalid body', code: 'BAD_REQUEST', details: body.error.flatten() });
+
+    // Check that user is owner of the specified village
+    const userSub = req.user!.sub;
+    const role = await getUserVillageRole(userSub, body.data.villageId);
+    if (role !== 'owner') {
+      return res.status(403).json({
+        error: 'forbidden',
+        code: 'FORBIDDEN',
+        message: 'You must be the owner of the village to create agents',
+      });
+    }
+
     const created = await prisma.agent.create({
       data: {
         name: body.data.name,
+        villageId: body.data.villageId,
         spriteConfig: body.data.spriteConfig as any,
         positionX: body.data.positionX,
         positionY: body.data.positionY,
@@ -233,14 +249,14 @@ agentsRouter.put('/agents/:id', requireAuth, async (req, res, next) => {
     const exists = await prisma.agent.findUnique({ where: { id } });
     if (!exists) return res.status(404).json({ error: 'agent not found', code: 'NOT_FOUND' });
 
-    // EMERGENCY HOTFIX: Use temporary auth check (Agent.villageId doesn't exist in schema yet)
+    // Check village ownership authorization
     const userSub = req.user!.sub;
     const canModify = await userCanModifyAgent(userSub, exists);
     if (!canModify) {
       return res.status(403).json({
         error: 'forbidden',
         code: 'FORBIDDEN',
-        message: 'You can only modify agents you own'
+        message: 'You must be the owner of the village to modify this agent',
       });
     }
 
@@ -267,14 +283,14 @@ agentsRouter.delete('/agents/:id', requireAuth, async (req, res, next) => {
     const exists = await prisma.agent.findUnique({ where: { id } });
     if (!exists) return res.status(404).json({ error: 'agent not found', code: 'NOT_FOUND' });
 
-    // EMERGENCY HOTFIX: Use temporary auth check (Agent.villageId doesn't exist in schema yet)
+    // Check village ownership authorization
     const userSub = req.user!.sub;
     const canModify = await userCanModifyAgent(userSub, exists);
     if (!canModify) {
       return res.status(403).json({
         error: 'forbidden',
         code: 'FORBIDDEN',
-        message: 'You can only delete agents you own'
+        message: 'You must be the owner of the village to delete this agent',
       });
     }
 
