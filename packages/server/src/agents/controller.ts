@@ -91,11 +91,25 @@ export class MockMCPAgentController implements MCPAgentController {
 
 // Factory that selects a controller implementation based on environment
 export function getAgentController(): MCPAgentController {
+  // Option 1: MCP Client Mode (for Claude Code integration)
+  if (process.env.MCP_CLIENT_MODE === 'true') {
+    const { MCPClientController } = require('./mcp-client');
+    const command = process.env.MCP_SERVER_COMMAND || 'npx';
+    const argsStr = process.env.MCP_SERVER_ARGS || '-y,@modelcontextprotocol/server-everything';
+    const args = argsStr.split(',').filter(Boolean);
+    console.log(`[MCP] Using MCP Client with command: ${command} ${args.join(' ')}`);
+    return new MCPClientController(command, args);
+  }
+
+  // Option 2: HTTP MCP Server Mode (for custom HTTP/SSE servers)
   const endpoint = process.env.MCP_HTTP_ENDPOINT;
   if (endpoint) {
-    // Lazy require to avoid import if unused in tests
     const { HttpMCPAgentController } = require('./mcp-http');
+    console.log(`[MCP] Using HTTP endpoint: ${endpoint}`);
     return new HttpMCPAgentController(endpoint, process.env.MCP_HTTP_API_KEY);
   }
+
+  // Option 3: Mock Mode (for development/testing)
+  console.log('[MCP] Using mock controller (no MCP configured)');
   return new MockMCPAgentController();
 }

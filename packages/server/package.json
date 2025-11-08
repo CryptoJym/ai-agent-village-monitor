@@ -32,6 +32,7 @@
     "webhook:send": "node scripts/send-webhook.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.21.1",
     "@octokit/graphql": "^8.2.0",
     "@octokit/plugin-retry": "^6.0.1",
     "@octokit/plugin-throttling": "^9.3.0",
