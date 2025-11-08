@@ -1,5 +1,48 @@
 import type { ApplicationFunctionOptions } from 'probot';
 
+/** Parse severity from GitHub issue labels */
+function parseSeverityFromLabels(labels: any[]): 'low' | 'medium' | 'high' | null {
+  if (!labels || !Array.isArray(labels)) return null;
+
+  const labelNames = labels.map((l) => String(l?.name || '').toLowerCase());
+
+  // Check for high severity indicators
+  if (
+    labelNames.some((name) =>
+      ['critical', 'urgent', 'high', 'severity: high', 'p0', 'blocker'].includes(name),
+    )
+  ) {
+    return 'high';
+  }
+
+  // Check for medium severity indicators
+  if (
+    labelNames.some((name) =>
+      ['medium', 'severity: medium', 'p1', 'important', 'bug'].includes(name),
+    )
+  ) {
+    return 'medium';
+  }
+
+  // Check for low severity indicators
+  if (
+    labelNames.some((name) =>
+      ['low', 'severity: low', 'p2', 'p3', 'minor', 'enhancement', 'good first issue'].includes(
+        name,
+      ),
+    )
+  ) {
+    return 'low';
+  }
+
+  // Default to medium for generic 'bug' label
+  if (labelNames.some((name) => name === 'bug')) {
+    return 'medium';
+  }
+
+  return null;
+}
+
 export function registerProbotHandlers(app: any) {
   app.on('issues.opened', async (context: any) => {
     const { rememberDelivery } = await import('../webhooks/dedupe');
@@ -12,6 +55,10 @@ export function registerProbotHandlers(app: any) {
       const { createBugBot } = await import('../bugs/service');
       const { resolveVillageAndHouse } = await import('../github/mapping');
       const mapping = await resolveVillageAndHouse(context.payload);
+
+      // Parse severity from issue labels
+      const severity = parseSeverityFromLabels(issue?.labels || []);
+
       await createBugBot({
         id,
         villageId: mapping.villageId,
@@ -21,7 +68,7 @@ export function registerProbotHandlers(app: any) {
         issueNumber: Number(issue?.number ?? 0),
         title: String(issue?.title ?? ''),
         description: String(issue?.body ?? ''),
-        severity: null,
+        severity,
         x: mapping.x,
         y: mapping.y,
         ...(mapping.houseId ? { houseId: mapping.houseId } : {}),

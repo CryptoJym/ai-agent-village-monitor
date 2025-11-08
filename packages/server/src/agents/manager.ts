@@ -169,6 +169,11 @@ export class AgentManager {
         timestamp,
       };
       emitWorkStream(dto);
+
+      // Update bug bot progress if agent is working on bugs
+      if (evt.progress !== undefined) {
+        void this.updateAssignedBugProgress(agentId, evt.progress);
+      }
     } else if (evt.type === 'status' || evt.type === 'log') {
       const dto: WorkStreamEventDTO = {
         event_type: evt.type,
@@ -201,6 +206,16 @@ export class AgentManager {
       return agent?.villageId ?? null;
     } catch {
       return null;
+    }
+  }
+
+  private async updateAssignedBugProgress(agentId: string, progress: number): Promise<void> {
+    try {
+      const { updateBugProgress } = await import('../bugs/service');
+      await updateBugProgress(agentId, progress);
+    } catch (e) {
+      // Best-effort, don't throw
+      void e;
     }
   }
 

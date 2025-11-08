@@ -33,6 +33,7 @@ model BugBot {
   status          BugStatus    @default(open)
   severity        BugSeverity?
   assignedAgentId String?
+  progress        Float?       @default(0.0) // 0.0 to 1.0, tracks agent work progress
   metadata        Json?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt

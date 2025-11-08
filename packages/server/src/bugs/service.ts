@@ -138,3 +138,44 @@ export async function removeBug(id: string) {
   }
   return storeRemove(id);
 }
+
+export async function updateBugProgress(agentId: string, progress: number) {
+  const prisma = getPrisma();
+  if (!prisma) return; // Skip if no database
+
+  try {
+    // Find bug assigned to this agent
+    const bugs = await prisma.bugBot.findMany({
+      where: {
+        assignedAgentId: agentId,
+        status: { in: ['assigned', 'in_progress'] },
+      },
+      select: { id: true, villageId: true, progress: true },
+    });
+
+    // Update progress for all bugs assigned to this agent
+    for (const bug of bugs) {
+      // Only update if progress increased
+      const currentProgress = bug.progress ?? 0;
+      if (progress > currentProgress) {
+        await prisma.bugBot.update({
+          where: { id: bug.id },
+          data: {
+            progress,
+            status: progress > 0 ? 'in_progress' : 'assigned',
+            updatedAt: new Date(),
+          },
+        });
+
+        // Emit WebSocket event for real-time UI update
+        emitToVillage(bug.villageId, 'bug_bot_progress', {
+          id: bug.id,
+          progress,
+        });
+      }
+    }
+  } catch (e) {
+    // Best-effort, don't throw
+    void e;
+  }
+}
