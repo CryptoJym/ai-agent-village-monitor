@@ -29,11 +29,24 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ControlTab } from '../../src/ui/ControlTab';
 import App from '../../src/App';
 import { ToastProvider } from '../../src/ui/Toast';
+import { AuthProvider } from '../../src/contexts/AuthProvider';
 
 describe('role-based visibility and gating', () => {
   beforeEach(() => {
     // @ts-ignore
-    global.fetch = vi.fn();
+    global.fetch = vi.fn((url: string) => {
+      // Mock auth endpoint to return a user
+      if (url.includes('/auth/me')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ id: 1, username: 'testuser' }),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+    });
   });
 
   it('disables ControlTab actions for non-owners and enables for owners', async () => {
@@ -51,13 +64,15 @@ describe('role-based visibility and gating', () => {
     });
 
     render(
-      <ToastProvider>
-        <MemoryRouter initialEntries={['/village/1']}>
-          <Routes>
-            <Route path="/village/:id" element={<ControlTab agentId="a-1" />} />
-          </Routes>
-        </MemoryRouter>
-      </ToastProvider>,
+      <AuthProvider>
+        <ToastProvider>
+          <MemoryRouter initialEntries={['/village/1']}>
+            <Routes>
+              <Route path="/village/:id" element={<ControlTab agentId="a-1" />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() => {
@@ -81,13 +96,15 @@ describe('role-based visibility and gating', () => {
     });
 
     render(
-      <ToastProvider>
-        <MemoryRouter initialEntries={['/village/1']}>
-          <Routes>
-            <Route path="/village/:id" element={<ControlTab agentId="a-1" />} />
-          </Routes>
-        </MemoryRouter>
-      </ToastProvider>,
+      <AuthProvider>
+        <ToastProvider>
+          <MemoryRouter initialEntries={['/village/1']}>
+            <Routes>
+              <Route path="/village/:id" element={<ControlTab agentId="a-1" />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() => {
@@ -115,13 +132,15 @@ describe('role-based visibility and gating', () => {
       }),
     });
     render(
-      <ToastProvider>
-        <MemoryRouter initialEntries={['/village/1']}>
-          <Routes>
-            <Route path="/village/:id" element={<App />} />
-          </Routes>
-        </MemoryRouter>
-      </ToastProvider>,
+      <AuthProvider>
+        <ToastProvider>
+          <MemoryRouter initialEntries={['/village/1']}>
+            <Routes>
+              <Route path="/village/:id" element={<App />} />
+            </Routes>
+          </MemoryRouter>
+        </ToastProvider>
+      </AuthProvider>,
     );
     await waitFor(() => {
       const btn = screen.getByRole('button', { name: 'Settings' }) as HTMLButtonElement;

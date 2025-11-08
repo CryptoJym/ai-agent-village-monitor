@@ -55,12 +55,6 @@ export class AgentManager {
     inc('agent_connect_attempt_total');
     const t0 = Date.now();
     try {
-      // Fetch and cache villageId for work stream broadcasting
-      if (!rt.villageId) {
-        const villageId = await this.getAgentVillageId(id);
-        if (villageId) rt.villageId = villageId;
-      }
-
       const session = await ensureActiveSession(id, { restart: opts?.restart });
       const { ok, sessionToken } = await this.controller.start(id);
       if (!ok) throw new Error('start failed');
@@ -73,6 +67,16 @@ export class AgentManager {
       observe('agent_connect_ms', Date.now() - t0);
       inc('agent_connected_total');
       audit.log('agent.connected', { agentId: id, sessionId: String(session.id) });
+
+      // Fetch and cache villageId in background (best-effort, non-blocking)
+      if (!rt.villageId) {
+        void this.getAgentVillageId(id)
+          .then((villageId) => {
+            if (villageId) rt.villageId = villageId;
+          })
+          .catch(() => {});
+      }
+
       return { ok: true as const, sessionId: String(session.id), sessionToken };
     } catch (e: any) {
       const lastError = e?.message || String(e);

@@ -1,21 +1,41 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import App from '../../src/App';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from '../../src/contexts/AuthProvider';
+import { FeatureFlagProvider } from '../../src/contexts/FeatureFlags';
 
 function mount(villageId = 'demo') {
   return render(
-    <MemoryRouter initialEntries={[`/village/${villageId}`]}>
-      <Routes>
-        <Route path="/village/:id" element={<App />} />
-      </Routes>
-    </MemoryRouter>,
+    <FeatureFlagProvider>
+      <AuthProvider>
+        <MemoryRouter initialEntries={[`/village/${villageId}`]}>
+          <Routes>
+            <Route path="/village/:id" element={<App />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>
+    </FeatureFlagProvider>,
   );
 }
 
 describe('Minimap teleport integration', () => {
   beforeEach(() => {
+    // Mock auth endpoint to return a user
+    global.fetch = vi.fn((url: string) => {
+      if (url.includes('/auth/me')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ id: 1, username: 'testuser' }),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+    }) as any;
+
     try {
       localStorage.clear();
     } catch {}

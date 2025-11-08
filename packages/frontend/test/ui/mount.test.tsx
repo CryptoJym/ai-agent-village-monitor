@@ -29,9 +29,23 @@ vi.mock('phaser', () => {
 import AppRouter from '../../src/routes/AppRouter';
 
 describe('App mount', () => {
-  it('renders the app title and toggles dialogue', () => {
+  it('renders the app title and toggles dialogue', async () => {
+    // Mock auth endpoint to return a user
+    global.fetch = vi.fn((url: string) => {
+      if (url.includes('/auth/me')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ id: 1, username: 'testuser' }),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      } as Response);
+    }) as any;
+
     render(<AppRouter />);
-    expect(screen.getByText('AI Agent Village Monitor')).toBeInTheDocument();
+    expect(await screen.findByText('AI Agent Village Monitor')).toBeInTheDocument();
 
     const btn = screen.getByRole('button', { name: 'Dialogue' });
     fireEvent.click(btn);
