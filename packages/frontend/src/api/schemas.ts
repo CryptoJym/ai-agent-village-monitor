@@ -16,7 +16,7 @@ export type AgentUpdate = z.infer<typeof AgentUpdateSchema>;
 
 // Villages
 export const VillageSchema = z.object({
-  id: z.number().int().positive(),
+  id: z.string(), // Changed from number to string (cuid)
   name: z.string(),
   githubOrgId: z.string(),
   isPublic: z.boolean(),
@@ -26,6 +26,25 @@ export const VillageSchema = z.object({
   viewerRole: z.enum(['owner', 'member', 'visitor', 'none']).optional(),
 });
 export type Village = z.infer<typeof VillageSchema>;
+
+// Village list item with analytics (for world map)
+export const VillageListItemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  githubOrgId: z.string().optional(),
+  isPublic: z.boolean().optional(),
+  lastSynced: z.string().nullable().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  houseCount: z.number().int().nonnegative().optional(),
+  totalStars: z.number().int().nonnegative().optional(),
+  primaryLanguage: z.string().nullable().optional(),
+  primaryLanguageLabel: z.string().nullable().optional(),
+});
+export type VillageListItem = z.infer<typeof VillageListItemSchema>;
+
+export const VillageListSchema = z.array(VillageListItemSchema);
+export type VillageList = z.infer<typeof VillageListSchema>;
 
 export const VillageAccessRowSchema = z.object({
   userId: z.number().int().positive(),

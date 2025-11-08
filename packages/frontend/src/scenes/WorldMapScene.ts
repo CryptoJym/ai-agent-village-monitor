@@ -5,6 +5,7 @@ import {
   type WorldMapData,
   type VillagePlacement,
 } from '../world';
+import { api } from '../api/client';
 
 export class WorldMapScene extends Phaser.Scene {
   private villages: VillageDescriptor[] = [];
@@ -210,35 +211,14 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private async fetchVillages(profile = false): Promise<VillageDescriptor[]> {
-    try {
-      const res = await fetch('/api/villages', { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      const data = (await res.json()) as Array<{
-        id: number | string;
-        name: string;
-        primaryLanguage?: string | null;
-        primaryLanguageLabel?: string | null;
-        language?: string | null;
-        houseCount?: number | null;
-        totalStars?: number | null;
-      }>;
-      return (data || []).map((v, idx) => ({
-        id: String(v?.id ?? idx),
-        name: v?.name ?? `Village ${idx + 1}`,
-        language: this.normalizeLanguage(v?.language ?? v?.primaryLanguage) ?? undefined,
-        houseCount: typeof v?.houseCount === 'number' ? v.houseCount : undefined,
-        totalStars: typeof v?.totalStars === 'number' ? v.totalStars : undefined,
-      }));
-    } catch {
-      const n = profile ? 32 : 12;
-      return Array.from({ length: n }).map((_, i) => ({
-        id: `v-${i + 1}`,
-        name: `Village ${i + 1}`,
-        language: this.supportedHouseLanguages[i % this.supportedHouseLanguages.length],
-        houseCount: Phaser.Math.Between(3, 16),
-        totalStars: Phaser.Math.Between(5, 260),
-      }));
-    }
+    const villages = await api.listVillages();
+    return villages.map((v) => ({
+      id: v.id,
+      name: v.name,
+      language: this.normalizeLanguage(v.primaryLanguage) ?? undefined,
+      houseCount: v.houseCount,
+      totalStars: v.totalStars,
+    }));
   }
 
   private normalizeLanguage(lang?: string | null): string | undefined {

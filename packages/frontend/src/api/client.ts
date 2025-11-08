@@ -4,6 +4,8 @@ import {
   type HealthResponse,
   VillageSchema,
   type Village,
+  VillageListSchema,
+  type VillageList,
   VillageAccessListSchema,
   type VillageAccessRow,
 } from './schemas';
@@ -87,6 +89,9 @@ export const api = {
     return apiFetch('/health', HealthSchema);
   },
   // Villages
+  listVillages(): Promise<VillageList> {
+    return apiFetch('/villages', VillageListSchema);
+  },
   getVillage(id: string | number): Promise<Village> {
     return apiFetch(`/villages/${encodeURIComponent(String(id))}`, VillageSchema);
   },
