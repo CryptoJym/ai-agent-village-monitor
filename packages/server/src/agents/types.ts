@@ -14,6 +14,7 @@ export type AgentRuntime = {
   state: AgentLifecycleState;
   sessionToken?: string;
   sessionId?: string;
+  villageId?: string; // Cached for work stream broadcasting
   lastError?: string;
   connectedAt?: number;
   updatedAt?: number;

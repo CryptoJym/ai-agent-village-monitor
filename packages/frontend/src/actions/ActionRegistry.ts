@@ -1,5 +1,6 @@
 import { eventBus } from '../realtime/EventBus';
 import { track } from '../analytics/client';
+import { queueAwarePost } from '../utils/queueFetch';
 
 export type ActionId =
   | 'startAgent'
@@ -76,16 +77,28 @@ export async function executeAction<T extends ActionId>(id: T, payload: ActionPa
   }
 }
 
-// Default stub implementations to be wired to real services later
+// Real implementations that call backend APIs
 registerAction('startAgent', async ({ agentId }) => {
-  eventBus.emit('agent_update', { agentId, state: 'working' });
+  // Call backend to actually start the agent
+  await queueAwarePost(`/api/agents/${encodeURIComponent(agentId)}/start`, {});
+  // Update UI state optimistically
+  eventBus.emit('agent_update', { agentId, state: 'connecting' });
 });
 
 registerAction('stopAgent', async ({ agentId }) => {
-  eventBus.emit('agent_update', { agentId, state: 'idle' });
+  // Call backend to actually stop the agent
+  await queueAwarePost(`/api/agents/${encodeURIComponent(agentId)}/stop`, {});
+  // Update UI state optimistically
+  eventBus.emit('agent_update', { agentId, state: 'disconnected' });
 });
 
 registerAction('runRecentTool', async ({ agentId, toolId }) => {
+  // Call backend to actually run the tool via MCP
+  await queueAwarePost(`/api/agents/${encodeURIComponent(agentId)}/tool`, {
+    tool: toolId,
+    params: {},
+  });
+  // Optimistic UI update
   eventBus.emit('work_stream', {
     agentId,
     message: `Running tool '${toolId}'…`,

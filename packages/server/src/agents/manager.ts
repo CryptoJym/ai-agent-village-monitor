@@ -55,6 +55,12 @@ export class AgentManager {
     inc('agent_connect_attempt_total');
     const t0 = Date.now();
     try {
+      // Fetch and cache villageId for work stream broadcasting
+      if (!rt.villageId) {
+        const villageId = await this.getAgentVillageId(id);
+        if (villageId) rt.villageId = villageId;
+      }
+
       const session = await ensureActiveSession(id, { restart: opts?.restart });
       const { ok, sessionToken } = await this.controller.start(id);
       if (!ok) throw new Error('start failed');
@@ -128,8 +134,33 @@ export class AgentManager {
     if (rtForPersist.sessionId) {
       await appendEvent(rtForPersist.sessionId, evt.type, evt.message).catch(() => {});
     }
-    // Broadcast to agent room for UI consumption
+
+    // Broadcast to both agent room AND village room for UI consumption
     const timestamp = new Date().toISOString();
+    const emitWorkStream = (dto: WorkStreamEventDTO) => {
+      const payload = jsonSafe({ agentId, ...dto });
+      // Emit to agent room for agent-specific subscribers
+      emitToAgent(agentId, 'work_stream', payload);
+      // Also emit to village room so all village viewers see agent activity
+      // Fetch villageId from agent record (cached in runtime if available)
+      const rt = this.get(agentId);
+      if (rt.villageId) {
+        const { emitToVillage } = require('../realtime/io');
+        emitToVillage(rt.villageId, 'work_stream', payload);
+      } else {
+        // Fallback: look up villageId from database
+        void this.getAgentVillageId(agentId)
+          .then((villageId) => {
+            if (villageId) {
+              rt.villageId = villageId; // Cache for next time
+              const { emitToVillage } = require('../realtime/io');
+              emitToVillage(villageId, 'work_stream', payload);
+            }
+          })
+          .catch(() => {});
+      }
+    };
+
     if (evt.type === 'progress') {
       const dto: WorkStreamEventDTO = {
         event_type: 'progress',
@@ -137,7 +168,7 @@ export class AgentManager {
         metadata: null,
         timestamp,
       };
-      emitToAgent(agentId, 'work_stream', jsonSafe({ agentId, ...dto }));
+      emitWorkStream(dto);
     } else if (evt.type === 'status' || evt.type === 'log') {
       const dto: WorkStreamEventDTO = {
         event_type: evt.type,
@@ -145,7 +176,7 @@ export class AgentManager {
         metadata: null,
         timestamp,
       };
-      emitToAgent(agentId, 'work_stream', jsonSafe({ agentId, ...dto }));
+      emitWorkStream(dto);
     } else if (evt.type === 'error') {
       const dto: WorkStreamEventDTO = {
         event_type: 'error',
@@ -153,10 +184,23 @@ export class AgentManager {
         metadata: null,
         timestamp,
       };
-      emitToAgent(agentId, 'work_stream', jsonSafe({ agentId, ...dto }));
+      emitWorkStream(dto);
       this.setState(agentId, 'error', { lastError: evt.message || 'unknown error' });
       inc('agent_error_total');
       audit.log('agent.error', { agentId, error: evt.message || 'unknown' });
+    }
+  }
+
+  private async getAgentVillageId(agentId: string): Promise<string | null> {
+    try {
+      const { prisma } = await import('../db/prisma');
+      const agent = await prisma.agent.findUnique({
+        where: { id: agentId },
+        select: { villageId: true },
+      });
+      return agent?.villageId ?? null;
+    } catch {
+      return null;
     }
   }
 
