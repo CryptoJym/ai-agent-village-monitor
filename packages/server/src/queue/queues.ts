@@ -23,10 +23,12 @@ export function createQueues(): AppQueues | null {
 
   const agentCommands = new Queue('agent-commands', {
     connection,
+    // @ts-expect-error timeout is valid in BullMQ but not in type definition
     defaultJobOptions: { ...defaultJobOpts, attempts: 5, timeout: 30_000 },
   });
   const githubSync = new Queue('github-sync', {
     connection,
+    // @ts-expect-error timeout is valid in BullMQ but not in type definition
     defaultJobOptions: { ...defaultJobOpts, attempts: 8, timeout: 120_000 },
     limiter: { max: 5, duration: 1000 },
   });

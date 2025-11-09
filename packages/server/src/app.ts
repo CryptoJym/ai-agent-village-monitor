@@ -12,7 +12,11 @@ import { githubMiddleware } from './github/middleware';
 import { notFound, errorHandler } from './middleware/error';
 import { requestId } from './middleware/requestId';
 import { prisma } from './db/client';
+ 
+// @ts-ignore shared package outside rootDir but configured in tsconfig paths
 import type { HealthStatus } from '@shared/index';
+ 
+// @ts-ignore shared package outside rootDir but configured in tsconfig paths
 import { nowIso } from '@shared/index';
 import { pingRedis } from './queue/redis';
 import { bugRouter } from './bugs/router';

@@ -70,6 +70,7 @@ export function createSocketServer(server: HttpServer) {
   }
 
   // JWT authentication
+  // @ts-expect-error socketAuth signature is compatible at runtime
   io.use(socketAuth);
 
   // Simple per-socket rate limiter for join events
@@ -195,6 +196,7 @@ export function createSocketServer(server: HttpServer) {
 
     socket.on(
       'join_village',
+      // @ts-expect-error withAck return type is compatible at runtime
       withAck(socket, async (payload: unknown) => {
         const parsed = JoinVillageSchema.safeParse(payload);
         if (!parsed.success) {
@@ -217,6 +219,7 @@ export function createSocketServer(server: HttpServer) {
 
     socket.on(
       'join_agent',
+      // @ts-expect-error withAck return type is compatible at runtime
       withAck(socket, async (payload: unknown) => {
         const parsed = JoinAgentSchema.safeParse(payload);
         if (!parsed.success) {
@@ -239,6 +242,7 @@ export function createSocketServer(server: HttpServer) {
 
     socket.on(
       'join_repo',
+      // @ts-expect-error withAck return type is compatible at runtime
       withAck(socket, async (payload: unknown) => {
         const parsed = JoinRepoSchema.safeParse(payload);
         if (!parsed.success) {

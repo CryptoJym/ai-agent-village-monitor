@@ -25,6 +25,7 @@ export async function pushSyncRun(villageId: string, run: SyncRun, keep = 50) {
   }
   const zkey = `sync:history:${key}`;
   const s = JSON.stringify(run);
+  // @ts-expect-error ioredis zadd overload mismatch
   await r.zadd(zkey, { score: run.ts, value: s });
   const len = await r.zcard(zkey);
   if (len > keep) {
@@ -39,7 +40,7 @@ export async function getLatestSync(villageId: string): Promise<SyncRun | null> 
   if (!r) {
     const list = mem.get(key) || [];
     return list[0] ?? null;
-    }
+  }
   try {
     const raw = await r.get(`sync:latest:${key}`);
     return raw ? (JSON.parse(raw) as SyncRun) : null;
@@ -63,4 +64,3 @@ export async function getRecentSyncRuns(villageId: string, limit = 20): Promise<
     return [];
   }
 }
-

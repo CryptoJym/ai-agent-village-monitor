@@ -9,7 +9,6 @@ githubRouter.get('/orgs', async (_req, res, next) => {
     const client = createGitHubClientFromEnv();
     // Use REST: orgs for authenticated user
     // Use wrapper getter
-    // @ts-expect-error wrapper method available at runtime
     const octo = (client as any).octokit();
     if (!octo) return res.status(503).json({ error: 'GitHub client unavailable' });
     const { data } = await octo.orgs.listForAuthenticatedUser({ per_page: 100 });

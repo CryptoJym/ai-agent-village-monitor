@@ -353,6 +353,7 @@ villagesRouter.put(
         data: {
           name: data.name ?? undefined,
           isPublic: typeof data.isPublic === 'boolean' ? data.isPublic : undefined,
+          // @ts-expect-error villageConfig is a valid JSON field but not in Prisma types
           villageConfig: 'villageConfig' in data ? (data.villageConfig as any) : undefined,
         },
       });

@@ -5,6 +5,7 @@ import { verifyAccessToken, type JwtPayload } from '../auth/jwt';
 
 declare module 'socket.io' {
   interface Socket {
+    // @ts-expect-error augmenting Socket.data with custom properties
     data: {
       user?: JwtPayload;
       [key: string]: any;

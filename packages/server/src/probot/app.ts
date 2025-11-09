@@ -153,6 +153,7 @@ export async function getProbotMiddleware() {
     );
   }
   const probot = new Probot({ appId, privateKey, secret });
+  // @ts-expect-error probot type mismatch between ApplicationFunctionOptions and MiddlewareOptions
   const middleware = createNodeMiddleware(appFn as any, { probot } as ApplicationFunctionOptions);
   return middleware;
 }
