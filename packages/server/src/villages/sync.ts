@@ -70,7 +70,7 @@ export async function syncVillageNow(villageId: string, org: string) {
 
   // Sort for deterministic assignment of new positions
   const sorted = [...repos].sort(
-    (a, b) => b.stargazers - a.stargazers || a.name.localeCompare(b.name),
+    (a, b) => (b.stargazers ?? 0) - (a.stargazers ?? 0) || a.name.localeCompare(b.name),
   );
 
   let created = 0;

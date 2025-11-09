@@ -120,7 +120,7 @@ villagesRouter.get('/', requireAuth, async (req, res, next) => {
         return {
           id: v.id,
           name: v.name,
-          githubOrgId: v.githubOrgId.toString(),
+          githubOrgId: v.githubOrgId?.toString() ?? '',
           isPublic: v.isPublic,
           lastSynced: v.lastSynced,
           createdAt: v.createdAt,
@@ -193,7 +193,7 @@ villagesRouter.get('/:id', async (req, res, next) => {
     res.json({
       id: v.id,
       name: v.name, // Now properly defined in schema
-      githubOrgId: v.githubOrgId.toString(),
+      githubOrgId: v.githubOrgId?.toString() ?? '',
       isPublic: v.isPublic,
       lastSynced: v.lastSynced,
       createdAt: v.createdAt,
@@ -278,7 +278,11 @@ villagesRouter.post('/', requireAuth, async (req, res, next) => {
     });
     return res
       .status(201)
-      .json({ id: created.id, name: created.name, githubOrgId: created.githubOrgId.toString() });
+      .json({
+        id: created.id,
+        name: created.name,
+        githubOrgId: created.githubOrgId?.toString() ?? '',
+      });
   } catch (e) {
     next(e);
   }
