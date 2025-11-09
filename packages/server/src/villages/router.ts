@@ -276,13 +276,11 @@ villagesRouter.post('/', requireAuth, async (req, res, next) => {
         config: { org: typeof rawOrg === 'string' ? rawOrg : name },
       },
     });
-    return res
-      .status(201)
-      .json({
-        id: created.id,
-        name: created.name,
-        githubOrgId: created.githubOrgId?.toString() ?? '',
-      });
+    return res.status(201).json({
+      id: created.id,
+      name: created.name,
+      githubOrgId: created.githubOrgId?.toString() ?? '',
+    });
   } catch (e) {
     next(e);
   }
@@ -367,7 +365,7 @@ villagesRouter.put(
 
 // Village access management (owner only)
 const RoleSchema = z.enum(['owner', 'member', 'visitor']);
-const UpsertAccessSchema = z.object({ userId: z.number().int().positive(), role: RoleSchema });
+const UpsertAccessSchema = z.object({ userId: z.string().min(1), role: RoleSchema });
 
 // List access entries for a village
 villagesRouter.get(

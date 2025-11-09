@@ -202,8 +202,8 @@ router.get('/auth/me', async (req, res) => {
   }
   try {
     const payload = verifyAccessToken(raw);
-    const user = await prisma.user.findUnique({ where: { id: Number(payload.sub) } });
-    if (!user || typeof (user as any).id !== 'number') {
+    const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+    if (!user) {
       res.setHeader('Cache-Control', 'no-store');
       return res.status(401).json({ error: 'unauthorized' });
     }

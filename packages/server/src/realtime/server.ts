@@ -140,13 +140,13 @@ export function createSocketServer(server: HttpServer) {
     if (!hasDb) return true;
     try {
       const agent = await prisma.agent.findUnique({
-        where: { id: Number(agentId) },
+        where: { id: agentId },
         select: { villageId: true },
       });
       if (!agent) return false;
       if (!config.JWT_SECRET || !userId) return false;
       const access = await prisma.villageAccess.findUnique({
-        where: { villageId_userId: { villageId: agent.villageId, userId: Number(userId) } },
+        where: { villageId_userId: { villageId: agent.villageId, userId } },
         select: { role: true },
       });
       const role = (access?.role || '').toLowerCase();
