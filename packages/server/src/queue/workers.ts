@@ -3,6 +3,7 @@ import { getRedis } from './redis';
 import { setVillageLastSynced } from '../villages/service';
 import { syncVillageNow } from '../villages/sync';
 import { getAgentController } from '../agents/controller';
+import type { CommandResult, StreamEvent } from '../agents/controller';
 import { getPrisma } from '../db';
 import { audit } from '../audit/logger';
 import { appendEvent, endActiveSession, ensureActiveSession } from '../agents/session';
@@ -47,20 +48,12 @@ export function startWorkers(log = console): WorkerHandles | null {
           }
           await appendEvent(sessionId!, 'session_started', 'agent session started');
         }
-        audit('agent.session_starting', { agentId: agentIdStr, jobId: String(job.id), sessionId });
+        audit.log('agent.session_starting', {
+          agentId: agentIdStr,
+          jobId: String(job.id),
+          sessionId,
+        });
         await controller.start(agentIdRaw);
-        try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: 'session_started',
-            agentId: agentIdStr,
-            sessionId,
-            jobId: String(job.id),
-            ts: Date.now(),
-          });
-        } catch {
-          // Audit logging failure should not block job success.
-        }
         emitToAgent(agentIdStr, 'agent_update', {
           agentId: agentIdStr,
           status: 'working',
@@ -71,9 +64,13 @@ export function startWorkers(log = console): WorkerHandles | null {
           message: 'session started',
           ts: Date.now(),
         });
-        audit('agent.session_started', { agentId: agentIdStr, jobId: String(job.id), sessionId });
+        audit.log('agent.session_started', {
+          agentId: agentIdStr,
+          jobId: String(job.id),
+          sessionId,
+        });
       } else if (kind === 'stop') {
-        audit('agent.session_stopping', { agentId: agentIdStr, jobId: String(job.id) });
+        audit.log('agent.session_stopping', { agentId: agentIdStr, jobId: String(job.id) });
         await controller.stop(agentIdRaw);
         if (prisma) {
           await endActiveSession(agentIdStr);
@@ -82,17 +79,6 @@ export function startWorkers(log = console): WorkerHandles | null {
           } catch {
             // Status update failure is non-critical; continue shutdown.
           }
-        }
-        try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: 'session_stopped',
-            agentId: agentIdStr,
-            jobId: String(job.id),
-            ts: Date.now(),
-          });
-        } catch {
-          // Audit logging failure should not block job success.
         }
         emitToAgent(agentIdStr, 'work_stream', {
           agentId: agentIdStr,
@@ -104,7 +90,7 @@ export function startWorkers(log = console): WorkerHandles | null {
           status: 'idle',
           ts: Date.now(),
         });
-        audit('agent.session_stopped', { agentId: agentIdStr, jobId: String(job.id) });
+        audit.log('agent.session_stopped', { agentId: agentIdStr, jobId: String(job.id) });
       } else if (kind === 'command') {
         const cmd = String(data?.command || '');
         const args = (data?.args || {}) as Record<string, unknown>;
@@ -112,22 +98,9 @@ export function startWorkers(log = console): WorkerHandles | null {
         if (prisma) {
           const session = await ensureActiveSession(agentIdStr);
           sessionId = (session as any).id as string;
-          await appendEvent(sessionId!, 'command_received', `command: ${cmd}`, { args });
+          await appendEvent(sessionId!, 'command_received', `command: ${cmd}`);
         }
-        try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: 'command_enqueued',
-            agentId: agentIdStr,
-            sessionId,
-            jobId: String(job.id),
-            data: { cmd },
-            ts: Date.now(),
-          });
-        } catch {
-          // Audit logging failure should not block command execution.
-        }
-        audit('agent.command_started', {
+        audit.log('agent.command_started', {
           agentId: agentIdStr,
           jobId: String(job.id),
           command: cmd,
@@ -151,7 +124,7 @@ export function startWorkers(log = console): WorkerHandles | null {
           return controller.runCommand(agentIdRaw, cmd, args, streamOpts);
         };
         const streamOpts = {
-          onEvent: async (evt) => {
+          onEvent: async (evt: StreamEvent) => {
             try {
               if (evt.type === 'log' && evt.message) {
                 emitToAgent(agentIdStr, 'work_stream', {
@@ -168,10 +141,11 @@ export function startWorkers(log = console): WorkerHandles | null {
                   progress: evt.progress,
                 });
                 if (prisma && sessionId)
-                  await appendEvent(sessionId, 'progress', undefined, {
-                    progress: evt.progress,
-                    data: evt.data,
-                  });
+                  await appendEvent(
+                    sessionId,
+                    'progress',
+                    `${Math.round((evt.progress || 0) * 100)}%`,
+                  );
               } else if (evt.type === 'status') {
                 emitToAgent(agentIdStr, 'agent_update', {
                   agentId: agentIdStr,
@@ -202,25 +176,12 @@ export function startWorkers(log = console): WorkerHandles | null {
             result,
           );
         }
-        try {
-          const { audit } = await import('../audit/logger');
-          audit({
-            type: result.ok ? 'command_completed' : 'command_failed',
-            agentId: agentIdStr,
-            sessionId,
-            jobId: String(job.id),
-            data: { cmd, result: result.ok ? 'ok' : result.error },
-            ts: Date.now(),
-          });
-        } catch {
-          // Audit logging failure should not block job completion.
-        }
         emitToAgent(agentIdStr, 'work_stream', {
           agentId: agentIdStr,
           message: result.ok ? `command completed: ${cmd}` : `command failed: ${cmd}`,
           ts: Date.now(),
         });
-        audit(result.ok ? 'agent.command_completed' : 'agent.command_failed', {
+        audit.log(result.ok ? 'agent.command_completed' : 'agent.command_failed', {
           agentId: agentIdStr,
           jobId: String(job.id),
           command: cmd,
@@ -230,11 +191,11 @@ export function startWorkers(log = console): WorkerHandles | null {
     } catch (e: any) {
       log.error?.('[worker] agent-commands error', { jobId: job.id, err: e?.message });
       try {
-        audit(
-          'agent.command_error',
-          { agentId: agentIdStr, jobId: String(job.id), error: e?.message },
-          'error',
-        );
+        audit.log('agent.command_error', {
+          agentId: agentIdStr,
+          jobId: String(job.id),
+          error: e?.message,
+        });
       } catch {
         // Ignore audit logging failure here; rethrow original error.
       }
@@ -247,8 +208,7 @@ export function startWorkers(log = console): WorkerHandles | null {
     log.info?.(`[worker] github-sync processing ${job.id} ${job.name}`, { data: job.data });
     const villageId = String((job.data as any)?.villageId || '');
     const org = String((job.data as any)?.org || '');
-    if (!villageId || !org)
-      throw new Error('invalid job payload');
+    if (!villageId || !org) throw new Error('invalid job payload');
     const result = await syncVillageNow(villageId, org);
     try {
       await setVillageLastSynced(villageId, new Date());
@@ -286,11 +246,12 @@ export function startWorkers(log = console): WorkerHandles | null {
           ts: Date.now(),
         });
         try {
-          audit(
-            'agent.command_dlq',
-            { agentId, jobId: String(job?.id), name: job?.name, error: err?.message },
-            'error',
-          );
+          audit.log('agent.command_dlq', {
+            agentId,
+            jobId: String(job?.id),
+            name: job?.name,
+            error: err?.message,
+          });
         } catch {
           // Ignore audit logging failure; DLQ entry already recorded.
         }

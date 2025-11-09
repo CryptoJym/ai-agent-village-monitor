@@ -1,5 +1,9 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import {
+  LoggingMessageNotificationSchema,
+  ProgressNotificationSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import type {
   CommandArgs,
   CommandResult,
@@ -53,31 +57,26 @@ export class MCPClientController implements MCPAgentController {
       );
 
       // Set up logging and notification handlers
-      client.setNotificationHandler({
-        method: 'notifications/message',
-        handler: (notification: any) => {
-          const handler = this.eventHandlers.get(id);
-          if (handler) {
-            handler({
-              type: 'log',
-              message: notification.params?.message || String(notification.params),
-            });
-          }
-        },
+      client.setNotificationHandler(LoggingMessageNotificationSchema, (notification) => {
+        const handler = this.eventHandlers.get(id);
+        if (handler) {
+          const message = notification.params?.message ?? JSON.stringify(notification.params ?? {});
+          handler({
+            type: 'log',
+            message: String(message),
+          });
+        }
       });
 
-      client.setNotificationHandler({
-        method: 'notifications/progress',
-        handler: (notification: any) => {
-          const handler = this.eventHandlers.get(id);
-          if (handler && notification.params) {
-            handler({
-              type: 'progress',
-              progress: notification.params.progress || 0,
-              message: notification.params.message,
-            });
-          }
-        },
+      client.setNotificationHandler(ProgressNotificationSchema, (notification) => {
+        const handler = this.eventHandlers.get(id);
+        if (handler && notification.params) {
+          handler({
+            type: 'progress',
+            progress: notification.params.progress || 0,
+            message: notification.params.message,
+          });
+        }
       });
 
       // Connect to the MCP server

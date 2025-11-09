@@ -202,7 +202,7 @@ export class AgentManager {
 
   private async getAgentVillageId(agentId: string): Promise<string | null> {
     try {
-      const { prisma } = await import('../db/prisma');
+      const { prisma } = await import('../db');
       const agent = await prisma.agent.findUnique({
         where: { id: agentId },
         select: { villageId: true },
