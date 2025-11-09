@@ -159,8 +159,7 @@ export function startWorkers(log = console): WorkerHandles | null {
                   message: evt.message || 'error',
                   ts: Date.now(),
                 });
-                if (prisma && sessionId)
-                  await appendEvent(sessionId, 'error', evt.message, evt.data);
+                if (prisma && sessionId) await appendEvent(sessionId, 'error', evt.message);
               }
             } catch {
               // Ignore streaming side-effect failures; continue emitting events.
@@ -173,7 +172,6 @@ export function startWorkers(log = console): WorkerHandles | null {
             sessionId,
             result.ok ? 'command_completed' : 'command_failed',
             result.ok ? 'ok' : result.error || 'error',
-            result,
           );
         }
         emitToAgent(agentIdStr, 'work_stream', {
@@ -216,7 +214,7 @@ export function startWorkers(log = console): WorkerHandles | null {
       log.error?.('[worker] github-sync lastSynced update failed', { villageId, err: e?.message });
     }
     log.info?.('[worker] github-sync completed', { jobId: job.id, ...result });
-    return { ok: true, jobId: job.id, ...result };
+    return { jobId: job.id, ...result };
   };
 
   const agentCommands = new Worker('agent-commands', agentProc, baseOpts);
