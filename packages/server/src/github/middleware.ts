@@ -1,9 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
 import { createGitHubClientFromEnv, GitHubClient } from './client';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    github?: GitHubClient;
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      github?: GitHubClient;
+    }
   }
 }
 
@@ -14,4 +17,3 @@ export function githubMiddleware() {
     next();
   };
 }
-

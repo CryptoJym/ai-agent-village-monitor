@@ -5,8 +5,9 @@ import { verifyAccessToken, type JwtPayload } from '../auth/jwt';
 
 declare module 'socket.io' {
   interface Socket {
-    data: Socket['data'] & {
+    data: {
       user?: JwtPayload;
+      [key: string]: any;
     };
   }
 }

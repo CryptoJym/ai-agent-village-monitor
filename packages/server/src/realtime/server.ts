@@ -54,7 +54,7 @@ export function createSocketServer(server: HttpServer) {
       const origin = req.headers.origin as string | undefined;
       if (!origin) return fn(null, true);
       const ok = allowedOrigins.includes(origin);
-      return fn(ok ? null : new Error('CORS origin not allowed'), ok);
+      return fn(ok ? null : 'CORS origin not allowed', ok);
     },
   });
 
@@ -91,14 +91,14 @@ export function createSocketServer(server: HttpServer) {
     if (!hasDb) return true;
     try {
       const v = await prisma.village.findUnique({
-        where: { id: Number(villageId) },
+        where: { id: villageId },
         select: { isPublic: true },
       });
       if (v?.isPublic) return true; // allow anonymous read-only join for public villages
       if (!config.JWT_SECRET) return true;
       if (!userId) return false;
       const access = await prisma.villageAccess.findUnique({
-        where: { villageId_userId: { villageId: Number(villageId), userId: Number(userId) } },
+        where: { villageId_userId: { villageId, userId } },
         select: { role: true },
       });
       return !!access;
@@ -114,7 +114,7 @@ export function createSocketServer(server: HttpServer) {
     if (!config.JWT_SECRET || !hasDb) return { ok: true };
     try {
       // Try by githubRepoId (BigInt) first, else fallback to internal house id
-      let house: { villageId: number } | null = null;
+      let house: { villageId: string } | null = null;
       try {
         const big = BigInt(repoId);
         house = await prisma.house.findUnique({
@@ -122,14 +122,15 @@ export function createSocketServer(server: HttpServer) {
           select: { villageId: true },
         });
       } catch {
-        const id = Number(repoId);
-        if (Number.isFinite(id)) {
-          house = await prisma.house.findUnique({ where: { id }, select: { villageId: true } });
-        }
+        // If not a valid BigInt, try as string ID
+        house = await prisma.house.findUnique({
+          where: { id: repoId },
+          select: { villageId: true },
+        });
       }
       if (!house) return { ok: false };
-      const ok = await canJoinVillageSecure(userId, String(house.villageId));
-      return ok ? { ok: true, villageId: String(house.villageId) } : { ok: false };
+      const ok = await canJoinVillageSecure(userId, house.villageId);
+      return ok ? { ok: true, villageId: house.villageId } : { ok: false };
     } catch {
       return { ok: false };
     }
