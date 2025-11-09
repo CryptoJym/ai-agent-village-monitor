@@ -42,7 +42,7 @@ usersRouter.delete('/account', requireAuth, async (req, res) => {
       data: {
         name: `deleted-${userId}`,
         email: null,
-        preferences: null,
+        preferences: undefined,
         githubId: null,
       },
     });
