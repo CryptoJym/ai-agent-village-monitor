@@ -164,9 +164,9 @@ router.get('/auth/github/callback', async (req, res, next) => {
     }
 
     // Issue JWTs and set cookies
-    const access = signAccessToken(dbUser.id, dbUser.username);
+    const access = signAccessToken(dbUser.id, dbUser.username || username);
     const refreshId = randomString(32);
-    const refresh = signRefreshToken(dbUser.id, dbUser.username, refreshId);
+    const refresh = signRefreshToken(dbUser.id, dbUser.username || username, refreshId);
     refreshStore.set(String(dbUser.id), sha256Hex(refreshId));
 
     res.cookie('access_token', access, {
@@ -238,8 +238,8 @@ router.post('/auth/refresh', async (req, res) => {
       return res.status(401).json({ error: 'unauthorized' });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: Number(userId) } });
-    if (!user) return res.status(401).json({ error: 'unauthorized' });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.username) return res.status(401).json({ error: 'unauthorized' });
 
     // Rotate tokens
     const newJti = randomString(32);
@@ -286,6 +286,5 @@ router.post('/auth/logout', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   return res.status(204).end();
 });
-
 
 export { router as authRouter };
