@@ -3,7 +3,7 @@ import { describe, it, beforeAll, expect } from 'vitest';
 
 describe('auth (cookies + protected routes)', () => {
   let createApp: any;
-  let signAccessToken: (id: number, username: string) => string;
+  let signAccessToken: (id: string | number, username: string) => string;
   let app: any;
 
   beforeAll(async () => {
@@ -19,13 +19,15 @@ describe('auth (cookies + protected routes)', () => {
   });
 
   it('GET /auth/me → 200 (or 401 if user not persisted) with access_token cookie', async () => {
-    const token = signAccessToken(7, 'cookie-user');
+    const token = signAccessToken('7', 'cookie-user');
     const res = await request(app)
       .get('/auth/me')
       .set('Cookie', [`access_token=${token}`]); // unsigned still accepted as fallback
     // Route returns 200 if the DB has the user; otherwise 401. Both are acceptable for this check.
     if (res.status === 200) {
-      expect(res.body?.id).toBeTypeOf('number');
+      // ID should be a string after our type migration
+      expect(res.body?.id).toBeTypeOf('string');
+      expect(res.body?.username).toBeTypeOf('string');
     } else {
       expect(res.status).toBe(401);
     }
@@ -55,8 +57,12 @@ describe('auth (cookies + protected routes)', () => {
     expect(res.status).toBe(204);
     const setCookie = res.header['set-cookie'] || [];
     // Expect cookies to be cleared (empty or past expiry)
-    const clearedAccess = setCookie.find((c: string) => c.toLowerCase().startsWith('access_token='));
-    const clearedRefresh = setCookie.find((c: string) => c.toLowerCase().startsWith('refresh_token='));
+    const clearedAccess = setCookie.find((c: string) =>
+      c.toLowerCase().startsWith('access_token='),
+    );
+    const clearedRefresh = setCookie.find((c: string) =>
+      c.toLowerCase().startsWith('refresh_token='),
+    );
     expect(clearedAccess || clearedRefresh).toBeDefined();
   });
 });

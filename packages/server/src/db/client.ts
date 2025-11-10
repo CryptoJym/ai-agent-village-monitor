@@ -9,7 +9,11 @@ function makeStub(): any {
   return {
     $queryRawUnsafe: async () => 1,
     user: {
-      findUnique: async (_args?: any) => ({ preferences: {} }),
+      findUnique: async (args?: any) => {
+        // Return a mock user with string ID and basic fields for testing
+        const id = args?.where?.id || '7';
+        return { id, username: 'testuser', avatarUrl: null, preferences: {} };
+      },
       update: async (_args?: any) => ({ ok: true }),
     },
     villageAccess: {
