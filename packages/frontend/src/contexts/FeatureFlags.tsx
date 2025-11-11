@@ -102,7 +102,8 @@ export function FeatureFlagProvider({ children, initialFlags = {} }: FeatureFlag
       console.warn('Failed to load feature flags from localStorage:', error);
       setFlags({ ...defaultFlags, ...initialFlags });
     }
-  }, [initialFlags]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount; initialFlags is intentionally excluded to prevent infinite loops
 
   // Save flags to localStorage when they change
   useEffect(() => {
@@ -148,23 +149,21 @@ export function FeatureFlagProvider({ children, initialFlags = {} }: FeatureFlag
   };
 
   const enableFeature = (flag: keyof FeatureFlags): void => {
-    setFlags(prev => ({ ...prev, [flag]: true }));
+    setFlags((prev) => ({ ...prev, [flag]: true }));
 
     // Analytics tracking
     trackFeatureToggle(flag, true);
   };
 
   const disableFeature = (flag: keyof FeatureFlags): void => {
-    setFlags(prev => ({ ...prev, [flag]: false }));
+    setFlags((prev) => ({ ...prev, [flag]: false }));
 
     // Analytics tracking
     trackFeatureToggle(flag, false);
   };
 
   const resetToDefaults = (): void => {
-    const resetFlags = isBetaTester
-      ? { ...defaultFlags, ...betaTesterFlags }
-      : defaultFlags;
+    const resetFlags = isBetaTester ? { ...defaultFlags, ...betaTesterFlags } : defaultFlags;
 
     setFlags(resetFlags);
 
@@ -180,7 +179,7 @@ export function FeatureFlagProvider({ children, initialFlags = {} }: FeatureFlag
 
     if (isBeta) {
       // Enable beta features
-      setFlags(prev => ({ ...prev, ...betaTesterFlags }));
+      setFlags((prev) => ({ ...prev, ...betaTesterFlags }));
     } else {
       // Reset to non-beta defaults
       setFlags(defaultFlags);
@@ -214,11 +213,7 @@ export function FeatureFlagProvider({ children, initialFlags = {} }: FeatureFlag
     setBetaTester,
   };
 
-  return (
-    <FeatureFlagContext.Provider value={contextValue}>
-      {children}
-    </FeatureFlagContext.Provider>
-  );
+  return <FeatureFlagContext.Provider value={contextValue}>{children}</FeatureFlagContext.Provider>;
 }
 
 // Hook to use feature flags
@@ -239,7 +234,7 @@ export function useFeature(flag: keyof FeatureFlags): boolean {
 // Higher-order component for feature gating
 export function withFeatureFlag<P extends object>(
   flag: keyof FeatureFlags,
-  fallbackComponent?: React.ComponentType<P>
+  fallbackComponent?: React.ComponentType<P>,
 ) {
   return function FeatureGatedComponent(Component: React.ComponentType<P>) {
     return function WrappedComponent(props: P) {
@@ -261,22 +256,31 @@ export function FeatureFlagDebugPanel() {
   if (!isBetaTester) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 10,
-      right: 10,
-      width: 300,
-      background: '#1f2937',
-      border: '1px solid #374151',
-      borderRadius: 8,
-      padding: 16,
-      color: '#e5e7eb',
-      fontSize: 12,
-      zIndex: 9999,
-      maxHeight: '80vh',
-      overflowY: 'auto',
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+    <div
+      style={{
+        position: 'fixed',
+        top: 10,
+        right: 10,
+        width: 300,
+        background: '#1f2937',
+        border: '1px solid #374151',
+        borderRadius: 8,
+        padding: 16,
+        color: '#e5e7eb',
+        fontSize: 12,
+        zIndex: 9999,
+        maxHeight: '80vh',
+        overflowY: 'auto',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 12,
+        }}
+      >
         <strong>🧪 Feature Flags (Beta)</strong>
         <button
           onClick={resetToDefaults}
@@ -295,7 +299,15 @@ export function FeatureFlagDebugPanel() {
       </div>
 
       {Object.entries(flags).map(([key, value]) => (
-        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div
+          key={key}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}
+        >
           <span style={{ fontSize: 11 }}>{key}</span>
           <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <input
