@@ -210,7 +210,7 @@ export class WorldMapScene extends Phaser.Scene {
     return container;
   }
 
-  private async fetchVillages(profile = false): Promise<VillageDescriptor[]> {
+  private async fetchVillages(_profile = false): Promise<VillageDescriptor[]> {
     const villages = await api.listVillages();
     return villages.map((v) => ({
       id: v.id,

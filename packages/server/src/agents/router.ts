@@ -153,44 +153,6 @@ async function userCanModifyAgent(userSub: string, agent: any): Promise<boolean>
   }
 }
 
-async function userHasOwnerRole(userSub: any, villageId: any): Promise<boolean> {
-  if (villageId == null) return false;
-  try {
-    const role = await getUserVillageRole(userSub, villageId);
-    if (role === 'owner') return true;
-  } catch (e) {
-    void e;
-  }
-  try {
-    const userCandidates = new Set<any>();
-    const villageCandidates = new Set<any>();
-    const subStr = String(userSub);
-    userCandidates.add(subStr);
-    const subNum = Number(subStr);
-    if (!Number.isNaN(subNum)) userCandidates.add(subNum);
-    const villageStr = String(villageId);
-    villageCandidates.add(villageStr);
-    const villageNum = Number(villageStr);
-    if (!Number.isNaN(villageNum)) villageCandidates.add(villageNum);
-    for (const v of villageCandidates) {
-      for (const u of userCandidates) {
-        try {
-          const access = await prisma.villageAccess.findUnique({
-            where: { villageId_userId: { villageId: v as any, userId: u as any } },
-          });
-          const role = String(access?.role || '').toLowerCase();
-          if (role === 'owner') return true;
-        } catch (err) {
-          void err;
-        }
-      }
-    }
-  } catch (err) {
-    void err;
-  }
-  return false;
-}
-
 // List agents (no village relation in schema)
 agentsRouter.get('/agents', requireAuth, async (_req, res, next) => {
   try {
