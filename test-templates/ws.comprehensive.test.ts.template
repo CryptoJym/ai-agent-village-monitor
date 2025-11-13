@@ -1,0 +1,519 @@
+/**
+ * WebSocket System Comprehensive Tests
+ *
+ * Template covering:
+ * - Multi-client room messaging
+ * - Authorization and permissions
+ * - Connection state recovery
+ * - Rate limiting
+ * - Redis adapter (multi-replica) testing
+ */
+
+import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest';
+import { Server as HttpServer, createServer } from 'http';
+import { AddressInfo } from 'net';
+import { io as ioClient, Socket } from 'socket.io-client';
+import { createSocketServer } from '../realtime/server';
+import { prisma } from '../db/client';
+import { signAccessToken } from '../auth/jwt';
+import type { Server as SocketIOServer } from 'socket.io';
+
+describe('WebSocket System Comprehensive', () => {
+  let httpServer: HttpServer;
+  let ioServer: SocketIOServer;
+  let port: number;
+  let baseUrl: string;
+  let testVillageId: string;
+  let testUserId: string;
+
+  beforeAll(async () => {
+    // Create test user
+    const user = await prisma.user.create({
+      data: {
+        username: 'ws-test-user',
+        githubId: BigInt(999999),
+      },
+    });
+    testUserId = user.id;
+
+    // Create test village
+    const village = await prisma.village.create({
+      data: {
+        name: 'WS Test Village',
+        orgName: 'ws-test',
+        githubOrgId: BigInt(999999),
+        ownerId: testUserId,
+        isPublic: false,
+      },
+    });
+    testVillageId = village.id;
+
+    // Grant user access to village
+    await prisma.villageAccess.create({
+      data: {
+        villageId: testVillageId,
+        userId: testUserId,
+        role: 'owner',
+      },
+    });
+
+    // Create HTTP and Socket.IO servers
+    httpServer = createServer();
+    ioServer = createSocketServer(httpServer);
+
+    await new Promise<void>((resolve) => {
+      httpServer.listen(0, () => {
+        const addr = httpServer.address() as AddressInfo;
+        port = addr.port;
+        baseUrl = `http://localhost:${port}`;
+        resolve();
+      });
+    });
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((r) => ioServer.close(() => r()));
+    await new Promise<void>((r) => httpServer.close(() => r()));
+
+    // Cleanup
+    await prisma.villageAccess.deleteMany({ where: { villageId: testVillageId } });
+    await prisma.village.delete({ where: { id: testVillageId } });
+    await prisma.user.delete({ where: { id: testUserId } });
+  });
+
+  function createClient(userId?: string): Socket {
+    const token = userId ? signAccessToken(userId, 'test-user') : undefined;
+
+    return ioClient(baseUrl, {
+      auth: token ? { token } : undefined,
+      transports: ['websocket'],
+      autoConnect: false,
+    });
+  }
+
+  function waitForEvent<T = any>(
+    socket: Socket,
+    event: string,
+    timeoutMs = 2000
+  ): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`Timeout waiting for ${event}`)),
+        timeoutMs
+      );
+
+      socket.once(event, (data: T) => {
+        clearTimeout(timer);
+        resolve(data);
+      });
+    });
+  }
+
+  describe('Multi-Client Room Messaging', () => {
+    it('delivers messages to all clients in a room', async () => {
+      const numClients = 5;
+      const clients: Socket[] = [];
+
+      try {
+        // Create and connect multiple clients
+        for (let i = 0; i < numClients; i++) {
+          const client = createClient(testUserId);
+          client.connect();
+          await waitForEvent(client, 'connect');
+          clients.push(client);
+        }
+
+        // All clients join the same room
+        await Promise.all(
+          clients.map((client) => {
+            return new Promise<void>((resolve, reject) => {
+              client.emit('join_village', { villageId: testVillageId }, (ack: any) => {
+                if (ack.error) reject(new Error(ack.error));
+                else resolve();
+              });
+            });
+          })
+        );
+
+        // Set up message listeners on all clients
+        const messagePromises = clients.map((client) =>
+          waitForEvent(client, 'work_stream')
+        );
+
+        // Emit message to the room (server-side)
+        const { emitToVillage } = await import('../realtime/io');
+        emitToVillage(testVillageId, 'work_stream', { data: 'test-broadcast' });
+
+        // All clients should receive the message
+        const messages = await Promise.all(messagePromises);
+        expect(messages).toHaveLength(numClients);
+        expect(messages.every((m) => m.data === 'test-broadcast')).toBe(true);
+      } finally {
+        // Disconnect all clients
+        clients.forEach((c) => c.disconnect());
+      }
+    });
+
+    it('handles client disconnection without affecting others', async () => {
+      const client1 = createClient(testUserId);
+      const client2 = createClient(testUserId);
+      const client3 = createClient(testUserId);
+
+      try {
+        // Connect all clients
+        await Promise.all([
+          client1.connect(),
+          client2.connect(),
+          client3.connect(),
+        ].map(c => waitForEvent(c as any, 'connect')));
+
+        // All join the room
+        await Promise.all([client1, client2, client3].map((client) => {
+          return new Promise<void>((resolve, reject) => {
+            client.emit('join_village', { villageId: testVillageId }, (ack: any) => {
+              if (ack.error) reject(new Error(ack.error));
+              else resolve();
+            });
+          });
+        }));
+
+        // Disconnect client2
+        client2.disconnect();
+        await new Promise((r) => setTimeout(r, 100)); // Wait for disconnect
+
+        // Emit message
+        const { emitToVillage } = await import('../realtime/io');
+        const msg1Promise = waitForEvent(client1, 'work_stream');
+        const msg3Promise = waitForEvent(client3, 'work_stream');
+
+        emitToVillage(testVillageId, 'work_stream', { data: 'after-disconnect' });
+
+        // Client1 and Client3 should receive, Client2 should not
+        const [msg1, msg3] = await Promise.all([msg1Promise, msg3Promise]);
+        expect(msg1.data).toBe('after-disconnect');
+        expect(msg3.data).toBe('after-disconnect');
+      } finally {
+        [client1, client2, client3].forEach((c) => c.disconnect());
+      }
+    });
+
+    it('supports selective room messaging (not broadcast to all rooms)', async () => {
+      // Create second village
+      const village2 = await prisma.village.create({
+        data: {
+          name: 'WS Test Village 2',
+          orgName: 'ws-test-2',
+          githubOrgId: BigInt(999998),
+          ownerId: testUserId,
+          isPublic: false,
+        },
+      });
+
+      try {
+        const clientVillage1 = createClient(testUserId);
+        const clientVillage2 = createClient(testUserId);
+
+        clientVillage1.connect();
+        clientVillage2.connect();
+
+        await Promise.all([
+          waitForEvent(clientVillage1, 'connect'),
+          waitForEvent(clientVillage2, 'connect'),
+        ]);
+
+        // Join different rooms
+        await new Promise<void>((resolve, reject) => {
+          clientVillage1.emit('join_village', { villageId: testVillageId }, (ack: any) => {
+            if (ack.error) reject(new Error(ack.error));
+            else resolve();
+          });
+        });
+
+        await new Promise<void>((resolve, reject) => {
+          clientVillage2.emit('join_village', { villageId: village2.id }, (ack: any) => {
+            if (ack.error) reject(new Error(ack.error));
+            else resolve();
+          });
+        });
+
+        // Set up listeners
+        const msg1Promise = waitForEvent(clientVillage1, 'work_stream', 1000);
+        const msg2Promise = waitForEvent(clientVillage2, 'work_stream', 1000);
+
+        // Emit only to village 1
+        const { emitToVillage } = await import('../realtime/io');
+        emitToVillage(testVillageId, 'work_stream', { data: 'village1-only' });
+
+        // Client 1 should receive, Client 2 should timeout
+        const msg1 = await msg1Promise;
+        expect(msg1.data).toBe('village1-only');
+
+        await expect(msg2Promise).rejects.toThrow(/timeout/i);
+
+        clientVillage1.disconnect();
+        clientVillage2.disconnect();
+      } finally {
+        await prisma.village.delete({ where: { id: village2.id } });
+      }
+    });
+  });
+
+  describe('Authorization and Permissions', () => {
+    it('prevents unauthorized access to private village rooms', async () => {
+      const unauthorizedClient = createClient(); // No auth token
+
+      try {
+        unauthorizedClient.connect();
+        await waitForEvent(unauthorizedClient, 'connect');
+
+        // Try to join private village room
+        const ackPromise = new Promise<any>((resolve) => {
+          unauthorizedClient.emit(
+            'join_village',
+            { villageId: testVillageId },
+            (ack: any) => resolve(ack)
+          );
+        });
+
+        const ack = await ackPromise;
+
+        // Should be rejected
+        expect(ack.error).toBeDefined();
+        expect(ack.error).toMatch(/unauthorized|forbidden/i);
+      } finally {
+        unauthorizedClient.disconnect();
+      }
+    });
+
+    it('allows access to public village rooms without auth', async () => {
+      // Make village public
+      await prisma.village.update({
+        where: { id: testVillageId },
+        data: { isPublic: true },
+      });
+
+      try {
+        const unauthorizedClient = createClient(); // No auth token
+        unauthorizedClient.connect();
+        await waitForEvent(unauthorizedClient, 'connect');
+
+        // Try to join public village room
+        const ackPromise = new Promise<any>((resolve) => {
+          unauthorizedClient.emit(
+            'join_village',
+            { villageId: testVillageId },
+            (ack: any) => resolve(ack)
+          );
+        });
+
+        const ack = await ackPromise;
+
+        // Should succeed
+        expect(ack.error).toBeUndefined();
+        expect(ack.ok).toBe(true);
+
+        unauthorizedClient.disconnect();
+      } finally {
+        // Reset to private
+        await prisma.village.update({
+          where: { id: testVillageId },
+          data: { isPublic: false },
+        });
+      }
+    });
+
+    it('enforces agent room access control', async () => {
+      // Create agent owned by different user
+      const otherUser = await prisma.user.create({
+        data: { username: 'other-user', githubId: BigInt(888888) },
+      });
+
+      const agent = await prisma.agent.create({
+        data: {
+          name: 'private-agent',
+          villageId: testVillageId,
+          currentStatus: 'idle',
+        },
+      });
+
+      try {
+        const client = createClient(otherUser.id);
+        client.connect();
+        await waitForEvent(client, 'connect');
+
+        // Try to join agent room (should fail - not owner)
+        const ackPromise = new Promise<any>((resolve) => {
+          client.emit('join_agent', { agentId: agent.id }, (ack: any) => resolve(ack));
+        });
+
+        const ack = await ackPromise;
+        expect(ack.error).toBeDefined();
+
+        client.disconnect();
+      } finally {
+        await prisma.agent.delete({ where: { id: agent.id } });
+        await prisma.user.delete({ where: { id: otherUser.id } });
+      }
+    });
+  });
+
+  describe('Connection State Recovery', () => {
+    it('recovers state after brief disconnection', async () => {
+      const client = createClient(testUserId);
+
+      try {
+        client.connect();
+        await waitForEvent(client, 'connect');
+
+        // Join room
+        await new Promise<void>((resolve, reject) => {
+          client.emit('join_village', { villageId: testVillageId }, (ack: any) => {
+            if (ack.error) reject(new Error(ack.error));
+            else resolve();
+          });
+        });
+
+        // Disconnect temporarily
+        client.disconnect();
+        await new Promise((r) => setTimeout(r, 100));
+
+        // Emit messages while disconnected
+        const { emitToVillage } = await import('../realtime/io');
+        emitToVillage(testVillageId, 'work_stream', { seq: 1 });
+        emitToVillage(testVillageId, 'work_stream', { seq: 2 });
+
+        await new Promise((r) => setTimeout(r, 100));
+
+        // Reconnect
+        client.connect();
+        await waitForEvent(client, 'connect');
+
+        // With connection state recovery, Socket.IO may replay missed messages
+        // (This depends on connectionStateRecovery configuration)
+
+        // TODO: Verify buffered messages are delivered
+        // Note: This test may need adjustment based on Socket.IO recovery config
+      } finally {
+        client.disconnect();
+      }
+    });
+
+    it('handles reconnection with session recovery', async () => {
+      const client = createClient(testUserId);
+
+      try {
+        client.connect();
+        await waitForEvent(client, 'connect');
+
+        const sessionId1 = client.id;
+
+        // Disconnect and reconnect
+        client.disconnect();
+        await new Promise((r) => setTimeout(r, 100));
+
+        client.connect();
+        await waitForEvent(client, 'connect');
+
+        const sessionId2 = client.id;
+
+        // Session IDs may or may not be the same depending on recovery
+        console.log('Session ID before:', sessionId1);
+        console.log('Session ID after:', sessionId2);
+
+        // Verify connection is functional
+        await new Promise<void>((resolve, reject) => {
+          client.emit('join_village', { villageId: testVillageId }, (ack: any) => {
+            if (ack.error) reject(new Error(ack.error));
+            else resolve();
+          });
+        });
+      } finally {
+        client.disconnect();
+      }
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    it('enforces join rate limit (20 joins per 5 seconds)', async () => {
+      const client = createClient(testUserId);
+
+      try {
+        client.connect();
+        await waitForEvent(client, 'connect');
+
+        const joinAttempts: Promise<any>[] = [];
+
+        // Try to join 30 times rapidly (exceeds 20/5s limit)
+        for (let i = 0; i < 30; i++) {
+          const promise = new Promise<any>((resolve) => {
+            client.emit('join_village', { villageId: testVillageId }, (ack: any) => {
+              resolve(ack);
+            });
+          });
+          joinAttempts.push(promise);
+        }
+
+        const results = await Promise.all(joinAttempts);
+
+        // Some should succeed, some should be rate limited
+        const successes = results.filter((r) => !r.error);
+        const ratelimited = results.filter((r) => r.error?.match(/rate.*limit/i));
+
+        expect(successes.length).toBeLessThan(30);
+        expect(ratelimited.length).toBeGreaterThan(0);
+
+        console.log(`Successes: ${successes.length}, Rate limited: ${ratelimited.length}`);
+      } finally {
+        client.disconnect();
+      }
+    });
+  });
+
+  describe('Polling Transport Support', () => {
+    it('works with polling transport', async () => {
+      const client = ioClient(baseUrl, {
+        auth: { token: signAccessToken(testUserId, 'test-user') },
+        transports: ['polling'], // Force polling
+        autoConnect: false,
+      });
+
+      try {
+        client.connect();
+        await waitForEvent(client, 'connect', 4000);
+
+        // Verify can join room
+        await new Promise<void>((resolve, reject) => {
+          client.emit('join_village', { villageId: testVillageId }, (ack: any) => {
+            if (ack.error) reject(new Error(ack.error));
+            else resolve();
+          });
+        });
+
+        // Verify can receive messages
+        const msgPromise = waitForEvent(client, 'work_stream');
+        const { emitToVillage } = await import('../realtime/io');
+        emitToVillage(testVillageId, 'work_stream', { data: 'polling-test' });
+
+        const msg = await msgPromise;
+        expect(msg.data).toBe('polling-test');
+      } finally {
+        client.disconnect();
+      }
+    });
+  });
+
+  describe('Redis Adapter (Multi-Replica)', () => {
+    // These tests would require Redis and multiple server instances
+    // Skipped if REDIS_URL not configured
+
+    it.skipIf(!process.env.REDIS_URL)(
+      'broadcasts messages across multiple server instances',
+      async () => {
+        // TODO: Start second server instance with Redis adapter
+        // Connect client1 to server1
+        // Connect client2 to server2
+        // Emit from server1, verify client2 receives
+      }
+    );
+  });
+});

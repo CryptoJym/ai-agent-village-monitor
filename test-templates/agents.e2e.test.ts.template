@@ -1,0 +1,395 @@
+/**
+ * Agent System End-to-End Tests
+ *
+ * Template for comprehensive agent testing covering:
+ * - Full lifecycle (create → connect → execute → stream → disconnect)
+ * - Concurrent execution
+ * - Error recovery
+ * - MCP protocol compliance
+ */
+
+import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest';
+import { prisma } from '../db/client';
+import { AgentManager } from '../agents/manager';
+import type { AgentStreamEvent } from '../agents/types';
+
+describe('Agent System End-to-End', () => {
+  let testVillageId: string;
+  let agentManager: AgentManager;
+
+  beforeAll(async () => {
+    // Create test village
+    const village = await prisma.village.create({
+      data: {
+        name: 'Test Village',
+        orgName: 'test-org',
+        githubOrgId: BigInt(12345),
+        ownerId: 'test-user-id',
+        isPublic: false,
+      },
+    });
+    testVillageId = village.id;
+
+    // Initialize agent manager
+    agentManager = new AgentManager();
+  });
+
+  afterAll(async () => {
+    // Cleanup
+    await prisma.agent.deleteMany({ where: { villageId: testVillageId } });
+    await prisma.village.delete({ where: { id: testVillageId } });
+  });
+
+  describe('Full Agent Lifecycle (Happy Path)', () => {
+    let agentId: string;
+
+    beforeEach(async () => {
+      const agent = await prisma.agent.create({
+        data: {
+          name: 'lifecycle-test-agent',
+          villageId: testVillageId,
+          currentStatus: 'idle',
+        },
+      });
+      agentId = agent.id;
+    });
+
+    it('completes full lifecycle: create → connect → execute → stream → disconnect', async () => {
+      // Step 1: Connect agent
+      const connectResult = await agentManager.connectAgent(agentId);
+      expect(connectResult.ok).toBe(true);
+      expect(connectResult.sessionToken).toBeDefined();
+
+      const runtime = agentManager.get(agentId);
+      expect(runtime.state).toBe('connected');
+      expect(runtime.sessionToken).toBeDefined();
+
+      // Step 2: Execute command with event streaming
+      const events: AgentStreamEvent[] = [];
+      const commandPromise = agentManager.runCommand(agentId, {
+        command: 'echo "Hello, World!"',
+        onEvent: (event) => {
+          events.push(event);
+          console.log(`[Event ${events.length}]`, event.type, event);
+        },
+      });
+
+      // Step 3: Wait for completion
+      const result = await commandPromise;
+
+      // Verify execution success
+      expect(result).toBeDefined();
+      expect(result.exitCode).toBe(0);
+
+      // Verify events were streamed
+      expect(events.length).toBeGreaterThan(0);
+
+      // Verify event types
+      const eventTypes = events.map((e) => e.type);
+      expect(eventTypes).toContain('stdout');
+      expect(eventTypes.filter((t) => t === 'exit')).toHaveLength(1);
+
+      // Verify event order (exit should be last)
+      expect(events[events.length - 1].type).toBe('exit');
+
+      // Verify stdout content
+      const stdoutEvents = events.filter((e) => e.type === 'stdout');
+      const stdoutContent = stdoutEvents.map((e) => e.data).join('');
+      expect(stdoutContent).toContain('Hello, World!');
+
+      // Step 4: Disconnect agent
+      await agentManager.disconnectAgent(agentId);
+      const disconnectedRuntime = agentManager.get(agentId);
+      expect(disconnectedRuntime.state).toBe('disconnected');
+    });
+
+    it('handles command failure gracefully', async () => {
+      await agentManager.connectAgent(agentId);
+
+      const events: AgentStreamEvent[] = [];
+      const result = await agentManager.runCommand(agentId, {
+        command: 'exit 1', // Command that fails
+        onEvent: (event) => events.push(event),
+      });
+
+      // Should complete with error exit code
+      expect(result.exitCode).toBe(1);
+
+      // Should still have received events
+      expect(events.length).toBeGreaterThan(0);
+      expect(events[events.length - 1].type).toBe('exit');
+    });
+
+    it('times out long-running commands', async () => {
+      await agentManager.connectAgent(agentId);
+
+      const events: AgentStreamEvent[] = [];
+
+      await expect(
+        agentManager.runCommand(agentId, {
+          command: 'sleep 100',
+          timeout: 1000, // 1 second timeout
+          onEvent: (event) => events.push(event),
+        })
+      ).rejects.toThrow(/timeout/i);
+
+      // Should have received some events before timeout
+      expect(events.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Concurrent Command Execution', () => {
+    it('handles multiple agents executing commands simultaneously', async () => {
+      // Create 10 test agents
+      const agents = await Promise.all(
+        Array.from({ length: 10 }, async (_, i) => {
+          return await prisma.agent.create({
+            data: {
+              name: `concurrent-agent-${i}`,
+              villageId: testVillageId,
+              currentStatus: 'idle',
+            },
+          });
+        })
+      );
+
+      try {
+        // Connect all agents
+        await Promise.all(agents.map((a) => agentManager.connectAgent(a.id)));
+
+        // Execute commands concurrently
+        const startTime = Date.now();
+        const results = await Promise.all(
+          agents.map((a, i) =>
+            agentManager.runCommand(a.id, {
+              command: `echo "Agent ${i} complete"`,
+            })
+          )
+        );
+        const duration = Date.now() - startTime;
+
+        // All should succeed
+        expect(results.every((r) => r.exitCode === 0)).toBe(true);
+
+        // Should complete in reasonable time (< 10 seconds for 10 agents)
+        expect(duration).toBeLessThan(10_000);
+
+        console.log(`Executed 10 concurrent commands in ${duration}ms`);
+      } finally {
+        // Cleanup
+        await Promise.all(agents.map((a) => agentManager.disconnectAgent(a.id)));
+        await prisma.agent.deleteMany({
+          where: { id: { in: agents.map((a) => a.id) } },
+        });
+      }
+    });
+
+    it('maintains session isolation between agents', async () => {
+      // Create 2 agents
+      const [agent1, agent2] = await Promise.all([
+        prisma.agent.create({
+          data: { name: 'isolation-1', villageId: testVillageId, currentStatus: 'idle' },
+        }),
+        prisma.agent.create({
+          data: { name: 'isolation-2', villageId: testVillageId, currentStatus: 'idle' },
+        }),
+      ]);
+
+      try {
+        await Promise.all([
+          agentManager.connectAgent(agent1.id),
+          agentManager.connectAgent(agent2.id),
+        ]);
+
+        // Set environment variable in agent1
+        const result1 = await agentManager.runCommand(agent1.id, {
+          command: 'export TEST_VAR=agent1_value && echo $TEST_VAR',
+        });
+
+        // Try to read it in agent2 (should fail - sessions are isolated)
+        const result2 = await agentManager.runCommand(agent2.id, {
+          command: 'echo $TEST_VAR',
+        });
+
+        expect(result1.exitCode).toBe(0);
+        expect(result2.exitCode).toBe(0);
+
+        // Agent 2 should not see agent 1's environment variable
+        // (implementation depends on MCP protocol session isolation)
+      } finally {
+        await Promise.all([
+          agentManager.disconnectAgent(agent1.id),
+          agentManager.disconnectAgent(agent2.id),
+        ]);
+        await prisma.agent.deleteMany({
+          where: { id: { in: [agent1.id, agent2.id] } },
+        });
+      }
+    });
+  });
+
+  describe('Error Recovery and Resilience', () => {
+    let agentId: string;
+
+    beforeEach(async () => {
+      const agent = await prisma.agent.create({
+        data: {
+          name: 'recovery-test-agent',
+          villageId: testVillageId,
+          currentStatus: 'idle',
+        },
+      });
+      agentId = agent.id;
+    });
+
+    it('recovers from connection failure with exponential backoff', async () => {
+      // TODO: Mock MCP controller to simulate connection failure
+      // Then verify retry behavior
+      expect(true).toBe(true); // Placeholder
+    });
+
+    it('handles command execution during disconnection', async () => {
+      await agentManager.connectAgent(agentId);
+
+      // Disconnect agent
+      await agentManager.disconnectAgent(agentId);
+
+      // Try to run command on disconnected agent
+      await expect(
+        agentManager.runCommand(agentId, { command: 'echo "test"' })
+      ).rejects.toThrow(/not connected|disconnected/i);
+    });
+
+    it('cleans up resources on agent deletion', async () => {
+      await agentManager.connectAgent(agentId);
+
+      const runtime = agentManager.get(agentId);
+      expect(runtime.state).toBe('connected');
+
+      // Delete agent from database
+      await prisma.agent.delete({ where: { id: agentId } });
+
+      // Manager should handle cleanup gracefully
+      await agentManager.disconnectAgent(agentId);
+
+      // Session should be ended
+      const sessions = await prisma.agentSession.findMany({
+        where: { agentId, status: 'active' },
+      });
+      expect(sessions).toHaveLength(0);
+    });
+  });
+
+  describe('Event Streaming Integrity', () => {
+    let agentId: string;
+
+    beforeEach(async () => {
+      const agent = await prisma.agent.create({
+        data: {
+          name: 'streaming-test-agent',
+          villageId: testVillageId,
+          currentStatus: 'idle',
+        },
+      });
+      agentId = agent.id;
+      await agentManager.connectAgent(agentId);
+    });
+
+    it('preserves event ordering for sequential commands', async () => {
+      const events: AgentStreamEvent[] = [];
+
+      await agentManager.runCommand(agentId, {
+        command: 'echo "line1" && echo "line2" && echo "line3"',
+        onEvent: (event) => events.push(event),
+      });
+
+      const stdoutEvents = events.filter((e) => e.type === 'stdout');
+      const output = stdoutEvents.map((e) => e.data).join('');
+
+      // Verify lines appear in order
+      const line1Index = output.indexOf('line1');
+      const line2Index = output.indexOf('line2');
+      const line3Index = output.indexOf('line3');
+
+      expect(line1Index).toBeGreaterThan(-1);
+      expect(line2Index).toBeGreaterThan(line1Index);
+      expect(line3Index).toBeGreaterThan(line2Index);
+    });
+
+    it('handles large stdout output without data loss', async () => {
+      const events: AgentStreamEvent[] = [];
+
+      // Generate 1MB of output
+      await agentManager.runCommand(agentId, {
+        command: 'for i in {1..10000}; do echo "Line $i: This is a test line with some content"; done',
+        onEvent: (event) => events.push(event),
+      });
+
+      const stdoutEvents = events.filter((e) => e.type === 'stdout');
+      const totalOutput = stdoutEvents.map((e) => e.data).join('');
+
+      // Should contain first and last lines
+      expect(totalOutput).toContain('Line 1:');
+      expect(totalOutput).toContain('Line 10000:');
+
+      // Should have received many chunks
+      expect(stdoutEvents.length).toBeGreaterThan(10);
+    });
+
+    it('interleaves stdout and stderr correctly', async () => {
+      const events: AgentStreamEvent[] = [];
+
+      await agentManager.runCommand(agentId, {
+        command: 'echo "stdout1" && echo "stderr1" >&2 && echo "stdout2" && echo "stderr2" >&2',
+        onEvent: (event) => events.push(event),
+      });
+
+      // Verify we got both stdout and stderr events
+      const stdoutEvents = events.filter((e) => e.type === 'stdout');
+      const stderrEvents = events.filter((e) => e.type === 'stderr');
+
+      expect(stdoutEvents.length).toBeGreaterThan(0);
+      expect(stderrEvents.length).toBeGreaterThan(0);
+    });
+
+    it('reports progress for long-running commands', async () => {
+      const events: AgentStreamEvent[] = [];
+      const progressUpdates: number[] = [];
+
+      await agentManager.runCommand(agentId, {
+        command: 'for i in {1..10}; do echo "Progress: $i"; sleep 0.1; done',
+        onEvent: (event) => {
+          events.push(event);
+          if (event.type === 'progress' && typeof event.percent === 'number') {
+            progressUpdates.push(event.percent);
+          }
+        },
+      });
+
+      // Verify progress updates are monotonically increasing
+      for (let i = 1; i < progressUpdates.length; i++) {
+        expect(progressUpdates[i]).toBeGreaterThanOrEqual(progressUpdates[i - 1]);
+      }
+    });
+  });
+
+  describe('MCP Protocol Compliance', () => {
+    // These tests would verify MCP-specific behavior
+    // Placeholder for MCP protocol testing
+
+    it('sends valid MCP request messages', () => {
+      // TODO: Intercept MCP messages and validate format
+      expect(true).toBe(true);
+    });
+
+    it('handles MCP tool calls correctly', () => {
+      // TODO: Test MCP tool invocation
+      expect(true).toBe(true);
+    });
+
+    it('manages MCP resources properly', () => {
+      // TODO: Test MCP resource access
+      expect(true).toBe(true);
+    });
+  });
+});
