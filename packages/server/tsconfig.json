@@ -4,7 +4,7 @@
     "target": "ES2020",
     "module": "CommonJS",
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "..",
     "sourceMap": true
   },
   "include": ["src/**/*", "../shared/src/**/*"],

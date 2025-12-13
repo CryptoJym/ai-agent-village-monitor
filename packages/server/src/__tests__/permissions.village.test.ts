@@ -29,7 +29,7 @@ describe('permissions: village access and public flag', () => {
     memberToken = signAccessToken(memberId, (member as any).username || 'member-t');
     outsiderToken = signAccessToken(outsiderId, (outsider as any).username || 'outsider-t');
     // village owned by owner
-    const v = await prisma.village.create({ data: { name: 'perm-v', githubOrgId: BigInt(4242), ownerId, isPublic: false } as any });
+    const v = await prisma.village.create({ data: { orgName: 'perm-v', githubOrgId: BigInt(4242), ownerId, isPublic: false } as any });
     villageId = (v as any).id;
     // grant member access
     await prisma.villageAccess.create({ data: { villageId, userId: memberId, role: 'member' } as any });

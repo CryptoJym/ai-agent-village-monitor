@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { Prisma } from '@prisma/client';
 import { requireAuth } from '../auth/middleware';
 import { prisma } from '../db/client';
 import { revokeProviderToken } from '../auth/tokenStore';
@@ -42,7 +43,7 @@ usersRouter.delete('/account', requireAuth, async (req, res) => {
       data: {
         name: `deleted-${userId}`,
         email: null,
-        preferences: null,
+        preferences: Prisma.DbNull,
         githubId: null,
       },
     });

@@ -32,7 +32,7 @@ describe('role-based visibility and flows', () => {
     memberToken = signAccessToken(member!.id, member!.username);
     // Village (private by default)
     const v = await prisma.village.create({
-      data: { name: 'role-test', githubOrgId: BigInt(ts + 3), ownerId: owner!.id, isPublic: false },
+      data: { orgName: 'role-test', githubOrgId: BigInt(ts + 3), ownerId: owner!.id, isPublic: false },
     });
     villageId = v.id;
     // Member access

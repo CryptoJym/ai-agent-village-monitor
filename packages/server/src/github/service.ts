@@ -28,7 +28,6 @@ export class GitHubService {
     let cursor: string | undefined = undefined;
     // paginate using client's GraphQL helper
     while (true) {
-      // @ts-expect-error using internal client helper
       const page = await (this.client as any).listOrgReposGraphQL(org, cursor);
       const nodes = page?.nodes ?? [];
       for (const n of nodes) {
@@ -43,7 +42,7 @@ export class GitHubService {
           updatedAt: n.updatedAt,
         });
       }
-      const info = page?.pageInfo ?? { hasNextPage: false };
+      const info: { hasNextPage: boolean; endCursor?: string | null } = page?.pageInfo ?? { hasNextPage: false };
       if (!info.hasNextPage) break;
       cursor = info.endCursor || undefined;
     }

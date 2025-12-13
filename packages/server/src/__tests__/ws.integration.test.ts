@@ -85,7 +85,7 @@ describe.skipIf(!USE)('WebSocket side-effects', () => {
       data: { githubId: BigInt(Date.now()), username: 'wsuser' },
     });
     const v = await prisma.village.create({
-      data: { name: 'wsv', githubOrgId: BigInt(Date.now() + 1), ownerId: u.id, isPublic: true },
+      data: { orgName: 'wsv', githubOrgId: BigInt(Date.now() + 1), ownerId: u.id, isPublic: true },
     });
     const a = await prisma.agent.create({
       data: { villageId: v.id, name: 'ws-agent', currentStatus: 'idle' },

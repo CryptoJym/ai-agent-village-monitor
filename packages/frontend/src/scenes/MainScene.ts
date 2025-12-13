@@ -19,6 +19,9 @@ import { CameraNavigator } from '../camera/CameraNavigator';
 import { startTravel } from '../metrics/perf';
 import { NpcManager } from '../npc/NpcManager';
 import type { HouseSnapshot } from '../npc/types';
+import { WorldGenerator } from '../world/WorldGenerator';
+import { WorldService } from '../services/WorldService';
+import type { WorldNode } from '../world/types';
 
 type HouseMeta = {
   name: string;
@@ -31,10 +34,27 @@ type HouseMeta = {
   lastCommitAt?: number;
 };
 
+/**
+ * Represents a terminal-based AI agent connected via the village-bridge CLI.
+ * These are real agents running in terminal sessions (Claude Code, Aider, etc.)
+ */
+type TerminalAgent = {
+  id: string;
+  sessionId: string;
+  type: 'claude' | 'aider' | 'codex' | 'cursor' | 'custom';
+  name: string;
+  repoPath?: string;
+  sprite?: Phaser.GameObjects.Container;
+  lastEventType?: string;
+  lastEventAt?: number;
+};
+
 export class MainScene extends Phaser.Scene {
   private agent?: Agent;
   private ws?: WebSocketService;
   private bugs: Map<string, BugBot> = new Map();
+  // Terminal agents connected via village-bridge CLI
+  private terminalAgents: Map<string, TerminalAgent> = new Map();
   private bugBotsGroup?: Phaser.GameObjects.Group;
   private bugIndex = new SpatialHash<{ id: string; x: number; y: number }>(64, (item) => item.id);
   private focusOrder: string[] = [];
@@ -88,6 +108,10 @@ export class MainScene extends Phaser.Scene {
   private houseMetadata: Map<string, HouseMeta> = new Map();
   private houseAssignMenu?: Phaser.GameObjects.Container;
   private houseAssignInputHandler?: (pointer: Phaser.Input.Pointer, objects: any[]) => void;
+
+  // Fractal World
+  private worldGenerator?: WorldGenerator;
+  private currentWorldNode?: WorldNode;
 
   private logWarning(context: string, error: unknown) {
     if (import.meta.env?.DEV && typeof console !== 'undefined') {
@@ -438,10 +462,13 @@ export class MainScene extends Phaser.Scene {
     }
 
     // Ground grid (lightweight isometric-like diamonds)
-    this.buildGroundGrid();
+    // this.buildGroundGrid(); // REPLACED BY FRACTAL WORLD
+    this.worldGenerator = new WorldGenerator(this);
+    this.loadWorld(villageId);
+
     this.scale.on(Phaser.Scale.Events.RESIZE, () => {
       // Rebuild grid to adapt to new viewport size
-      this.buildGroundGrid();
+      // this.buildGroundGrid();
     });
 
     // Demo houses (language variants) at sample grid positions
@@ -545,6 +572,11 @@ export class MainScene extends Phaser.Scene {
       if (h) h.applyActivityIndicators(msg.indicators as any);
     });
 
+    // Terminal agent events from village-bridge CLI
+    eventBus.on('agent_spawn', (p) => this.handleTerminalAgentSpawn(p));
+    eventBus.on('agent_disconnect', (p) => this.handleTerminalAgentDisconnect(p));
+    eventBus.on('work_stream_event', (p) => this.handleWorkStreamEvent(p));
+
     // Optional URL-based profiling mode: /?profileVillage[&profileVillageCount=200]
     try {
       if (typeof window !== 'undefined') {
@@ -575,6 +607,169 @@ export class MainScene extends Phaser.Scene {
       });
       this.queueSaveLayout(true);
       this.npcManager?.destroy();
+    });
+  }
+
+  // Track current world assets for cleanup
+  private currentMap?: Phaser.Tilemaps.Tilemap;
+  private currentPortals?: Phaser.GameObjects.Group;
+  private currentBackground?: Phaser.GameObjects.Image;
+
+  private async loadWorld(nodeId: string) {
+    if (this.isTransitioning) return;
+
+    try {
+      // If nodeId is 'demo' or similar, try root
+      const id = nodeId === 'demo' ? 'root' : nodeId;
+      const node = await WorldService.getWorldNode(id);
+
+      console.log('[MainScene] Loaded world node:', node);
+
+      // Cleanup previous world
+      if (this.currentMap) {
+        this.currentMap.destroy();
+        this.currentMap = undefined;
+      }
+      if (this.currentPortals) {
+        this.currentPortals.clear(true, true);
+        this.currentPortals = undefined;
+      }
+      if (this.currentBackground) {
+        this.currentBackground.destroy();
+        this.currentBackground = undefined;
+      }
+
+      this.currentWorldNode = node;
+
+      // Generate the map
+      if (this.worldGenerator) {
+        const { map, layer, background } = this.worldGenerator.createWorld(node);
+        this.currentMap = map;
+        this.currentBackground = background;
+
+        // Center camera on spawn
+        const spawn = node.config?.spawnPoint || { x: 10, y: 10 };
+        const gridSize = node.config?.gridSize || 32;
+
+        // If this is not the initial load, maybe we should spawn near the "entrance" (parent portal)?
+        // For now, just use default spawn.
+
+        this.agent?.setPosition(spawn.x * gridSize, spawn.y * gridSize);
+        this.cameras.main.centerOn(spawn.x * gridSize, spawn.y * gridSize);
+        this.cameras.main.setZoom(1); // Reset zoom
+
+        // Place portals
+        this.currentPortals = this.add.group();
+        this.worldGenerator.placePortals(node, this.currentPortals);
+
+        // Add collision with portals
+        if (this.agent) {
+          this.physics.add.overlap(this.agent, this.currentPortals, (agent, portal) => {
+            const childId = (portal as any).getData('nodeId');
+            if (childId && !this.isTransitioning) {
+              this.enterPortal(childId, portal as Phaser.GameObjects.Zone);
+            }
+          });
+
+          // Exit Zones (Edges)
+          if (node.parentId && this.currentMap) {
+            const width = this.currentMap.widthInPixels;
+            const height = this.currentMap.heightInPixels;
+            const exitThickness = 32;
+            const exits = this.add.group();
+
+            // Top
+            const top = this.add.zone(width / 2, exitThickness / 2, width, exitThickness);
+            this.physics.add.existing(top);
+            exits.add(top);
+
+            // Bottom
+            const bottom = this.add.zone(width / 2, height - exitThickness / 2, width, exitThickness);
+            this.physics.add.existing(bottom);
+            exits.add(bottom);
+
+            // Left
+            const left = this.add.zone(exitThickness / 2, height / 2, exitThickness, height);
+            this.physics.add.existing(left);
+            exits.add(left);
+
+            // Right
+            const right = this.add.zone(width - exitThickness / 2, height / 2, exitThickness, height);
+            this.physics.add.existing(right);
+            exits.add(right);
+
+            this.physics.add.overlap(this.agent, exits, () => {
+              if (!this.isTransitioning) {
+                this.exitToParent(node.parentId!);
+              }
+            });
+
+            // Track for cleanup (hacky, add to portals group for now or separate)
+            // Ideally we'd have a separate group, but let's just add to currentPortals for auto-cleanup
+            // actually currentPortals is cleared, so we can add them there if we want, 
+            // but they are zones, so it fits.
+            // However, the overlap callback is different. 
+            // Let's just add them to currentPortals but give them a special data tag?
+            // Or just manage them.
+            // For simplicity, let's just add them to currentPortals and handle the callback there?
+            // No, different callback.
+            // Let's add to currentPortals so they get destroyed, but we need to distinguish them.
+            // Actually, we can just add them to the scene and they will be destroyed when we clear the scene?
+            // No, we need to destroy them explicitly in cleanup.
+            // Let's add them to currentPortals for now, but we need to distinguish them.
+            // Actually, let's just make a new group for exits?
+            // Or just add to currentPortals and check data.
+
+            exits.getChildren().forEach(child => {
+              this.currentPortals?.add(child);
+              (child as any).setData('isExit', true);
+            });
+          }
+        }
+      }
+
+    } catch (e) {
+      console.error('[MainScene] Failed to load world:', e);
+      // Fallback to old grid if failed?
+      // this.buildGroundGrid();
+    }
+  }
+
+  private isTransitioning = false;
+
+  private enterPortal(childId: string, portal: Phaser.GameObjects.Zone) {
+    this.isTransitioning = true;
+    console.log('[MainScene] Entering portal to:', childId);
+
+    // Zoom into portal
+    this.tweens.add({
+      targets: this.cameras.main,
+      zoom: 3,
+      scrollX: portal.x - this.cameras.main.width / 6, // Approximate centering
+      scrollY: portal.y - this.cameras.main.height / 6,
+      duration: 1000,
+      ease: 'Power2',
+      onComplete: () => {
+        this.isTransitioning = false;
+        this.loadWorld(childId);
+      }
+    });
+  }
+
+  private exitToParent(parentId: string) {
+    this.isTransitioning = true;
+    console.log('[MainScene] Exiting to parent:', parentId);
+
+    // Zoom out
+    this.tweens.add({
+      targets: this.cameras.main,
+      zoom: 0.5,
+      duration: 1000,
+      ease: 'Power2',
+      onComplete: () => {
+        this.isTransitioning = false;
+        this.loadWorld(parentId);
+      }
     });
   }
 
@@ -977,6 +1172,7 @@ export class MainScene extends Phaser.Scene {
       this.bugs.set(id, bot);
       this.bugBotsGroup?.add(bot);
       this.bugIndex.insert({ id, x: bot.x, y: bot.y });
+      this.bugIndex.insert({ id, x: bot.x, y: bot.y });
       if (!this.focusOrder.includes(id)) this.focusOrder.push(id);
       announce(`Bug ${id} spawned with ${severity} severity`);
       this.ensureFocusVisible();
@@ -1308,20 +1504,41 @@ export class MainScene extends Phaser.Scene {
 
   private syncSearchIndex() {
     try {
-      const agents = this.agent
-        ? [
-            {
-              type: 'agent' as const,
-              id: this.agent.id,
-              name: this.agent.nameText.text || this.agent.id,
-              status: this.agent.agentState,
-              houseId: this.agent.houseId,
-              houseName: this.agent.houseId
-                ? (this.houseMetadata.get(this.agent.houseId)?.name ?? this.agent.houseId)
-                : undefined,
-            },
-          ]
-        : [];
+      // Include both the main visual agent and terminal agents from bridge
+      const agents: Array<{
+        type: 'agent';
+        id: string;
+        name: string;
+        status?: string;
+        houseId?: string;
+        houseName?: string;
+        agentType?: string;
+      }> = [];
+
+      // Main visual agent
+      if (this.agent) {
+        agents.push({
+          type: 'agent' as const,
+          id: this.agent.id,
+          name: this.agent.nameText.text || this.agent.id,
+          status: this.agent.agentState,
+          houseId: this.agent.houseId,
+          houseName: this.agent.houseId
+            ? (this.houseMetadata.get(this.agent.houseId)?.name ?? this.agent.houseId)
+            : undefined,
+        });
+      }
+
+      // Terminal agents from village-bridge
+      for (const [id, termAgent] of this.terminalAgents) {
+        agents.push({
+          type: 'agent' as const,
+          id,
+          name: termAgent.name,
+          status: termAgent.lastEventType || 'connected',
+          agentType: termAgent.type,
+        });
+      }
       const houses = Array.from(this.houseObjects.entries()).map(([id, house]) => {
         const meta = this.houseMetadata.get(id);
         return {
@@ -1851,5 +2068,285 @@ export class MainScene extends Phaser.Scene {
       isoToScreen(p.r, p.c, tx.tileW, tx.tileH, tx.originX, tx.originY),
     );
     this.agent.walkPath(points);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Terminal Agent Visualization (village-bridge CLI integration)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Handle a terminal agent connecting via village-bridge.
+   * Creates a visual representation in the village.
+   */
+  private handleTerminalAgentSpawn(payload: {
+    agentId: string;
+    sessionId: string;
+    agentType: 'claude' | 'aider' | 'codex' | 'cursor' | 'custom';
+    agentName?: string;
+    repoPath?: string;
+    timestamp?: string;
+  }) {
+    const { agentId, sessionId, agentType, agentName, repoPath } = payload;
+
+    // Skip if already registered
+    if (this.terminalAgents.has(agentId)) {
+      const existing = this.terminalAgents.get(agentId)!;
+      existing.sessionId = sessionId;
+      existing.lastEventAt = Date.now();
+      return;
+    }
+
+    // Find a spawn position (spread agents around the village)
+    const index = this.terminalAgents.size;
+    const baseX = this.scale.width * 0.5;
+    const baseY = this.scale.height * 0.4;
+    const angle = (index * Math.PI * 0.4) + Math.PI * 0.1;
+    const radius = 120 + index * 40;
+    const x = baseX + Math.cos(angle) * radius;
+    const y = baseY + Math.sin(angle) * radius;
+
+    // Create a visual sprite for the terminal agent
+    const sprite = this.createTerminalAgentSprite(agentId, agentType, agentName || agentId, x, y);
+
+    const terminalAgent: TerminalAgent = {
+      id: agentId,
+      sessionId,
+      type: agentType,
+      name: agentName || `${agentType}-agent`,
+      repoPath,
+      sprite,
+      lastEventAt: Date.now(),
+    };
+
+    this.terminalAgents.set(agentId, terminalAgent);
+
+    // Announce and notify
+    announce(`Terminal agent ${terminalAgent.name} connected`);
+    eventBus.emit('toast', {
+      type: 'success',
+      message: `${terminalAgent.name} joined the village`,
+    });
+
+    // Update search index
+    this.syncSearchIndex();
+  }
+
+  /**
+   * Handle a terminal agent disconnecting.
+   */
+  private handleTerminalAgentDisconnect(payload: {
+    agentId: string;
+    sessionId: string;
+    timestamp?: string;
+  }) {
+    const { agentId } = payload;
+    const terminalAgent = this.terminalAgents.get(agentId);
+    if (!terminalAgent) return;
+
+    // Fade out and destroy the sprite
+    if (terminalAgent.sprite) {
+      this.tweens.add({
+        targets: terminalAgent.sprite,
+        alpha: 0,
+        scale: 0.5,
+        duration: 500,
+        ease: 'Power2',
+        onComplete: () => {
+          terminalAgent.sprite?.destroy(true);
+        },
+      });
+    }
+
+    // Remove from registry
+    this.time.delayedCall(600, () => {
+      this.terminalAgents.delete(agentId);
+      this.syncSearchIndex();
+    });
+
+    announce(`Terminal agent ${terminalAgent.name} disconnected`);
+    eventBus.emit('toast', {
+      type: 'info',
+      message: `${terminalAgent.name} left the village`,
+    });
+  }
+
+  /**
+   * Handle work stream events from terminal agents.
+   * Updates the visual state of the agent based on activity.
+   */
+  private handleWorkStreamEvent(payload: {
+    id?: string;
+    agentId: string;
+    sessionId?: string;
+    type: string;
+    payload: Record<string, unknown>;
+    timestamp: string;
+  }) {
+    const { agentId, type } = payload;
+    const terminalAgent = this.terminalAgents.get(agentId);
+    if (!terminalAgent) return;
+
+    terminalAgent.lastEventType = type;
+    terminalAgent.lastEventAt = Date.now();
+
+    // Update visual state based on event type
+    this.updateTerminalAgentVisualState(terminalAgent, type, payload.payload);
+  }
+
+  /**
+   * Create a visual sprite for a terminal agent.
+   */
+  private createTerminalAgentSprite(
+    agentId: string,
+    agentType: string,
+    name: string,
+    x: number,
+    y: number,
+  ): Phaser.GameObjects.Container {
+    const container = this.add.container(x, y);
+    container.setDepth(100);
+
+    // Agent type colors
+    const typeColors: Record<string, number> = {
+      claude: 0xd97706, // amber/orange for Claude
+      aider: 0x22c55e, // green for Aider
+      codex: 0x3b82f6, // blue for Codex
+      cursor: 0x8b5cf6, // purple for Cursor
+      custom: 0x64748b, // slate for custom
+    };
+    const color = typeColors[agentType] || typeColors.custom;
+
+    // Body (circle with glow)
+    const glow = this.add.circle(0, 0, 20, color, 0.2);
+    const body = this.add.circle(0, 0, 14, color, 1);
+    body.setStrokeStyle(2, 0xffffff, 0.8);
+
+    // Agent type icon (letter in center)
+    const iconLetter = agentType.charAt(0).toUpperCase();
+    const icon = this.add.text(0, 0, iconLetter, {
+      color: '#ffffff',
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    // Name label below
+    const label = this.add.text(0, 24, name, {
+      color: '#e2e8f0',
+      fontFamily: 'monospace',
+      fontSize: '10px',
+      backgroundColor: 'rgba(15, 23, 42, 0.8)',
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0.5, 0);
+
+    // Status indicator (small dot that changes color)
+    const statusDot = this.add.circle(12, -12, 4, 0x22c55e, 1);
+    statusDot.setName('statusDot');
+
+    // Activity pulse ring (hidden by default)
+    const pulseRing = this.add.circle(0, 0, 18, 0xffffff, 0);
+    pulseRing.setName('pulseRing');
+
+    container.add([glow, body, icon, label, statusDot, pulseRing]);
+
+    // Store reference to the glow for animations
+    (container as any).__glow = glow;
+    (container as any).__body = body;
+    (container as any).__statusDot = statusDot;
+    (container as any).__pulseRing = pulseRing;
+
+    // Spawn animation
+    container.setScale(0);
+    container.setAlpha(0);
+    this.tweens.add({
+      targets: container,
+      scale: 1,
+      alpha: 1,
+      duration: 400,
+      ease: 'Back.easeOut',
+    });
+
+    // Idle breathing animation on glow
+    this.tweens.add({
+      targets: glow,
+      scale: { from: 1, to: 1.15 },
+      alpha: { from: 0.2, to: 0.1 },
+      duration: 2000,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    });
+
+    return container;
+  }
+
+  /**
+   * Update the visual state of a terminal agent based on work stream events.
+   */
+  private updateTerminalAgentVisualState(
+    agent: TerminalAgent,
+    eventType: string,
+    _eventPayload: Record<string, unknown>,
+  ) {
+    const sprite = agent.sprite;
+    if (!sprite) return;
+
+    const statusDot = sprite.getByName('statusDot') as Phaser.GameObjects.Arc | undefined;
+    const pulseRing = sprite.getByName('pulseRing') as Phaser.GameObjects.Arc | undefined;
+    const glow = (sprite as any).__glow as Phaser.GameObjects.Arc | undefined;
+
+    // Status colors based on event type
+    const statusColors: Record<string, number> = {
+      thinking: 0xfbbf24, // yellow - thinking/analyzing
+      file_read: 0x3b82f6, // blue - reading
+      file_edit: 0x22c55e, // green - writing
+      file_create: 0x22c55e,
+      file_delete: 0xef4444, // red - deleting
+      command: 0x8b5cf6, // purple - running commands
+      tool_use: 0x06b6d4, // cyan - using tools
+      search: 0x3b82f6, // blue - searching
+      error: 0xef4444, // red - error
+      completed: 0x22c55e, // green - done
+      session_start: 0x22c55e,
+      session_end: 0x64748b, // gray - ending
+      output: 0x64748b,
+      status_change: 0xfbbf24,
+    };
+
+    const color = statusColors[eventType] || 0x64748b;
+
+    // Update status dot color
+    if (statusDot) {
+      statusDot.setFillStyle(color, 1);
+    }
+
+    // Pulse effect for activity
+    if (pulseRing) {
+      this.tweens.killTweensOf(pulseRing);
+      pulseRing.setFillStyle(color, 0.4);
+      pulseRing.setScale(1);
+      this.tweens.add({
+        targets: pulseRing,
+        scale: 2,
+        alpha: 0,
+        duration: 600,
+        ease: 'Cubic.easeOut',
+        onComplete: () => {
+          pulseRing.setAlpha(0);
+        },
+      });
+    }
+
+    // Intensify glow briefly for high-activity events
+    if (glow && ['file_edit', 'file_create', 'command', 'error'].includes(eventType)) {
+      this.tweens.add({
+        targets: glow,
+        scale: 1.4,
+        alpha: 0.5,
+        duration: 150,
+        ease: 'Power2',
+        yoyo: true,
+      });
+    }
   }
 }

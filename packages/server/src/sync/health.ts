@@ -25,7 +25,7 @@ export async function pushSyncRun(villageId: number | string, run: SyncRun, keep
   }
   const zkey = `sync:history:${key}`;
   const s = JSON.stringify(run);
-  await r.zadd(zkey, { score: run.ts, value: s });
+  await r.zadd(zkey, run.ts, s);
   const len = await r.zcard(zkey);
   if (len > keep) {
     await r.zremrangebyrank(zkey, 0, len - keep - 1);

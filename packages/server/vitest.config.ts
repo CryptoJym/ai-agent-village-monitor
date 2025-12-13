@@ -6,22 +6,37 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: ['test/setup.ts'],
+    pool: 'forks',
+    testTimeout: 30000, // 30 seconds for integration tests
+    hookTimeout: 30000,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'lcov'],
+      reporter: ['text', 'text-summary', 'lcov', 'html', 'json'],
       // Enable coverage in CI or when VITEST_COVERAGE=true is set locally
       enabled: process.env.CI === 'true' || process.env.VITEST_COVERAGE === 'true',
+      include: ['src/**/*.{ts,js}'],
+      exclude: [
+        'src/__tests__/**',
+        'src/**/*.test.{ts,js}',
+        'src/**/*.spec.{ts,js}',
+        'src/index.ts',
+        'src/**/*.d.ts',
+        'src/types/**',
+        'src/db.ts',
+        'src/config.ts',
+        'test/**',
+      ],
       thresholds: {
-        lines: 0.8,
-        functions: 0.8,
-        statements: 0.8,
-        branches: 0.7,
+        lines: 80,
+        functions: 80,
+        statements: 80,
+        branches: 75,
       },
-      exclude: ['src/__tests__/**', 'test/**'],
     },
   },
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'src'),
       '@shared': path.resolve(__dirname, '../shared/src'),
     },
   },

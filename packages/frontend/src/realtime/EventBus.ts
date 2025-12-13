@@ -1,8 +1,30 @@
 import mitt from 'mitt';
 
 type Events = {
-  agent_update: { agentId: string; state: string; x?: number; y?: number };
+  agent_update: { agentId: string; state: string; x?: number; y?: number; timestamp?: string };
   work_stream: { agentId: string; message: string; ts?: number };
+  // Terminal agent events (from village-bridge CLI)
+  agent_spawn: {
+    agentId: string;
+    sessionId: string;
+    agentType: 'claude' | 'aider' | 'codex' | 'cursor' | 'custom';
+    agentName?: string;
+    repoPath?: string;
+    timestamp?: string;
+  };
+  agent_disconnect: {
+    agentId: string;
+    sessionId: string;
+    timestamp?: string;
+  };
+  work_stream_event: {
+    id?: string;
+    agentId: string;
+    sessionId?: string;
+    type: string;
+    payload: Record<string, unknown>;
+    timestamp: string;
+  };
   // Spawns may reference a house (preferred) or provide absolute x/y as a fallback.
   // When houseId is provided, the scene will place the bot within a ring around the house center.
   bug_bot_spawn: {
@@ -56,6 +78,14 @@ type Events = {
     ts: number;
   };
   npc_population: Record<string, any[]>;
+  // Game scene events
+  agentMoved: { agentId: string; x: number; y: number };
+  agentRemoved: { agentId: string };
+  houseEntered: { houseId: string };
+  houseExited: { houseId: string };
+  agentInRoom: { agentId: string; roomId: string; x: number; y: number };
+  agentLeftRoom: { agentId: string };
+  roomClicked: { houseId: string; roomId: string };
 };
 
 export const eventBus = mitt<Events>();

@@ -3,6 +3,39 @@ export type HealthStatus = {
   timestamp: string;
 };
 
+// Generation module exports (primary source for building generation types)
+export * from './generation';
+
+// State machine module exports
+export * from './state/agentMachine';
+export type { AgentContext, AgentEvent, AgentStateValue } from './state/agentMachine';
+export * from './state/guards';
+export * from './state/actions';
+export * from './state/workEventAdapter';
+export * from './state/useAgent';
+
+// Tilemap module exports - only export types not already exported by generation
+// Note: RoomType, SeededRNG, TilemapData, TilemapLayer are already exported from generation
+export {
+  // Core tilemap types (not duplicated)
+  TilesetReference,
+  TileMapping,
+  Rectangle,
+  Room,
+  Direction,
+  Corridor,
+  CorridorSegment,
+  PlacementRule,
+  Decoration,
+  DecorationCatalog,
+  DecorationItem,
+  TilemapOptions,
+  // Constants
+  DEFAULT_TILE_IDS,
+  AUTOTILE_MASKS,
+  LAYER_NAMES,
+} from './tilemap/types';
+
 export function nowIso(): string {
   return new Date().toISOString();
 }

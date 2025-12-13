@@ -27,8 +27,8 @@ export function loadEnv() {
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
-  DATABASE_URL: z.string().url().optional(),
-  REDIS_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().optional(),
+  REDIS_URL: z.string().optional(),
   // Cache configuration
   CACHE_ENABLED: z.coerce.boolean().default(true),
   CACHE_TTL_ORG_REPOS: z.coerce.number().int().positive().default(900), // 15m

@@ -6759,87 +6759,699 @@
   "world-builder": {
     "tasks": [
       {
-        "id": 1,
-        "title": "Regenerate Pixellab character and emote sprites with full 8-frame loops",
-        "description": "Re-run the Pixellab pipeline so every character, emote, and bug-bot animation provides eight frames per direction to match our JRPG aesthetic.",
-        "details": "- Extend scripts/generate-agents.mjs to accept per-entry frame targets and ensure animate_character requests the correct 8-frame template.\n- Update prompts to explicitly mention \"8-frame looping animation\" while preserving existing FF3 + Studio Ghibli tone, colors, and props.\n- Regenerate the affected assets (emotes: awakening, deep-thinking, flow-state, communication, learning-growth, frustration, eureka, dreaming; bug-bots: spawn, assigned, progress, resolved; any agents still at 6 frames).\n- Sync regenerated ZIPs into packages/frontend/public/assets/... and rerun scripts/generate-pixellab-manifest.mjs so metadata reflects the new counts.\n- Verify no legacy 6-frame leftovers remain (clean extracted/ directories, refresh previews).\n- Document regeneration steps in docs/art-pipeline.md for future runs.",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
+        "id": "8",
+        "title": "Set Up Project Repository",
+        "description": "Initialize the project repository with the necessary structure and tools.",
+        "details": "Create a new GitHub repository. Set up the project structure with folders for frontend, backend, and shared resources. Initialize package.json files for both frontend and backend. Install necessary dependencies including Phaser.js, React, XState, Node.js, Express, Socket.io, Prisma, and PostgreSQL.",
+        "testStrategy": "Verify that the repository is accessible and all dependencies are correctly installed by running initial build scripts.",
         "priority": "medium",
-        "subtasks": []
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T16:15:40.960Z"
       },
       {
-        "id": 2,
-        "title": "Generate Pixellab terrain and tile-set assets",
-        "description": "Create exterior and interior tile atlases (upper/lower terrain, decorative elements) that match the existing FF3/Ghibli vibe.",
-        "details": "- Design prompt presets for outdoor terrain (grasslands, water edges, cliffs, bridges, roads), biome variants, and interior flooring/walls with 32x32 top-down perspective.\n- Use Pixellab create_topdown_tileset and create_isometric_tile tools to produce autop-tile compatible sheets (include edge/corner/center variants for smoothing).\n- Organize outputs under packages/frontend/public/assets/tiles/(biome|interior)/ and generate metadata (tile size, passability, animation frames where relevant).\n- Extend scripts/generate-pixellab-manifest.mjs or add scripts/generate-tiles.mjs to register tile sets and emit tile manifest JSON for the game engine.\n- Capture documentation on how to regenerate or extend tile sets, including prompt templates and seeding guidance.",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
+        "id": "9",
+        "title": "Configure Prisma with PostgreSQL",
+        "description": "Set up Prisma ORM with PostgreSQL database for the project.",
+        "details": "Install Prisma and PostgreSQL. Create a new Prisma schema file defining models for Village, House, Room, Agent, and WorldMap. Connect Prisma to a PostgreSQL database instance. Run Prisma migrations to apply the schema.",
+        "testStrategy": "Test database connection and schema application by querying each model and verifying the structure.",
         "priority": "medium",
-        "subtasks": []
+        "dependencies": [
+          "8"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T16:20:58.586Z"
       },
       {
-        "id": 3,
-        "title": "Create themed interior house asset packs",
-        "description": "Produce interior tiles, furniture, and props for each programming-language house so players can enter unique spaces.",
-        "details": "- Define style guides for each house theme (JavaScript neon lab, Go coastal lodge, Ruby artisan workshop, etc.) consistent with our existing color palette and lighting.\n- Use Pixellab MCP to generate interior floor/wall tiles, doorway transitions, stairs, and decorative props (desks, terminals, plants, notice boards).\n- Compose interior layout blueprints (YAML/JSON) describing tile layers, object placement, and spawn points stored under packages/frontend/src/data/houses/.\n- Export interior atlases into packages/frontend/public/assets/interiors/<theme>/ and update manifest generator to surface props/tiles with passability metadata.\n- Document interior pipeline (prompt templates, layout schema, how to add new house themes).",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
+        "id": "10",
+        "title": "Implement Village CRUD Endpoints",
+        "description": "Develop REST endpoints for managing villages in the backend.",
+        "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the Village model. Implement logic to handle requests and interact with the database using Prisma.",
+        "testStrategy": "Write integration tests using Jest to ensure all CRUD operations work as expected, achieving 80%+ coverage.",
         "priority": "medium",
-        "subtasks": []
+        "dependencies": [
+          "9"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:35.554Z"
       },
       {
-        "id": 4,
-        "title": "Implement procedural world map generator",
-        "description": "Build a world-map engine that lays out villages and terrain based on each user's organization structure.",
-        "details": "- Design a noise/Voronoi based terrain generator seeded by user ID, producing biome regions and height maps for tile selection.\n- Map GitHub organizations to village nodes; compute positioning rules (spacing, roads, signage) ensuring readability on the overworld.\n- Integrate newly generated tile sets for upper/lower terrain, rivers, bridges, and decorative elements.\n- Output map data structures (tile layers, entity placements) consumable by Phaser scenes and store per-user seeds/preferences.\n- Add serialization + caching so the same user gets consistent worlds across sessions while enabling future re-rolls.",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
+        "id": "11",
+        "title": "Implement House CRUD Endpoints",
+        "description": "Develop REST endpoints for managing houses within villages.",
+        "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the House model. Implement logic to handle requests, including triggering repository analysis on house creation.",
+        "testStrategy": "Write integration tests to verify CRUD operations and ensure house creation triggers repository analysis.",
         "priority": "medium",
-        "subtasks": []
+        "dependencies": [
+          "10"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:35.561Z"
       },
       {
-        "id": 5,
-        "title": "Add village interior navigation and scene transitions",
-        "description": "Support entering houses and exploring interior maps rendered with the new asset packs.",
-        "details": "- Implement Phaser scene management for WorldMapScene ↔ InteriorScene transitions, preserving player state and camera positions.\n- Load interior layouts from data/houses blueprints and instantiate tile layers, props, and NPC spawn zones.\n- Handle door/portal triggers, fade effects, and minimap updates when moving between scenes.\n- Ensure collision + pathfinding layers respect furniture and walls; update command palette/help text as needed.\n- Write regression tests or manual QA checklist covering enter/exit interactions and state persistence.",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
+        "id": "12",
+        "title": "Implement Agent CRUD Endpoints",
+        "description": "Develop REST endpoints for managing agents.",
+        "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the Agent model. Implement logic to handle state updates and interactions with the database.",
+        "testStrategy": "Write integration tests to verify agent management operations and state updates.",
         "priority": "medium",
-        "subtasks": []
+        "dependencies": [
+          "10"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:35.567Z"
       },
       {
-        "id": 6,
-        "title": "Develop NPC population and behavior system",
-        "description": "Populate villages and interiors with NPCs that reflect team activity and bring the MMO feel to life.",
-        "details": "- Generate additional Pixellab NPC sprites (different roles, accessories) and register them in the manifest with default animations.\n- Implement population seeding using user/org data: assign NPC counts, roles (engineer, bot, visitor), and color accents.\n- Add behavior scripts (idle, wander, work at desk, converse) with simple state machines and integrate with analytics events where appropriate.\n- Ensure performance by batching animations and culling off-screen NPCs.\n- Provide configuration hooks so specific repos/orgs can override population themes.",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
+        "id": "13",
+        "title": "Implement Room CRUD Endpoints",
+        "description": "Develop REST endpoints for managing rooms within houses.",
+        "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the Room model. Implement logic to handle requests and manage room data.",
+        "testStrategy": "Write integration tests to verify room management operations.",
         "priority": "medium",
-        "subtasks": []
+        "dependencies": [
+          "11"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:35.572Z"
       },
       {
-        "id": 7,
-        "title": "Integrate expanded assets into engine and documentation",
-        "description": "Wire the new sprite, tile, and interior assets into the Phaser runtime and update developer docs.",
-        "details": "- Extend pixellabManifest/tile manifests to include new atlases, collision info, and animation metadata.\n- Update AssetManager loaders and world/interior scenes to consume tile sets, NPC sprites, and blueprint data.\n- Add automated validation (e.g., unit tests or lint scripts) that confirm frame counts and asset directories are in sync.\n- Refresh docs/art-pipeline.md and engine README with instructions for regenerating assets, configuring world seeds, and adding new themes.\n- Coordinate with infrastructure to ensure build bundling (Vite/Phaser) handles the additional asset volume efficiently.",
-        "testStrategy": "",
-        "status": "done",
-        "dependencies": [],
+        "id": "14",
+        "title": "Set Up Jest for Backend Testing",
+        "description": "Configure Jest for testing the backend with TypeScript support.",
+        "details": "Install Jest and necessary TypeScript support packages. Configure Jest to work with TypeScript and set up coverage reporting and database mocking.",
+        "testStrategy": "Run sample tests to ensure Jest is correctly configured and coverage reports are generated.",
         "priority": "medium",
-        "subtasks": []
+        "dependencies": [
+          "8"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:39.417Z"
+      },
+      {
+        "id": "15",
+        "title": "Write API Integration Tests",
+        "description": "Create integration tests for all backend CRUD endpoints.",
+        "details": "Develop integration tests using Jest for the Village, House, Agent, and Room endpoints. Aim for 80%+ coverage.",
+        "testStrategy": "Run tests and verify coverage meets the target. Ensure all endpoints behave as expected.",
+        "priority": "medium",
+        "dependencies": [
+          "14"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:39.425Z"
+      },
+      {
+        "id": "16",
+        "title": "Set Up Vitest for Frontend Testing",
+        "description": "Configure Vitest for testing the frontend with Phaser.js mocking.",
+        "details": "Install Vitest and configure it to work with the frontend setup. Mock Phaser.js to enable testing of game scenes and components.",
+        "testStrategy": "Run sample tests to ensure Vitest is correctly configured and Phaser.js is properly mocked.",
+        "priority": "medium",
+        "dependencies": [
+          "8"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:39.430Z"
+      },
+      {
+        "id": "17",
+        "title": "Create GitHub GraphQL Client Wrapper",
+        "description": "Develop a client wrapper for interacting with the GitHub GraphQL API.",
+        "details": "Build a TypeScript-based client wrapper for the GitHub GraphQL API. Implement rate limiting, request batching, error handling, and a caching layer.",
+        "testStrategy": "Test the client with mock responses to ensure it handles requests and errors correctly.",
+        "priority": "medium",
+        "dependencies": [
+          "8"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:25.139Z"
+      },
+      {
+        "id": "18",
+        "title": "Implement Repository Tree Fetcher",
+        "description": "Fetch and process the complete repository structure using GitHub GraphQL.",
+        "details": "Use the GitHub GraphQL API to recursively fetch the repository tree. Gather file metadata, commit information, and language statistics.",
+        "testStrategy": "Verify the fetched data against known repository structures to ensure accuracy and completeness.",
+        "priority": "medium",
+        "dependencies": [
+          "17"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:25.146Z"
+      },
+      {
+        "id": "19",
+        "title": "Implement Language Detection with go-enry",
+        "description": "Integrate go-enry for language detection and classification.",
+        "details": "Set up go-enry to detect primary languages and classify files by language. Use this data for language-based styling decisions.",
+        "testStrategy": "Test language detection on a variety of repositories to ensure accurate classification.",
+        "priority": "medium",
+        "dependencies": [
+          "18"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:31:23.024Z"
+      },
+      {
+        "id": "20",
+        "title": "Create Module Classifier",
+        "description": "Classify files into module types based on their roles.",
+        "details": "Develop a system to classify files into types such as component, service, repository, etc. Support multiple languages including JS/TS, Python, Go, Rust, and Java.",
+        "testStrategy": "Validate classification accuracy by comparing results with known module structures.",
+        "priority": "medium",
+        "dependencies": [
+          "19"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:31:30.798Z"
+      },
+      {
+        "id": "21",
+        "title": "Build Dependency Graph Analyzer",
+        "description": "Analyze and build a dependency graph from repository imports.",
+        "details": "Use Tree-sitter to parse import statements and build a directed dependency graph. Calculate module coupling metrics.",
+        "testStrategy": "Test graph accuracy by comparing with manual dependency maps.",
+        "priority": "medium",
+        "dependencies": [
+          "20"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:33:20.983Z"
+      },
+      {
+        "id": "22",
+        "title": "Set Up Webhook Endpoint",
+        "description": "Create a webhook endpoint to receive GitHub events.",
+        "details": "Develop a POST /api/webhooks/github endpoint with signature verification and event type routing. Implement an async processing queue for handling events.",
+        "testStrategy": "Test endpoint with simulated GitHub events to ensure proper routing and processing.",
+        "priority": "medium",
+        "dependencies": [
+          "17"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:25.153Z"
+      },
+      {
+        "id": "23",
+        "title": "Implement Webhook Event Processing",
+        "description": "Process GitHub events to update agent states and activities.",
+        "details": "Handle push, pull_request, and check_run events to trigger work activity and agent state changes.",
+        "testStrategy": "Simulate events and verify that agent states and activities update correctly.",
+        "priority": "medium",
+        "dependencies": [
+          "22"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:25.158Z"
+      },
+      {
+        "id": "24",
+        "title": "Write GitHub Integration Tests",
+        "description": "Test the GitHub client and webhook processing with mock responses.",
+        "details": "Develop tests to ensure the GitHub client handles API interactions correctly and webhook processing updates states as expected.",
+        "testStrategy": "Run tests with mock responses to verify integration accuracy.",
+        "priority": "medium",
+        "dependencies": [
+          "23"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T20:54:52.164Z"
+      },
+      {
+        "id": "25",
+        "title": "Refactor Scene Structure in Phaser",
+        "description": "Organize Phaser scenes for the game.",
+        "details": "Create BootScene, PreloadScene, VillageScene, and HouseScene in Phaser. Ensure each scene is responsible for specific game aspects.",
+        "testStrategy": "Test scene transitions and loading to ensure smooth operation.",
+        "priority": "medium",
+        "dependencies": [
+          "16"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:43.406Z"
+      },
+      {
+        "id": "26",
+        "title": "Implement Camera System with Zoom/Pan",
+        "description": "Develop a camera controller for navigation in the game.",
+        "details": "Create a camera system with zoom (0.5x to 2x) and pan capabilities. Implement smooth lerp for transitions and constrain movement to world edges.",
+        "testStrategy": "Test camera movement and zoom to ensure smooth and bounded navigation.",
+        "priority": "medium",
+        "dependencies": [
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:43.413Z"
+      },
+      {
+        "id": "27",
+        "title": "Create Input Handler for Game Controls",
+        "description": "Build a unified input system for various control methods.",
+        "details": "Implement keyboard, mouse, touch, and gamepad controls for movement and interaction. Ensure all input methods are intuitive and responsive.",
+        "testStrategy": "Test all input methods to ensure they work seamlessly and provide expected control.",
+        "priority": "medium",
+        "dependencies": [
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:43.420Z"
+      },
+      {
+        "id": "28",
+        "title": "Build Asset Manifest System",
+        "description": "Develop a system for dynamic asset loading in the game.",
+        "details": "Create JSON manifest files for assets. Implement dynamic loading based on scene requirements with progress tracking and error handling.",
+        "testStrategy": "Test asset loading in different scenes to ensure correct assets are loaded and errors are handled gracefully.",
+        "priority": "medium",
+        "dependencies": [
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:43.425Z"
+      },
+      {
+        "id": "29",
+        "title": "Create Sprite Loading Pipeline",
+        "description": "Develop a pipeline for loading and managing sprites in the game.",
+        "details": "Implement sprite sheet parsing, animation definition loading, and texture atlas support. Include a runtime sprite generation hook for dynamic sprites.",
+        "testStrategy": "Test sprite loading and animations to ensure they are correctly parsed and displayed.",
+        "priority": "medium",
+        "dependencies": [
+          "28"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:43.431Z"
+      },
+      {
+        "id": "30",
+        "title": "Implement Tileset Loading System",
+        "description": "Create a system for loading and managing tilesets in the game.",
+        "details": "Develop a tileset system with Tiled JSON import, auto-tile support, and multiple layers. Extract collision data for game physics.",
+        "testStrategy": "Test tileset loading and collision data extraction to ensure seamless integration.",
+        "priority": "medium",
+        "dependencies": [
+          "28"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:43.437Z"
+      },
+      {
+        "id": "31",
+        "title": "Create Basic UI Layer with React Overlay",
+        "description": "Integrate React for UI elements in the game.",
+        "details": "Build a React overlay for the game HUD, dialog, menu, and agent inspector panel. Ensure seamless integration with Phaser scenes.",
+        "testStrategy": "Test UI elements to ensure they are responsive and correctly overlay the game scenes.",
+        "priority": "medium",
+        "dependencies": [
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:43.442Z"
+      },
+      {
+        "id": "32",
+        "title": "Write Scene Transition Tests",
+        "description": "Develop tests for scene loading and transitions in the game.",
+        "details": "Create tests to verify that scenes load correctly and transitions occur smoothly without errors.",
+        "testStrategy": "Run tests to ensure all scenes transition as expected and handle errors gracefully.",
+        "priority": "medium",
+        "dependencies": [
+          "25"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:33:20.990Z"
+      },
+      {
+        "id": "33",
+        "title": "Create Prando Seeded RNG Wrapper",
+        "description": "Implement a deterministic random number generator using Prando.",
+        "details": "Integrate Prando for deterministic random number generation. Use repo and commit hash for seed generation to ensure reproducibility.",
+        "testStrategy": "Test RNG outputs with the same seed to verify deterministic behavior.",
+        "priority": "medium",
+        "dependencies": [
+          "8"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:47.406Z"
+      },
+      {
+        "id": "34",
+        "title": "Implement BSP Tree Generator",
+        "description": "Develop a Binary Space Partitioning algorithm for building generation.",
+        "details": "Build a BSP generator with configurable split ratios and depth constraints. Ensure balanced tree generation for room placement.",
+        "testStrategy": "Test BSP generation to ensure it produces balanced and correct layouts.",
+        "priority": "medium",
+        "dependencies": [
+          "33"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:47.413Z"
+      },
+      {
+        "id": "35",
+        "title": "Create Room Placement Algorithm",
+        "description": "Develop an algorithm for placing rooms within BSP leaves.",
+        "details": "Implement room placement by shrinking leaf bounds and calculating room size from module complexity. Center rooms within leaves and store metadata.",
+        "testStrategy": "Test room placement to ensure rooms fit within leaves and are correctly centered.",
+        "priority": "medium",
+        "dependencies": [
+          "34"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:47.418Z"
+      },
+      {
+        "id": "36",
+        "title": "Implement Delaunay Triangulation",
+        "description": "Connect rooms using Delaunay triangulation for corridor generation.",
+        "details": "Use Delaunay triangulation to connect room centers. Extract edges and calculate distances for corridor paths.",
+        "testStrategy": "Test triangulation to ensure all rooms are connected without overlaps.",
+        "priority": "medium",
+        "dependencies": [
+          "35"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:47.423Z"
+      },
+      {
+        "id": "37",
+        "title": "Build Kruskal's MST for Corridors",
+        "description": "Generate a corridor network using Kruskal's Minimum Spanning Tree algorithm.",
+        "details": "Use a Union-Find data structure to build a minimum spanning tree. Add extra edges for loops to enhance navigation.",
+        "testStrategy": "Test MST generation to ensure corridors connect all rooms efficiently.",
+        "priority": "medium",
+        "dependencies": [
+          "36"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:47.428Z"
+      },
+      {
+        "id": "38",
+        "title": "Create Corridor Path Carving Algorithm",
+        "description": "Carve corridors in the grid based on the MST.",
+        "details": "Implement path carving with L-shaped or straight paths. Configure path width and place doors at room entries.",
+        "testStrategy": "Test path carving to ensure corridors are correctly formed and connected.",
+        "priority": "medium",
+        "dependencies": [
+          "37"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:57.490Z"
+      },
+      {
+        "id": "39",
+        "title": "Implement Room Connection Doors",
+        "description": "Place doors at corridor-room intersections for connectivity.",
+        "details": "Detect intersections and place door tiles. Store connection metadata for navigation.",
+        "testStrategy": "Test door placement to ensure all rooms are accessible through corridors.",
+        "priority": "medium",
+        "dependencies": [
+          "38"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:17:57.497Z"
+      },
+      {
+        "id": "40",
+        "title": "Write BSP Algorithm Tests",
+        "description": "Develop tests for the BSP algorithm to ensure correctness and determinism.",
+        "details": "Create tests to verify that the same seed produces the same layout and all rooms are connected without overlap.",
+        "testStrategy": "Run tests to confirm deterministic behavior and correct room connectivity.",
+        "priority": "medium",
+        "dependencies": [
+          "34"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:33:20.997Z"
+      },
+      {
+        "id": "41",
+        "title": "Create Tilemap Data Structure",
+        "description": "Define the tilemap format for the game environment.",
+        "details": "Develop a tilemap format with multi-layer support, tile IDs, collision flags, and export to JSON for rendering.",
+        "testStrategy": "Test tilemap data structure to ensure it supports all necessary features and exports correctly.",
+        "priority": "medium",
+        "dependencies": [
+          "30"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.194Z"
+      },
+      {
+        "id": "42",
+        "title": "Implement 4-bit Auto-Tiling",
+        "description": "Build an auto-tiler for seamless tile transitions.",
+        "details": "Calculate neighbor masks and map to a 16-tile wall set. Ensure seamless transitions and handle corners appropriately.",
+        "testStrategy": "Test auto-tiling to ensure smooth transitions between tiles.",
+        "priority": "medium",
+        "dependencies": [
+          "41"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.201Z"
+      },
+      {
+        "id": "43",
+        "title": "Create Floor Tile Placement System",
+        "description": "Develop a system for placing floor tiles based on room types.",
+        "details": "Implement floor tile placement with room-type based tiles, corridor tiles, and biome variations.",
+        "testStrategy": "Test floor tile placement to ensure correct tiles are used for each room type.",
+        "priority": "medium",
+        "dependencies": [
+          "42"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.208Z"
+      },
+      {
+        "id": "44",
+        "title": "Implement Wall Tile Placement System",
+        "description": "Develop a system for placing wall tiles with auto-tiling.",
+        "details": "Place auto-tiled walls with inner/outer variants and shadow tiles. Attach decorations at specified points.",
+        "testStrategy": "Test wall tile placement to ensure walls are correctly auto-tiled and decorated.",
+        "priority": "medium",
+        "dependencies": [
+          "42"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.213Z"
+      },
+      {
+        "id": "45",
+        "title": "Create Door Tile Placement System",
+        "description": "Develop a system for placing door tiles with interaction zones.",
+        "details": "Implement door frames with open/closed states and interaction zones for transitions.",
+        "testStrategy": "Test door placement to ensure doors function correctly and trigger transitions.",
+        "priority": "medium",
+        "dependencies": [
+          "43",
+          "44"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.219Z"
+      },
+      {
+        "id": "46",
+        "title": "Build Decoration Placement System",
+        "description": "Develop a system for placing decorations in rooms.",
+        "details": "Create a decoration engine with furniture catalogs and placement rules. Ensure collision avoidance and density controls.",
+        "testStrategy": "Test decoration placement to ensure items are correctly placed and do not overlap.",
+        "priority": "medium",
+        "dependencies": [
+          "44"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.225Z"
+      },
+      {
+        "id": "47",
+        "title": "Implement Room-Type Decorations",
+        "description": "Add specific decorations based on room types.",
+        "details": "Place room-specific items such as monitors in component rooms and server racks in service rooms.",
+        "testStrategy": "Test room-type decorations to ensure correct items are placed in each room type.",
+        "priority": "medium",
+        "dependencies": [
+          "46"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:31:37.374Z"
+      },
+      {
+        "id": "48",
+        "title": "Write Tilemap Generation Tests",
+        "description": "Develop tests for tilemap generation to ensure correctness.",
+        "details": "Create tests to verify that tilemaps are generated correctly with all layers and features.",
+        "testStrategy": "Run tests to confirm tilemap generation accuracy and completeness.",
+        "priority": "medium",
+        "dependencies": [
+          "41"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.231Z"
+      },
+      {
+        "id": "49",
+        "title": "Create Phaser Tilemap Renderer",
+        "description": "Render tilemaps in Phaser with multiple layers.",
+        "details": "Load tilemap JSON and create Phaser.Tilemaps. Ensure correct layer ordering and culling for performance.",
+        "testStrategy": "Test tilemap rendering to ensure all layers are displayed correctly and performance is optimized.",
+        "priority": "medium",
+        "dependencies": [
+          "41"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:23:29.238Z"
+      },
+      {
+        "id": "50",
+        "title": "Implement Multi-Layer Rendering System",
+        "description": "Develop a system for rendering multiple tilemap layers.",
+        "details": "Render ground, wall, decoration, and above-player layers. Ensure correct layer visibility and ordering.",
+        "testStrategy": "Test multi-layer rendering to ensure all layers are visible and correctly ordered.",
+        "priority": "medium",
+        "dependencies": [
+          "49"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:31:43.811Z"
+      },
+      {
+        "id": "51",
+        "title": "Set Up Collision Layer",
+        "description": "Implement collision detection for tilemaps and dynamic objects.",
+        "details": "Use Arcade physics for collision detection. Set up tilemap collision and dynamic object interactions.",
+        "testStrategy": "Test collision detection to ensure accurate interactions between objects and tilemaps.",
+        "priority": "medium",
+        "dependencies": [
+          "49"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T20:46:13.490Z"
+      },
+      {
+        "id": "52",
+        "title": "Create Room Label System",
+        "description": "Develop a system for displaying room labels based on module names.",
+        "details": "Display module names as room labels with visibility based on zoom level. Implement font scaling and click-to-view details.",
+        "testStrategy": "Test room label visibility and interaction to ensure labels are correctly displayed and interactive.",
+        "priority": "medium",
+        "dependencies": [
+          "50"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T17:31:54.153Z"
+      },
+      {
+        "id": "53",
+        "title": "Implement Minimap Feature",
+        "description": "Develop a minimap for navigation and room highlights.",
+        "details": "Create a scaled view of the map with player position and room highlights. Implement click-to-navigate functionality.",
+        "testStrategy": "Test minimap functionality to ensure it accurately represents the map and allows navigation.",
+        "priority": "medium",
+        "dependencies": [
+          "50"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T20:46:13.496Z"
+      },
+      {
+        "id": "54",
+        "title": "Build Door/Portal System",
+        "description": "Develop mechanics for door interactions and room transitions.",
+        "details": "Implement door interaction zones and room-to-room transitions. Include house exits and cross-village portals.",
+        "testStrategy": "Test door and portal interactions to ensure smooth transitions and correct functionality.",
+        "priority": "medium",
+        "dependencies": [
+          "45"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T20:46:13.503Z"
+      },
+      {
+        "id": "55",
+        "title": "Create Scene Transitions",
+        "description": "Implement transitions between scenes with effects and state preservation.",
+        "details": "Develop fade effects and loading states for scene transitions. Preserve state and implement animation hooks.",
+        "testStrategy": "Test scene transitions to ensure they are smooth and preserve game state.",
+        "priority": "medium",
+        "dependencies": [
+          "54"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T20:46:23.002Z"
+      },
+      {
+        "id": "56",
+        "title": "Optimize Rendering Performance",
+        "description": "Improve rendering performance to achieve 60fps target.",
+        "details": "Implement tile culling, batch rendering, and object pooling to optimize performance.",
+        "testStrategy": "Profile rendering performance to ensure 60fps is consistently achieved.",
+        "priority": "medium",
+        "dependencies": [
+          "49"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-09T20:55:49.461Z"
       }
     ],
     "metadata": {
-      "created": "2025-09-21T14:29:45.488Z",
-      "updated": "2025-09-23T06:01:13.790Z",
-      "description": "Tag created on 9/21/2025"
+      "version": "1.0.0",
+      "lastModified": "2025-12-09T20:55:49.469Z",
+      "taskCount": 49,
+      "completedCount": 49,
+      "tags": [
+        "world-builder"
+      ]
     }
   }
 }

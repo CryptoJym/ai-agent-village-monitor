@@ -12,6 +12,28 @@ export interface VillageDescriptor {
 
 export type TileVariant = 'lower' | 'upper' | 'transition';
 
+export interface WorldNodeConfig {
+  gridSize?: number;
+  walkable?: boolean;
+  spawnPoint?: { x: number; y: number };
+  layout?: { x: number; y: number; r: number };
+}
+
+export interface WorldNodeAssets {
+  background?: string;
+  collision?: string;
+}
+
+export interface WorldNode {
+  id: string;
+  parentId?: string | null;
+  name: string;
+  type: 'VILLAGE' | 'HOUSE' | 'ROOM' | 'DUNGEON';
+  children?: WorldNode[];
+  config?: WorldNodeConfig;
+  assets?: WorldNodeAssets;
+}
+
 export interface TileSample {
   x: number;
   y: number;

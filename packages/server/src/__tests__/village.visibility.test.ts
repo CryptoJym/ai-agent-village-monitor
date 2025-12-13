@@ -21,7 +21,7 @@ describe('village visibility and roles', () => {
     ownerToken = signAccessToken(owner.id, owner.username);
     memberToken = signAccessToken(member.id, member.username);
     outsiderToken = signAccessToken(outsider.id, outsider.username);
-    const v = await prisma.village.create({ data: { name: 'RBAC Village', githubOrgId: BigInt(4242), ownerId: owner.id, isPublic: false } });
+    const v = await prisma.village.create({ data: { orgName: 'RBAC Village', githubOrgId: BigInt(4242), ownerId: owner.id, isPublic: false } });
     villageId = v.id;
     await prisma.villageAccess.create({ data: { villageId: v.id, userId: member.id, role: 'member' } });
   });

@@ -111,7 +111,7 @@ export function getPrometheus(): string {
     for (let i = 0; i < h.counts.length; i++) {
       cum += h.counts[i];
       const le = i < h.buckets.length ? h.buckets[i] : '+Inf';
-      const allLabels = { ...baseLabels, le: String(le) };
+      const allLabels: Record<string, string> = { ...baseLabels, le: String(le) };
       const lbls =
         '{' +
         Object.keys(allLabels)

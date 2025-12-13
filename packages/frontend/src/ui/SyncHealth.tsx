@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { getErrorMessage } from '../utils/errors';
 
 type SyncRun = {
   ts: number;
@@ -30,8 +31,8 @@ export function SyncHealth({ villageId }: { villageId: string }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const j = (await res.json()) as HealthResponse;
       setData(j);
-    } catch (e: any) {
-      setError(e?.message || 'Failed to load sync health');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e, 'Failed to load sync health'));
       setData(null);
     } finally {
       setLoading(false);

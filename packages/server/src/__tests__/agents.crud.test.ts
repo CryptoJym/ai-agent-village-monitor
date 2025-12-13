@@ -20,7 +20,7 @@ describe.skipIf(!hasDb)('Agents CRUD (integration)', () => {
     // Seed user + village (owner)
     const u = await prisma.user.create({ data: { githubId: BigInt(Date.now()), username: 'owner' } });
     token = signAccessToken(u.id, u.username);
-    const v = await prisma.village.create({ data: { githubOrgId: BigInt(Date.now()), name: 'Village' } });
+    const v = await prisma.village.create({ data: { githubOrgId: BigInt(Date.now()), orgName: 'Village' } });
     villageId = v.id;
     await prisma.villageAccess.create({ data: { villageId: v.id, userId: u.id, role: 'owner' } });
   });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useToast } from './Toast';
+import { getErrorMessage } from '../utils/errors';
 
 type Category = 'bug' | 'feature' | 'question' | 'other';
 
@@ -95,8 +96,8 @@ export function FeedbackModal({ open, onClose }: { open: boolean; onClose: () =>
       } catch (e) {
         void e;
       }
-    } catch (e: any) {
-      showError(e?.message || 'Failed to send feedback');
+    } catch (e: unknown) {
+      showError(getErrorMessage(e, 'Failed to send feedback'));
     } finally {
       setBusy(false);
     }

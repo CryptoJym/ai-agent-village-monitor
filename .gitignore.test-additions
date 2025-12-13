@@ -1,0 +1,17 @@
+# Testing artifacts (add to main .gitignore if not present)
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Test results
+test-results/
+playwright-report/
+lighthouse-ci-storage/
+.lighthouseci/
+
+# Visual regression baselines (commit these, but ignore failures)
+# tests/e2e/__screenshots__/*.png
+
+# Playwright downloads
+playwright/.cache/

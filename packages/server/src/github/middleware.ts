@@ -1,16 +1,19 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { createGitHubClientFromEnv, GitHubClient } from './client';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    github?: GitHubClient;
+// Extend Express Request type
+declare global {
+  namespace Express {
+    interface Request {
+      github?: GitHubClient;
+    }
   }
 }
 
-export function githubMiddleware() {
+export function githubMiddleware(): RequestHandler {
   const client = createGitHubClientFromEnv();
-  return function attach(req: Request, _res: Response, next: NextFunction) {
-    req.github = client;
+  return function attach(req: Request, _res: Response, next: NextFunction): void {
+    (req as any).github = client;
     next();
   };
 }

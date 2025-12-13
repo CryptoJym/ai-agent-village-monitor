@@ -30,7 +30,7 @@ describe.skipIf(!hasDb)('Village access and visibility', () => {
     memberToken = signAccessToken(memberId, uMember.username);
     visitorToken = signAccessToken(visitorId, uVisitor.username);
 
-    const v = await prisma.village.create({ data: { githubOrgId: BigInt(Date.now() + 10), name: 'perm-village', ownerId: ownerId, isPublic: false } });
+    const v = await prisma.village.create({ data: { githubOrgId: BigInt(Date.now() + 10), orgName: 'perm-village', ownerId: ownerId, isPublic: false } });
     villageId = v.id;
     await prisma.villageAccess.create({ data: { villageId, userId: memberId, role: 'member' } });
     await prisma.villageAccess.create({ data: { villageId, userId: visitorId, role: 'visitor' } });

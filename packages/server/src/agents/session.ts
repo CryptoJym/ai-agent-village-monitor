@@ -67,7 +67,7 @@ export async function ensureActiveSession(agentId: number | string, opts?: { res
       const created = await tx.agentSession.create({
         data: { agentId: agentIdStr, startedAt: new Date(), endedAt: null },
       });
-      audit('session.created', { agentId: agentIdStr, sessionId: created.id });
+      audit.log('session.created', { agentId: agentIdStr, sessionId: created.id });
       return created;
     });
   });
@@ -86,7 +86,7 @@ export async function endActiveSession(agentId: number | string) {
   });
   if (!existing) return;
   await prisma.agentSession.update({ where: { id: existing.id }, data: { endedAt: new Date() } });
-  audit('session.ended', { agentId: agentIdStr, sessionId: existing.id });
+  audit.log('session.ended', { agentId: agentIdStr, sessionId: existing.id });
 }
 
 export async function appendEvent(sessionId: number | string, eventType: string, content?: string) {
@@ -99,7 +99,7 @@ export async function appendEvent(sessionId: number | string, eventType: string,
     if (!agentId) return;
     const message = content ? `${eventType}: ${content}` : eventType;
     await prisma.workStreamEvent.create({ data: { agentId, message } });
-    audit('session.event', { sessionId: sid, agentId, eventType });
+    audit.log('session.event', { sessionId: sid, agentId, eventType });
   } catch {
     // swallow to avoid breaking worker paths
   }

@@ -1,14 +1,10 @@
-import type { Socket } from 'socket.io';
-import type { NextFunction } from 'express';
+import type { Socket, ExtendedError } from 'socket.io';
 import { config } from '../config';
 import { verifyAccessToken, type JwtPayload } from '../auth/jwt';
 
-declare module 'socket.io' {
-  interface Socket {
-    data: Socket['data'] & {
-      user?: JwtPayload;
-    };
-  }
+// Extend SocketData interface to include user payload
+interface SocketData {
+  user?: JwtPayload;
 }
 
 /**
@@ -18,7 +14,10 @@ declare module 'socket.io' {
  * In development, if no JWT secret is configured, the middleware allows
  * connections but logs a warning for visibility.
  */
-export function socketAuth(socket: Socket, next: NextFunction) {
+export function socketAuth(
+  socket: Socket<any, any, any, SocketData>,
+  next: (err?: ExtendedError) => void,
+): void {
   const token =
     (socket.handshake.auth as Record<string, unknown> | undefined)?.token ??
     (socket.handshake.query?.token as string | undefined);
@@ -26,21 +25,22 @@ export function socketAuth(socket: Socket, next: NextFunction) {
   if (!config.JWT_SECRET) {
     // Allow connection in dev/test without strict auth to ease local iteration
     console.warn('[ws] JWT_SECRET is not set; allowing unauthenticated WebSocket connection');
-    return next();
+    next();
+    return;
   }
 
   try {
     if (typeof token !== 'string' || token.length === 0) {
       // Allow anonymous socket; join handlers will enforce access rules
-      return next();
+      next();
+      return;
     }
     const payload = verifyAccessToken(token);
     socket.data.user = payload;
-    return next();
+    next();
   } catch {
-    const err = new Error('unauthorized: invalid token');
-    // @ts-expect-error attach code for client-side handling
+    const err: ExtendedError = new Error('unauthorized: invalid token');
     err.data = { code: 'WS_INVALID_TOKEN' };
-    return next(err);
+    next(err);
   }
 }

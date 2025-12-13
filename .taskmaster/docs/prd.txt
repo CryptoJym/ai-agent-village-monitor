@@ -1,0 +1,698 @@
+# AI Agent Village Monitor - RPG System PRD
+
+## Project Overview
+
+Transform the AI Agent Village Monitor into an immersive RPG-like experience where GitHub repositories become explorable buildings with rooms representing code modules. AI agents inhabit these spaces with behaviors driven by real work events, creating a living visualization of development activity.
+
+## Vision
+
+- **Repositories become houses/buildings** that grow organically based on codebase structure
+- **Components/modules become rooms** within houses, with names referencing actual code components
+- **Agents are animated sprites** with behaviors and emotes tied to actual cognitive states
+- **File structure maps to room layout** - deterministic geometry so same repo always generates same building
+- **Universal compatibility** - adding system to any GitHub repo should automatically construct the world
+- **Multiplayer** - public repos become visitable spaces where users can walk their agent-avatar into others' repos
+
+## Tech Stack
+
+- **Frontend**: Phaser.js (game engine), React (UI overlay), XState v5 (state machines), Yuka.js (steering)
+- **Backend**: Node.js, Express/Fastify, Socket.io, Yjs (CRDT)
+- **Database**: PostgreSQL with Prisma ORM
+- **External APIs**: GitHub GraphQL API, PixelLab.ai (sprites)
+- **Testing**: Jest, Vitest, Playwright
+
+---
+
+## Phase 1: Foundation (Weeks 1-3)
+
+### Week 1: Database & API Foundation
+
+#### Task: Migrate database to Prisma with new schema
+Create comprehensive Prisma schema including:
+- Village model with seed, name, worldMap relation
+- House model with githubRepo, position, footprint, rooms, agents
+- Room model with moduleType, modulePath, position, size, connections, decorations
+- Agent model with name, spriteKey, personality, position, state, energy
+- WorldMap model for storing generated map data
+
+#### Task: Create Village CRUD endpoints
+Implement REST endpoints:
+- GET /api/villages - List all villages
+- POST /api/villages - Create village
+- GET /api/villages/:id - Get village details with houses
+- PUT /api/villages/:id - Update village
+- DELETE /api/villages/:id - Delete village
+
+#### Task: Create House CRUD endpoints
+Implement REST endpoints:
+- GET /api/houses - List houses (with village filter)
+- POST /api/houses - Create house (trigger repo analysis)
+- GET /api/houses/:id - Get house with rooms and agents
+- PUT /api/houses/:id - Update house
+- DELETE /api/houses/:id - Delete house
+
+#### Task: Create Agent CRUD endpoints
+Implement REST endpoints for agent management including state updates.
+
+#### Task: Create Room CRUD endpoints
+Implement REST endpoints for room management.
+
+#### Task: Set up Jest test suite for backend
+Configure Jest with TypeScript support, coverage reporting, database mocking.
+
+#### Task: Write API integration tests
+Create integration tests for all CRUD endpoints with 80%+ coverage target.
+
+#### Task: Set up Vitest for frontend
+Configure Vitest for frontend testing with Phaser mocking.
+
+### Week 2: GitHub Integration
+
+#### Task: Create GitHub GraphQL client wrapper
+Build a typed GraphQL client for GitHub API v4 with:
+- Rate limiting (5000 points/hour budget)
+- Request batching
+- Error handling
+- Caching layer
+
+#### Task: Implement repository tree fetcher
+Fetch complete repository structure using GraphQL:
+- Recursive tree traversal
+- File metadata (size, type)
+- Commit information
+- Language statistics
+
+#### Task: Implement language detection with go-enry
+Integrate go-enry (or Linguist) for:
+- Primary language detection
+- File-by-file language classification
+- Language-based styling decisions
+
+#### Task: Create module classifier
+Classify files into module types:
+- component, service, repository, controller
+- utility, config, type, test, asset, root
+- Support for JS/TS, Python, Go, Rust, Java
+
+#### Task: Build dependency graph analyzer
+Analyze imports and dependencies:
+- Parse import statements (Tree-sitter)
+- Build directed dependency graph
+- Calculate module coupling metrics
+
+#### Task: Set up webhook endpoint
+Create POST /api/webhooks/github endpoint:
+- Signature verification
+- Event type routing
+- Async processing queue
+
+#### Task: Implement webhook event processing
+Process GitHub events:
+- push events -> work activity
+- pull_request events -> agent state changes
+- check_run events -> build status
+
+#### Task: Write GitHub integration tests
+Test GitHub client with mock responses.
+
+### Week 3: Frontend Foundation
+
+#### Task: Refactor scene structure
+Create Phaser scenes:
+- BootScene - initialization
+- PreloadScene - asset loading with progress
+- VillageScene - world map view
+- HouseScene - building interior view
+
+#### Task: Implement camera system with zoom/pan
+Create camera controller:
+- Zoom: 0.5x to 2x with smooth lerp
+- Pan: Click-drag and edge scroll
+- Bounds: Constrain to world edges
+- Follow: Optional agent following mode
+
+#### Task: Create input handler
+Build unified input system:
+- Keyboard: WASD/Arrows for movement
+- Mouse: Click to interact, drag to pan
+- Touch: Pinch to zoom, swipe to pan
+- Gamepad: Optional controller support
+
+#### Task: Build asset manifest system
+Create asset loading system:
+- JSON manifest files
+- Dynamic loading based on scene
+- Progress tracking
+- Error handling with fallbacks
+
+#### Task: Create sprite loading pipeline
+Build sprite loader:
+- Sprite sheet parsing
+- Animation definition loading
+- Texture atlas support
+- Runtime sprite generation hook
+
+#### Task: Implement tileset loading
+Create tileset system:
+- Tiled JSON import
+- Auto-tile support
+- Multiple tileset layers
+- Collision data extraction
+
+#### Task: Create basic UI layer with React overlay
+Build React-Phaser integration:
+- HUD layer (minimap, status)
+- Dialog system
+- Menu system
+- Agent inspector panel
+
+#### Task: Write scene transition tests
+Test scene loading and transitions.
+
+---
+
+## Phase 2: Building Generation (Weeks 4-6)
+
+### Week 4: BSP Generator
+
+#### Task: Create Prando seeded RNG wrapper
+Implement deterministic random:
+- Prando library integration
+- Seed generation from repo+commit hash
+- Reproducibility verification
+
+#### Task: Implement BSP tree generator
+Build Binary Space Partitioning:
+- Configurable split ratios (0.45-0.55)
+- Max depth based on room count
+- Minimum room size constraints
+- Balanced tree generation
+
+#### Task: Create room placement within BSP leaves
+Room placement algorithm:
+- Shrink leaf bounds by margin
+- Calculate room size from module complexity
+- Center room in leaf
+- Store room metadata
+
+#### Task: Implement Delaunay triangulation
+Connect rooms with graph:
+- Delaunay triangulation of room centers
+- Edge extraction
+- Distance calculation
+
+#### Task: Build Kruskal's MST for corridors
+Generate corridor network:
+- Union-Find data structure
+- Minimum spanning tree
+- Add 30% extra edges for loops
+
+#### Task: Create corridor path carving
+Carve corridors in grid:
+- L-shaped or straight paths
+- Configurable width
+- Door placement at room entries
+
+#### Task: Implement room connection doors
+Place doors:
+- Detect corridor-room intersections
+- Door tile placement
+- Connection metadata
+
+#### Task: Write BSP algorithm tests
+Test determinism and correctness:
+- Same seed = same layout
+- All rooms connected
+- No overlapping rooms
+
+### Week 5: Tilemap Generation
+
+#### Task: Create tilemap data structure
+Define tilemap format:
+- Multi-layer support (floor, walls, decorations)
+- Tile IDs with metadata
+- Collision flags
+- Export to JSON
+
+#### Task: Implement 4-bit auto-tiling
+Build auto-tiler:
+- Calculate neighbor masks
+- 16-tile wall set mapping
+- Seamless transitions
+- Corner handling
+
+#### Task: Create floor tile placement
+Floor system:
+- Room-type based tiles
+- Corridor tiles
+- Transition tiles
+- Biome variations
+
+#### Task: Implement wall tile placement
+Wall system:
+- Auto-tiled walls
+- Inner/outer wall variants
+- Shadow tiles
+- Decoration attachment points
+
+#### Task: Create door tile placement
+Door system:
+- Door frames
+- Open/closed states
+- Interaction zones
+- Transition triggers
+
+#### Task: Build decoration placement system
+Decoration engine:
+- Furniture catalogs by room type
+- Placement rules (wall, center, corner)
+- Collision avoidance
+- Density controls
+
+#### Task: Implement room-type decorations
+Room-specific items:
+- component: monitors, keyboards
+- service: server racks, cables
+- test: testing equipment
+- config: filing cabinets
+
+#### Task: Write tilemap generation tests
+Test tilemap output correctness.
+
+### Week 6: Tilemap Rendering
+
+#### Task: Create Phaser tilemap renderer
+Render tilemaps:
+- Load tilemap JSON
+- Create Phaser.Tilemaps
+- Layer ordering
+- Culling for performance
+
+#### Task: Implement multi-layer rendering
+Layer system:
+- Ground layer
+- Wall layer
+- Decoration layer
+- Above-player layer (roofs, trees)
+
+#### Task: Set up collision layer
+Collision detection:
+- Arcade physics
+- Tilemap collision
+- Dynamic objects
+
+#### Task: Create room label system
+Room labels:
+- Module name display
+- Visibility based on zoom
+- Font scaling
+- Click to view details
+
+#### Task: Implement minimap
+Minimap feature:
+- Scaled view
+- Player position
+- Room highlights
+- Click to navigate
+
+#### Task: Build door/portal system
+Portal mechanics:
+- Door interaction zones
+- Room-to-room transitions
+- House exits
+- Cross-village portals
+
+#### Task: Create scene transitions
+Transitions:
+- Fade effects
+- Loading states
+- State preservation
+- Animation hooks
+
+#### Task: Optimize rendering performance
+Performance:
+- Tile culling
+- Batch rendering
+- Object pooling
+- 60fps target
+
+---
+
+## Phase 3: Agent System (Weeks 7-9)
+
+### Week 7: State Machine Implementation
+
+#### Task: Set up XState v5 with TypeScript
+Configure XState:
+- Type-safe machines
+- Actor system
+- DevTools integration
+
+#### Task: Implement core agent state machine
+Build state machine with states:
+- idle, working, thinking, frustrated
+- celebrating, resting, socializing
+- traveling, observing
+
+#### Task: Create all state guards
+Implement guards:
+- isHighFrustration
+- isLowEnergy
+- hasTarget, isAtTarget
+- hasNearbyAgents
+- shouldRest, canCelebrate
+
+#### Task: Implement all state actions
+Implement actions:
+- updatePosition, setTarget, clearTarget
+- startTask, completeTask
+- increaseFrustration, decreaseFrustration
+- increaseEnergy, decreaseEnergy
+- triggerEmote, updateWorkload
+
+#### Task: Build work stream adapter
+Event processing:
+- Event buffering
+- Timestamp ordering
+- Conversion to machine events
+- Rate limiting
+
+#### Task: Create event-to-state converters
+Map work events to states:
+- commit -> WORK_STARTED/COMPLETED
+- build_failed -> ERROR_OCCURRED
+- pr_merged -> celebrate trigger
+
+#### Task: Implement context updaters
+Context management:
+- Workload calculation
+- Frustration tracking
+- Energy decay
+- Streak counting
+
+#### Task: Write state machine tests
+Test all transitions and guards.
+
+### Week 8: Steering & Animation
+
+#### Task: Set up Yuka.js entity manager
+Configure Yuka:
+- EntityManager
+- Time integration
+- Phaser coordinate sync
+
+#### Task: Create AgentVehicle class
+Vehicle implementation:
+- Extend Yuka.Vehicle
+- Configure maxSpeed, maxForce
+- Bounding radius
+- Smoother for movement
+
+#### Task: Implement steering controller
+Steering behaviors:
+- WanderBehavior for idle
+- ArriveBehavior for navigation
+- SeparationBehavior for crowds
+- ObstacleAvoidanceBehavior
+
+#### Task: Create animation controller
+Animation system:
+- Direction detection from velocity
+- Action determination from speed
+- Animation key selection
+- Smooth transitions
+
+#### Task: Build sprite animation system
+Animations:
+- 4-direction idle/walk/run
+- Work animation
+- Sleep animation
+- Special animations
+
+#### Task: Implement emote manager
+Emote system:
+- Sprite creation
+- Position tracking (above head)
+- Priority queue
+- Duration timers
+- Pop in/out animations
+
+#### Task: Create emote trigger rules
+Trigger conditions:
+- Error streak -> frustrated
+- Success -> celebrating
+- Low energy -> tired
+- Work started -> working
+
+#### Task: Write animation/steering tests
+Test movement and animation sync.
+
+### Week 9: Agent Integration
+
+#### Task: Create AgentEntity Phaser game object
+Game object:
+- Sprite container
+- Emote container
+- Name label
+- Selection indicator
+
+#### Task: Wire state machine to animation
+Integration:
+- State change listeners
+- Animation controller updates
+- Transition smoothing
+
+#### Task: Wire state machine to steering
+Movement integration:
+- State-based behavior config
+- Speed modifiers
+- Behavior weights
+
+#### Task: Implement agent-room awareness
+Room tracking:
+- Current room detection
+- Room enter/exit events
+- Room-specific behaviors
+
+#### Task: Create pathfinding integration
+Navigation:
+- NavMesh generation
+- Path planning
+- Corridor navigation
+- Door handling
+
+#### Task: Build agent inspector panel
+UI panel:
+- Selected agent info
+- State visualization
+- Metrics display
+- Event history
+
+#### Task: Implement agent selection/following
+Interaction:
+- Click to select
+- Camera follow mode
+- Selection highlighting
+
+#### Task: Performance optimization for agents
+Optimization:
+- LOD system
+- Spatial partitioning
+- Object pooling
+- Update batching
+
+---
+
+## Phase 4: Multiplayer & Polish (Weeks 10-12)
+
+### Week 10: Network Foundation
+
+#### Task: Set up Socket.io server
+Server setup:
+- Connection handling
+- Authentication
+- Room management
+- Error handling
+
+#### Task: Create room management system
+Rooms:
+- House-based rooms
+- Player limits
+- Join/leave events
+- State broadcasting
+
+#### Task: Implement Yjs document structure
+CRDT setup:
+- Agent states
+- Position updates
+- Custom types
+
+#### Task: Create network sync adapter
+Client sync:
+- Local state to Yjs
+- Yjs to local state
+- Conflict resolution
+
+#### Task: Implement position interpolation
+Smooth movement:
+- Target tracking
+- Interpolation duration
+- Prediction
+
+#### Task: Build rate limiting system
+Rate control:
+- Position: 20/sec
+- State: 10/sec
+- Network quality adaptation
+
+#### Task: Create reconnection handling
+Reconnection:
+- State restoration
+- Catchup sync
+- Graceful degradation
+
+#### Task: Write network integration tests
+Test sync behavior.
+
+### Week 11: Sprite Generation
+
+#### Task: Create PixelLab.ai client
+API integration:
+- Authentication
+- Request formatting
+- Response parsing
+- Error handling
+
+#### Task: Implement sprite cache with Redis
+Caching:
+- Cache key generation
+- TTL management
+- Cache invalidation
+- Hit/miss tracking
+
+#### Task: Create sprite generation queue
+Queue system:
+- BullMQ or similar
+- Priority handling
+- Retry logic
+- Progress tracking
+
+#### Task: Build prompt engineering system
+Prompts:
+- Personality to visual traits
+- Style consistency
+- Color palettes
+- Animation requirements
+
+#### Task: Implement Replicate fallback
+Fallback:
+- Health checks
+- Automatic switching
+- Quality comparison
+
+#### Task: Create sprite sheet assembler
+Assembly:
+- Frame arrangement
+- Atlas generation
+- Texture packing
+- Metadata export
+
+#### Task: Build sprite preview UI
+UI:
+- Preview panel
+- Regeneration option
+- Style selection
+- Export option
+
+#### Task: Write sprite generation tests
+Test generation consistency.
+
+### Week 12: Polish & Launch
+
+#### Task: Performance profiling and optimization
+Profiling:
+- Chrome DevTools
+- Phaser debug
+- Memory snapshots
+- Frame timing
+
+#### Task: Memory leak detection and fixes
+Leaks:
+- Event listener cleanup
+- Texture disposal
+- Object pool management
+- Reference tracking
+
+#### Task: Mobile/touch optimization
+Mobile:
+- Touch controls
+- Responsive UI
+- Performance modes
+- PWA support
+
+#### Task: Accessibility improvements
+Accessibility:
+- Keyboard navigation
+- Screen reader support
+- Color contrast
+- Motion reduction
+
+#### Task: Error handling and logging
+Errors:
+- Global error boundary
+- Sentry integration
+- User-friendly messages
+- Debug logging
+
+#### Task: User documentation
+Docs:
+- Getting started guide
+- Feature documentation
+- FAQ
+- Troubleshooting
+
+#### Task: API documentation
+API docs:
+- OpenAPI spec
+- Endpoint reference
+- Example requests
+- Rate limits
+
+#### Task: Production deployment setup
+Deployment:
+- Docker configuration
+- CI/CD pipeline
+- Environment config
+- Monitoring setup
+
+---
+
+## Success Metrics
+
+### MVP (Week 6)
+- User can add GitHub repo and see generated building
+- Building layout is deterministic
+- Rooms labeled with module names
+- Basic navigation works
+
+### Beta (Week 9)
+- Agents move with appropriate behaviors
+- Agent states reflect actual work activity
+- Emotes show cognitive states
+- Single-player fully functional
+
+### Launch (Week 12)
+- Multiplayer functional for 2+ players
+- Generated sprites for agents
+- Stable 60fps performance
+- Production deployment live
+
+---
+
+## Technical Requirements
+
+- **Performance**: 60fps on mid-range hardware, 100 agents supported
+- **Determinism**: Same repo + commit = identical building
+- **Testing**: 80%+ coverage on core modules
+- **Accessibility**: WCAG 2.1 AA compliance
+- **Mobile**: Touch controls, responsive design

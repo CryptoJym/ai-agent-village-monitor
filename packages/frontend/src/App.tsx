@@ -8,7 +8,7 @@ import { ToastProvider } from './ui/Toast';
 import { OfflineBanner } from './ui/OfflineBanner';
 import { GlobalErrorHooks } from './ui/GlobalErrorHooks';
 import { ConnectionOverlay } from './ui/ConnectionOverlay';
-import { ErrorBoundary } from './ui/ErrorBoundary';
+import { ErrorBoundary, InlineErrorBoundary } from './ui/ErrorBoundary';
 import { GameCanvas, GameProvider } from './game';
 import { PreloaderScene } from './scenes/PreloaderScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
@@ -369,7 +369,7 @@ export default function App() {
               })(),
             }}
           >
-            <ErrorBoundary>
+            <ErrorBoundary name="GameCanvas">
               <GameCanvas />
             </ErrorBoundary>
           </GameProvider>
@@ -511,12 +511,14 @@ export default function App() {
           <Suspense fallback={null}>
             <HelpHint onOpen={() => setHelpOpen(true)} />
           </Suspense>
-          <HouseDashboardPanel
-            open={houseDashboard != null}
-            data={houseDashboard}
-            onClose={() => setHouseDashboard(null)}
-            viewerRole={viewerRole}
-          />
+          <ErrorBoundary name="HouseDashboard">
+            <HouseDashboardPanel
+              open={houseDashboard != null}
+              data={houseDashboard}
+              onClose={() => setHouseDashboard(null)}
+              viewerRole={viewerRole}
+            />
+          </ErrorBoundary>
           <OnboardingStepper
             open={onboardingOpen}
             onClose={() => setOnboardingOpen(false)}
@@ -581,13 +583,15 @@ export default function App() {
             </p>
           </div>
         </details>
-        <DialogueUI
-          open={panelOpen}
-          onClose={() => setPanelOpen(false)}
-          agentId={selectedAgent}
-          initialTab={dialogueTab}
-          onTabChange={(t) => setDialogueTab(t)}
-        />
+        <ErrorBoundary name="DialogueUI">
+          <DialogueUI
+            open={panelOpen}
+            onClose={() => setPanelOpen(false)}
+            agentId={selectedAgent}
+            initialTab={dialogueTab}
+            onTabChange={(t) => setDialogueTab(t)}
+          />
+        </ErrorBoundary>
         <Suspense fallback={null}>
           <SettingsPermissions
             open={settingsOpen}

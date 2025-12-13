@@ -28,10 +28,13 @@ import { requestLogger } from './middleware/logging';
 import { z } from 'zod';
 import { AgentCommandSchema, UserPreferencesSchema } from './schemas';
 import { agentsRouter } from './agents/router';
+import { sessionsRouter } from './sessions/router';
 import { audit } from './audit/logger';
 import { getMetrics, inc, setGauge } from './metrics';
 import { enqueueAgentJob } from './agents/queue';
 import { getUserVillageRole } from './auth/middleware';
+import { housesRouter } from './houses/router';
+import { roomsRouter } from './rooms/router';
 
 let isReady = false;
 export function setReady(ready: boolean) {
@@ -136,7 +139,7 @@ export function createApp(): Express {
     }),
   );
   // Sign cookies if JWT secret is available
-  app.use(cookieParser(config.JWT_SECRET));
+  app.use(cookieParser(config.JWT_SECRET) as any);
   if (config.NODE_ENV !== 'test') {
     app.use(morgan('dev'));
   }
@@ -208,9 +211,9 @@ export function createApp(): Express {
 
   // E2E auth helper (disabled unless E2E_TEST_MODE=true)
   if (process.env.E2E_TEST_MODE === 'true') {
-    app.get('/test/login/:id', (req, res) => {
+    app.get('/test/login/:id', async (req, res) => {
       try {
-        const id = Number(req.params.id) || 1;
+        const id = String(req.params.id || '1');
         const username = String((req.query.username as string) || 'e2e-user');
         const access = signAccessToken(id, username);
         const refresh = signRefreshToken(id, username, randomString(16));
@@ -218,6 +221,22 @@ export function createApp(): Express {
         const cookieBase = { httpOnly: true, secure: isProd, sameSite: 'lax' as const, path: '/' };
         res.cookie('access_token', access, { ...cookieBase, maxAge: 60 * 60 * 1000 });
         res.cookie('refresh_token', refresh, { ...cookieBase, maxAge: 30 * 24 * 60 * 60 * 1000 });
+        try {
+          // Grant the demo user access to existing villages for local exploration
+          const userIdStr = String(id);
+          const villages = await prisma.village.findMany({ select: { id: true } });
+          await Promise.all(
+            villages.map((v) =>
+              prisma.villageAccess.upsert({
+                where: { villageId_userId: { villageId: v.id, userId: userIdStr } },
+                update: { role: 'owner' },
+                create: { villageId: v.id, userId: userIdStr, role: 'owner' },
+              }),
+            ),
+          );
+        } catch {
+          // Best-effort; ignore failures
+        }
         return res.json({ ok: true, id, username });
       } catch (e: any) {
         return res.status(500).json({ error: e?.message || 'internal error' });
@@ -351,6 +370,9 @@ export function createApp(): Express {
   // Mount analytics routes before auth so the collector remains public
   app.use('/api', analyticsRouter);
 
+  // Sessions router for terminal agent bridge (session registration is public)
+  app.use('/api', sessionsRouter);
+
   // Protect API routes with auth (exclude webhooks/reconcile which are public)
   app.use('/api', requireAuth);
 
@@ -440,8 +462,19 @@ export function createApp(): Express {
   // Villages endpoints (protected)
   app.use('/api/villages', villagesRouter);
 
+  // Houses endpoints (protected)
+  app.use('/api/houses', housesRouter);
+
+  // Rooms endpoints (protected)
+  app.use('/api/rooms', roomsRouter);
+
   // Agents endpoints (protected)
   app.use('/api', agentsRouter);
+
+  // World endpoints (protected)
+  const { worldRouter } = require('./world/router');
+  app.use('/api/world', worldRouter);
+
   // Queue inspection endpoints (protected)
   app.use('/api', queuesRouter);
   // (analytics router mounted earlier to allow public collector & KPI)

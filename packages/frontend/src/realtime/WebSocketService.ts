@@ -9,15 +9,32 @@ export type WebSocketOptions = {
   reconnectionDelay?: number;
 };
 
+// Typed payloads for high-frequency events that get queued
+type AgentUpdatePayload = { agentId: string; state: string; x?: number; y?: number; timestamp?: string };
+type WorkStreamPayload = { agentId: string; message: string; ts?: number };
+type WorkStreamEventPayload = {
+  id?: string;
+  agentId: string;
+  sessionId?: string;
+  type: string;
+  payload: Record<string, unknown>;
+  timestamp: string;
+};
+
+type QueuedEvent =
+  | { type: 'agent_update'; payload: AgentUpdatePayload }
+  | { type: 'work_stream'; payload: WorkStreamPayload }
+  | { type: 'work_stream_event'; payload: WorkStreamEventPayload };
+
 export class WebSocketService {
   private socket?: Socket;
   private opts: Required<WebSocketOptions>;
   // Throttled event buffers
-  private wsQueue: any[] = [];
+  private wsQueue: QueuedEvent[] = [];
   private rafScheduled = false;
 
   constructor(options: WebSocketOptions = {}) {
-    const envWs = (import.meta as any)?.env?.VITE_WS_URL as string | undefined;
+    const envWs = import.meta.env?.VITE_WS_URL;
     const defaultUrl = (() => {
       if (envWs) return envWs;
       if (typeof location === 'undefined') return 'ws://localhost:3000';
@@ -87,6 +104,11 @@ export class WebSocketService {
     this.socket.on('bug_bot_progress', (payload) => eventBus.emit('bug_bot_progress', payload));
     this.socket.on('bug_bot_resolved', (payload) => eventBus.emit('bug_bot_resolved', payload));
     this.socket.on('house.activity', (payload) => eventBus.emit('house_activity', payload));
+
+    // Terminal agent events (from village-bridge CLI)
+    this.socket.on('agent_spawn', (payload) => eventBus.emit('agent_spawn', payload));
+    this.socket.on('agent_disconnect', (payload) => eventBus.emit('agent_disconnect', payload));
+    this.socket.on('work_stream_event', (payload) => this.enqueue('work_stream_event', payload));
   }
 
   disconnect() {
@@ -94,20 +116,28 @@ export class WebSocketService {
     this.socket = undefined;
   }
 
-  private enqueue(type: 'agent_update' | 'work_stream', payload: any) {
+  // Overloads for type-safe enqueue
+  private enqueue(type: 'agent_update', payload: AgentUpdatePayload): void;
+  private enqueue(type: 'work_stream', payload: WorkStreamPayload): void;
+  private enqueue(type: 'work_stream_event', payload: WorkStreamEventPayload): void;
+  private enqueue(
+    type: 'agent_update' | 'work_stream' | 'work_stream_event',
+    payload: AgentUpdatePayload | WorkStreamPayload | WorkStreamEventPayload
+  ): void {
     // In Vitest, emit synchronously to simplify tests
     try {
       const inTest =
         typeof process !== 'undefined' &&
-        ((process as any).env?.VITEST || (process as any).env?.VITEST_WORKER_ID);
+        (process.env?.VITEST || process.env?.VITEST_WORKER_ID);
       if (inTest) {
-        eventBus.emit(type, payload);
+        // Type assertion needed due to TypeScript limitations with discriminated unions in overloads
+        this.emitTyped(type, payload);
         return;
       }
-    } catch (e) {
-      void e;
+    } catch {
+      // Ignore errors from process access in browser
     }
-    this.wsQueue.push({ type, payload });
+    this.wsQueue.push({ type, payload } as QueuedEvent);
     if (!this.rafScheduled) {
       this.rafScheduled = true;
       const schedule =
@@ -118,12 +148,32 @@ export class WebSocketService {
     }
   }
 
+  // Helper to emit with proper type narrowing
+  private emitTyped(
+    type: 'agent_update' | 'work_stream' | 'work_stream_event',
+    payload: AgentUpdatePayload | WorkStreamPayload | WorkStreamEventPayload
+  ): void {
+    switch (type) {
+      case 'agent_update':
+        eventBus.emit('agent_update', payload as AgentUpdatePayload);
+        break;
+      case 'work_stream':
+        eventBus.emit('work_stream', payload as WorkStreamPayload);
+        break;
+      case 'work_stream_event':
+        eventBus.emit('work_stream_event', payload as WorkStreamEventPayload);
+        break;
+    }
+  }
+
   private flush() {
     this.rafScheduled = false;
     if (this.wsQueue.length === 0) return;
     const q = this.wsQueue.splice(0);
     // Coalesce by type if needed; for now, emit in order
-    for (const e of q) eventBus.emit(e.type, e.payload);
+    for (const e of q) {
+      this.emitTyped(e.type, e.payload);
+    }
   }
 
   joinVillage(villageId: string) {

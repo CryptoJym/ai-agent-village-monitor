@@ -17,7 +17,7 @@ export function emitSocketError(socket: Socket, code: WsErrorCode, message: stri
 // Curry the socket into the handler so Socket.IO can pass (payload, ack)
 export function withAck<TPayload>(
   socket: Socket,
-  handler: (payload: TPayload) => Promise<{ ok: true; [k: string]: unknown }> | { ok: true; [k: string]: unknown },
+  handler: (payload: TPayload) => Promise<{ ok: boolean; [k: string]: unknown }> | { ok: boolean; [k: string]: unknown },
 ) {
   return async (payload: TPayload, ack?: (resp: unknown) => void) => {
     try {

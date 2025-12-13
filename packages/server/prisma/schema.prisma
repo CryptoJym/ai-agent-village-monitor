@@ -3,9 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
+
+// ============================================================================
+// ENUMS
+// ============================================================================
 
 enum BugStatus {
   open
@@ -19,6 +23,372 @@ enum BugSeverity {
   medium
   high
 }
+
+enum WorldNodeType {
+  VILLAGE
+  HOUSE
+  ROOM
+  DUNGEON
+}
+
+// RPG Room Types - maps code module types to visual rooms
+enum RoomType {
+  entrance      // Main entry (always present)
+  hallway       // Connecting corridors
+  workspace     // Component/service rooms
+  library       // Utility/shared code
+  vault         // Config/secrets
+  laboratory    // Test suites
+  archive       // Legacy/deprecated code
+}
+
+// Module Types - semantic classification of code
+enum ModuleType {
+  component     // React/Vue/Svelte components
+  service       // Business logic, APIs
+  repository    // Data access, models
+  controller    // Request handlers
+  utility       // Helpers, shared functions
+  config        // Configuration files
+  type_def      // Type definitions (can't use 'type' as it's reserved)
+  test          // Test files
+  asset         // Static assets
+  root          // Root-level files
+}
+
+// Agent States - XState v5 states
+enum AgentState {
+  idle
+  working
+  thinking
+  frustrated
+  celebrating
+  resting
+  socializing
+  traveling
+  observing
+}
+
+// Building Sizes based on repo complexity
+enum BuildingSize {
+  tiny          // < 10 score
+  small         // < 30 score
+  medium        // < 80 score
+  large         // < 200 score
+  huge          // >= 200 score
+}
+
+// ============================================================================
+// USER & AUTH
+// ============================================================================
+
+model User {
+  id              String   @id @default(cuid())
+  email           String?  @unique
+  githubId        BigInt?  @unique
+  username        String?  @unique
+  name            String?
+  avatarUrl       String?
+  accessTokenHash String?
+  preferences     Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  villages VillageAccess[]
+  agents   Agent[]
+}
+
+model OAuthToken {
+  id            String    @id @default(cuid())
+  userKey       String
+  provider      String
+  scopes        String?
+  encCiphertext Bytes
+  encIv         Bytes
+  encTag        Bytes
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime?
+
+  @@unique([userKey, provider], name: "u_user_provider")
+  @@index([provider], name: "idx_provider")
+  @@map("oauth_tokens")
+}
+
+model VillageAccess {
+  villageId String
+  userId    String
+  role      String @default("viewer")
+
+  village Village @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([villageId, userId])
+  @@index([userId])
+}
+
+// ============================================================================
+// VILLAGE & WORLD
+// ============================================================================
+
+model Village {
+  id          String   @id @default(cuid())
+  orgName     String
+  githubOrgId BigInt?  @unique
+  seed        String?  // Deterministic seed for world generation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  config      Json?
+
+  // Layout concurrency/versioning
+  layoutVersion Int @default(0)
+
+  // Generic Provider Support
+  provider   String  @default("github")
+  externalId String?
+
+  // Relations
+  houses   House[]
+  bugBots  BugBot[]
+  access   VillageAccess[]
+  worldMap WorldMap?
+
+  @@index([orgName])
+  @@index([provider, externalId])
+}
+
+model WorldMap {
+  id        String   @id @default(cuid())
+  villageId String   @unique
+  village   Village  @relation(fields: [villageId], references: [id], onDelete: Cascade)
+
+  // Map data
+  width          Int       // World width in tiles
+  height         Int       // World height in tiles
+  tileSize       Int       @default(16) // Pixels per tile
+  seed           String    // Deterministic generation seed
+
+  // Layer data (JSON serialized TypedArrays)
+  groundLayer    Json?     // Floor tiles
+  objectLayer    Json?     // Trees, rocks, paths
+  collisionData  Json?     // Passability map
+
+  // House placement positions
+  housePlacements Json?    // Array of {houseId, x, y, rotation}
+
+  // Generation metadata
+  generatedAt    DateTime  @default(now())
+  generationVersion Int    @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================================================
+// HOUSES & BUILDINGS
+// ============================================================================
+
+model House {
+  id           String       @id @default(cuid())
+  villageId    String
+  village      Village      @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  repoName     String
+  githubRepoId BigInt?      @unique
+
+  // Repository metadata
+  primaryLanguage String?
+  stars           Int?
+  openIssues      Int?
+  commitSha       String?    // Last analyzed commit (for deterministic seeding)
+
+  // Building generation
+  buildingSize    BuildingSize? @default(medium)
+  seed            String?       // Hash of repoId + commitSha for determinism
+  complexity      Int?          // Calculated complexity score 1-100
+
+  // Layout persistence
+  positionX         Float?
+  positionY         Float?
+  footprintWidth    Int?        // Building footprint in tiles
+  footprintHeight   Int?
+  spriteOrientation String?
+  spriteVariant     String?
+  spriteScale       Float?
+  spriteUrl         String?     // Generated building sprite URL
+  lastMovedAt       DateTime?
+  lastMovedBy       String?
+
+  // Generated interior data
+  interiorWidth     Int?        // Interior tilemap width
+  interiorHeight    Int?        // Interior tilemap height
+  interiorTilemap   Json?       // Full tilemap data (layers, collision)
+  tilesetId         String?     // Reference to tileset used
+
+  // Generic Provider Support
+  provider   String @default("github")
+  externalId String?
+
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  rooms  Room[]
+  agents HouseAgent[]
+
+  @@index([villageId])
+  @@index([positionX, positionY])
+  @@index([provider, externalId])
+}
+
+model Room {
+  id        String    @id @default(cuid())
+  houseId   String
+  house     House     @relation(fields: [houseId], references: [id], onDelete: Cascade)
+
+  // Room identification
+  name         String      // Display name (e.g., "components", "services")
+  roomType     RoomType    @default(workspace)
+  moduleType   ModuleType? // Code module type this room represents
+  modulePath   String?     // Original code path (e.g., "src/components")
+
+  // Room geometry (in tiles)
+  x            Int
+  y            Int
+  width        Int
+  height       Int
+
+  // Connections to other rooms
+  doors        Json?       // Array of {x, y, direction, connectsToRoomId}
+  corridorData Json?       // Corridor paths connecting this room
+
+  // Decorations
+  decorations  Json?       // Array of {type, x, y, tileId, rotation}
+
+  // Module metadata
+  fileCount    Int?        // Number of files in module
+  totalSize    Int?        // Total bytes
+  complexity   Int?        // Complexity score 1-10
+  imports      Json?       // Module IDs this depends on
+  exports      Json?       // Public API surface
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([houseId])
+  @@index([roomType])
+  @@index([modulePath])
+}
+
+// ============================================================================
+// AGENTS
+// ============================================================================
+
+model Agent {
+  id        String     @id @default(cuid())
+  name      String
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Visual representation
+  spriteKey        String?   // Sprite sheet identifier
+  spriteConfig     Json?     // Animation/visual config
+  spriteOrientation String?
+  spriteVariant    String?
+  spriteScale      Float?
+
+  // Position in world
+  positionX Float?
+  positionY Float?
+  currentRoomId String?     // Current room if inside a house
+  currentHouseId String?    // Current house if inside a building
+
+  // XState v5 State Machine data
+  currentState  AgentState @default(idle)
+  previousState AgentState?
+  stateHistory  Json?      // Recent state transitions
+
+  // Agent personality (affects behavior)
+  personality Json?         // {introversion, diligence, creativity, patience}
+
+  // Agent metrics (drive state transitions)
+  energy       Float @default(100)  // 0-100, decreases with work
+  frustration  Float @default(0)    // 0-100, increases with errors
+  workload     Float @default(0)    // 0-100, current task load
+  streak       Int   @default(0)    // Consecutive successes
+  errorStreak  Int   @default(0)    // Consecutive errors
+
+  // Behavior configuration
+  behaviorConfig Json?    // Yuka.js steering behavior settings
+
+  // Location context (what they're working on)
+  locationContext Json?   // {villageId, houseId, roomId, taskDescription}
+
+  // Movement
+  lastMovedAt DateTime?
+  lastMovedBy String?
+
+  // Legacy fields (kept for backwards compatibility)
+  status    String @default("idle")
+  config    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions AgentSession[]
+  events   WorkStreamEvent[]
+  houses   HouseAgent[]
+}
+
+// Junction table for agents assigned to houses
+model HouseAgent {
+  houseId   String
+  agentId   String
+  role      String   @default("developer") // developer, reviewer, tester, etc.
+  assignedAt DateTime @default(now())
+
+  house House @relation(fields: [houseId], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@id([houseId, agentId])
+  @@index([agentId])
+}
+
+model AgentSession {
+  id        String    @id @default(cuid())
+  agentId   String
+  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  state     String?
+
+  @@index([agentId])
+  @@index([startedAt])
+  @@index([agentId, startedAt])
+}
+
+model WorkStreamEvent {
+  id        String   @id @default(cuid())
+  agentId   String
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  // Event details
+  eventType String?  // commit, pr_opened, pr_merged, build_failed, etc.
+  message   String
+  severity  String?  // info, warning, error, success
+  metadata  Json?    // Additional event data
+
+  ts DateTime @default(now())
+
+  @@index([agentId])
+  @@index([ts])
+  @@index([agentId, ts])
+  @@index([eventType])
+}
+
+// ============================================================================
+// BUGS & ISSUES
+// ============================================================================
 
 model BugBot {
   id              String       @id @default(cuid())
@@ -45,140 +415,97 @@ model BugBot {
   @@map("bug_bots")
 }
 
-model User {
-  id             String   @id @default(cuid())
-  email          String?  @unique @db.Citext
-  githubId       BigInt?  @unique
-  username       String?  @unique
-  name           String?
-  avatarUrl      String?
-  accessTokenHash String?
-  preferences    Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+// ============================================================================
+// WORLD HIERARCHY (Generic Tree Structure)
+// ============================================================================
 
-  villages VillageAccess[]
-  agents   Agent[]
-}
+model WorldNode {
+  id       String     @id @default(cuid())
+  parentId String?
+  parent   WorldNode? @relation("NodeHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children WorldNode[] @relation("NodeHierarchy")
 
-model Village {
-  id          String   @id @default(cuid())
-  orgName     String
-  githubOrgId BigInt?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  config      Json?
-  // Layout concurrency/versioning
-  layoutVersion Int     @default(0)
+  type       WorldNodeType
+  provider   String        @default("github")
+  externalId String
 
-  houses  House[]
-  bugBots BugBot[]
-  access  VillageAccess[]
+  name   String
+  config Json?
 
-  @@index([orgName])
-}
+  // Visuals (Nano Banana)
+  visualContext Json?
+  assets        Json?
 
-model House {
-  id           String   @id @default(cuid())
-  villageId    String
-  village      Village  @relation(fields: [villageId], references: [id], onDelete: Cascade)
-  repoName     String
-  githubRepoId BigInt?  @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  metadata     Json?
-  primaryLanguage String?
-  stars           Int?
-  openIssues      Int?
-  // Layout persistence
-  positionX    Float?
-  positionY    Float?
-  spriteOrientation String?  @db.VarChar(16)
-  spriteVariant     String?  @db.VarChar(32)
-  spriteScale       Float?
-  lastMovedAt       DateTime?
-  lastMovedBy       String?  @db.Uuid
-
-  @@index([villageId])
-  @@index([positionX, positionY])
-}
-
-model Agent {
-  id        String   @id @default(cuid())
-  name      String
-  status    String   @default("idle")
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  config    Json?
-  // Layout and sprite persistence
-  positionX Float?
-  positionY Float?
-  spriteConfig Json?
-  spriteOrientation String?  @db.VarChar(16)
-  spriteVariant     String?  @db.VarChar(32)
-  spriteScale       Float?
-  lastMovedAt       DateTime?
-  lastMovedBy       String?  @db.Uuid
-  currentStatus String? @default("idle")
 
-  sessions AgentSession[]
-  events   WorkStreamEvent[]
+  @@unique([provider, externalId])
+  @@index([parentId])
 }
 
-model AgentSession {
-  id        String    @id @default(cuid())
-  agentId   String
-  agent     Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  startedAt DateTime  @default(now())
-  endedAt   DateTime?
-  state     String?
+// ============================================================================
+// SPRITE GENERATION
+// ============================================================================
 
-  @@index([agentId])
-  @@index([startedAt])
-  @@index([agentId, startedAt])
+model GeneratedSprite {
+  id           String   @id @default(cuid())
+  entityType   String   // agent, building, decoration
+  entityId     String   // ID of the entity this sprite belongs to
+
+  // Generation parameters (for reproducibility)
+  prompt       String
+  seed         Int
+  style        String?  // pixel_art, rpg, etc.
+
+  // Output
+  spriteUrl    String
+  width        Int
+  height       Int
+  frames       Int      @default(1) // For animated sprites
+
+  // Cache control
+  generatedAt  DateTime @default(now())
+  expiresAt    DateTime?
+
+  // Metadata
+  provider     String   @default("pixellab") // pixellab, replicate, etc.
+  cost         Float?   // Generation cost
+  metadata     Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entityType, entityId])
+  @@index([entityType])
+  @@index([expiresAt])
 }
 
-model WorkStreamEvent {
-  id      String   @id @default(cuid())
-  agentId String
-  agent   Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  message String
-  ts      DateTime @default(now())
+// ============================================================================
+// TILESET DEFINITIONS
+// ============================================================================
 
-  @@index([agentId])
-  @@index([ts])
-  @@index([agentId, ts])
-}
+model Tileset {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
 
-model VillageAccess {
-  villageId String
-  userId    String
-  role      String @default("viewer")
+  // Tileset image
+  imageUrl    String
+  tileWidth   Int    @default(16)
+  tileHeight  Int    @default(16)
+  columns     Int    // Tiles per row in image
+  rows        Int    // Rows in image
 
-  village Village @relation(fields: [villageId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Tile mappings (JSON definitions)
+  wallTiles   Json   // {mask: tileId} for 4-bit auto-tiling
+  floorTiles  Json   // Array of floor tile IDs
+  doorTiles   Json   // {north, south, east, west}
+  decorations Json?  // {itemName: tileId}
 
-  @@id([villageId, userId])
-  @@index([userId])
-}
+  // Language/theme associations
+  languages   Json?  // Array of programming languages this suits
+  theme       String? // modern, medieval, sci-fi, etc.
 
-/// Encrypted OAuth tokens at rest (per userKey and provider).
-/// userKey typically maps to a stable identifier such as a GitHub login.
-model OAuthToken {
-  id            String    @id @default(cuid())
-  userKey       String
-  provider      String
-  scopes        String?
-  encCiphertext Bytes
-  encIv         Bytes
-  encTag        Bytes
-  version       Int       @default(1)
-  createdAt     DateTime  @default(now())
-  lastUsedAt    DateTime?
-
-  @@unique([userKey, provider], name: "u_user_provider")
-  @@index([provider], name: "idx_provider")
-  @@map("oauth_tokens")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

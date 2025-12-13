@@ -11,12 +11,28 @@ export function LocaleSwitcher() {
       void e;
     }
   }
+  const langNames: Record<string, string> = {
+    en: 'English',
+    es: 'Español',
+  };
+
   return (
-    <div style={{ position: 'absolute', right: 12, top: 56, display: 'flex', gap: 6 }}>
+    <div
+      role="group"
+      aria-label="Language selection"
+      style={{ position: 'absolute', right: 12, top: 56, display: 'flex', gap: 6 }}
+    >
       {['en', 'es'].map((l) => (
         <button
           key={l}
+          type="button"
           onClick={() => setLang(l)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setLang(l);
+            }
+          }}
           style={{
             padding: '4px 8px',
             borderRadius: 6,
@@ -26,6 +42,7 @@ export function LocaleSwitcher() {
             cursor: 'pointer',
           }}
           aria-pressed={lang === l}
+          aria-label={`Switch to ${langNames[l] || l}`}
         >
           {l.toUpperCase()}
         </button>

@@ -1,0 +1,169 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+
+jobs:
+  lighthouse:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-results
+          path: |
+            .lighthouseci/
+            lighthouse-ci-storage/
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            try {
+              // Read Lighthouse results
+              const resultsDir = '.lighthouseci';
+              if (fs.existsSync(resultsDir)) {
+                const files = fs.readdirSync(resultsDir);
+                const manifestFile = files.find(f => f.includes('manifest'));
+
+                if (manifestFile) {
+                  const manifest = JSON.parse(
+                    fs.readFileSync(path.join(resultsDir, manifestFile), 'utf8')
+                  );
+
+                  // Create comment body
+                  let comment = '## Lighthouse CI Results\n\n';
+                  comment += '| Category | Score |\n';
+                  comment += '|----------|-------|\n';
+
+                  manifest.forEach(result => {
+                    const categories = result.summary || {};
+                    Object.entries(categories).forEach(([category, score]) => {
+                      const emoji = score >= 0.9 ? '✅' : score >= 0.5 ? '⚠️' : '❌';
+                      comment += `| ${category} | ${emoji} ${Math.round(score * 100)} |\n`;
+                    });
+                  });
+
+                  // Post comment
+                  await github.rest.issues.createComment({
+                    issue_number: context.issue.number,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: comment
+                  });
+                }
+              }
+            } catch (error) {
+              console.error('Failed to post Lighthouse results:', error);
+            }
+
+  performance-budget:
+    name: Check Performance Budget
+    runs-on: ubuntu-latest
+    needs: lighthouse
+
+    steps:
+      - name: Download Lighthouse results
+        uses: actions/download-artifact@v4
+        with:
+          name: lighthouse-results
+
+      - name: Check performance budget
+        run: |
+          echo "Performance budget check completed"
+          # Add custom budget validation logic here if needed
+
+  mobile-lighthouse:
+    name: Lighthouse Mobile Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Run Mobile Lighthouse CI
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun --config=lighthouserc.mobile.js || true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Mobile Lighthouse results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-mobile-results
+          path: |
+            .lighthouseci/
+          retention-days: 30

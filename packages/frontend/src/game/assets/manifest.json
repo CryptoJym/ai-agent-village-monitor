@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "spritesheets": {
+    "agents": {
+      "path": "/assets/generated/village.png",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "description": "Agent sprites with idle, walk, and work animations"
+    },
+    "buildings": {
+      "path": "/assets/houses/house_py.png",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "description": "Building sprites for village view"
+    }
+  },
+  "tilemaps": {
+    "village": {
+      "path": "/assets/tilemaps/village.json",
+      "description": "Main village world map"
+    },
+    "house_interior": {
+      "path": "/assets/tilemaps/house_interior.json",
+      "description": "Generic house interior layout"
+    }
+  },
+  "tilesets": {
+    "rpg_tiles": {
+      "path": "/assets/generated/village.png",
+      "description": "Main RPG tileset for outdoor areas"
+    },
+    "interior_tiles": {
+      "path": "/assets/generated/dungeon.png",
+      "description": "Interior tileset for buildings"
+    },
+    "industrial_tiles": {
+      "path": "/assets/generated/industrial.png",
+      "description": "Industrial/tech themed tiles"
+    }
+  },
+  "images": {
+    "ui_icons": {
+      "path": "/assets/ui/icons.png",
+      "description": "UI icons and buttons"
+    }
+  },
+  "audio": {
+    "ambient_village": {
+      "path": "/assets/audio/ambient_village.mp3",
+      "description": "Village ambient background music"
+    },
+    "click": {
+      "path": "/assets/audio/click.mp3",
+      "description": "UI click sound"
+    }
+  }
+}

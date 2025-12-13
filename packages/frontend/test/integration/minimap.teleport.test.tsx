@@ -3,13 +3,19 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import App from '../../src/App';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from '../../src/contexts/AuthProvider';
+import { FeatureFlagProvider } from '../../src/contexts/FeatureFlags';
 
 function mount(villageId = 'demo') {
   return render(
     <MemoryRouter initialEntries={[`/village/${villageId}`]}>
-      <Routes>
-        <Route path="/village/:id" element={<App />} />
-      </Routes>
+      <FeatureFlagProvider>
+        <AuthProvider>
+          <Routes>
+            <Route path="/village/:id" element={<App />} />
+          </Routes>
+        </AuthProvider>
+      </FeatureFlagProvider>
     </MemoryRouter>,
   );
 }

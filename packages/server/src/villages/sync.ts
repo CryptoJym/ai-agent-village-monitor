@@ -22,7 +22,7 @@ function* gridPositions(): Generator<{ x: number; y: number }> {
   }
 }
 
-export async function syncVillageNow(villageId: number, org: string) {
+export async function syncVillageNow(villageId: string, org: string) {
   const started = Date.now();
   const gh = new GitHubService();
 
@@ -70,7 +70,7 @@ export async function syncVillageNow(villageId: number, org: string) {
 
   // Sort for deterministic assignment of new positions
   const sorted = [...repos].sort(
-    (a, b) => b.stargazers - a.stargazers || a.name.localeCompare(b.name),
+    (a, b) => (b.stargazers ?? 0) - (a.stargazers ?? 0) || a.name.localeCompare(b.name),
   );
 
   let created = 0;
@@ -196,11 +196,11 @@ export async function syncVillageNow(villageId: number, org: string) {
   };
 }
 
-export async function enqueueVillageSync(villageId: number) {
+export async function enqueueVillageSync(villageId: string) {
   const village = await prisma.village.findUnique({ where: { id: villageId } });
   if (!village) throw new Error('village not found');
-  const cfg = (village.villageConfig as any) || {};
-  const org: string | undefined = typeof cfg.org === 'string' ? cfg.org : village.name;
+  const cfg = (village.config as any) || {};
+  const org: string | undefined = typeof cfg.org === 'string' ? cfg.org : village.orgName;
   if (!org) throw new Error('village config missing org');
 
   const queues = createQueues();

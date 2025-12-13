@@ -23,7 +23,7 @@ describe('integration: session start → command → stop', () => {
       const { prisma } = await import('../db/client');
       // Create user + village + agent
       const u = await prisma.user.create({ data: { githubId: BigInt(Date.now()), username: 'integ' } as any });
-      const v = await prisma.village.create({ data: { name: 'v-integ', githubOrgId: BigInt(999), ownerId: (u as any).id, isPublic: false } as any });
+      const v = await prisma.village.create({ data: { orgName: 'v-integ', githubOrgId: BigInt(999), ownerId: (u as any).id, isPublic: false } as any });
       const a = await prisma.agent.create({ data: { villageId: (v as any).id, name: 'a-integ', currentStatus: 'idle' } as any });
       agentId = (a as any).id || agentId;
       const { signAccessToken } = await import('../auth/jwt');

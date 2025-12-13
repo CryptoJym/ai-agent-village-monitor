@@ -1,13 +1,30 @@
 import type { Octokit } from '@octokit/rest';
 import { graphql as ghGraphql } from '@octokit/graphql';
 import { computeBackoffDelayMs } from './rateLimit';
-import { NormalizedError, RateInfo } from './types';
+import {
+  NormalizedError,
+  RateInfo,
+  Repository,
+  TreeEntry,
+  CommitInfo,
+  RateLimitStatus,
+  CacheEntry,
+  LanguageStats,
+} from './types';
 
 type CreateClientOptions = {
   tokens: string[];
   userAgent?: string;
   previews?: string[];
+  rateLimitBudget?: number;
+  cacheTTL?: number;
 };
+
+export interface GitHubClientOptions {
+  token: string;
+  rateLimitBudget?: number;
+  cacheTTL?: number;
+}
 
 export class GitHubClient {
   private _octokit?: Octokit;
@@ -16,10 +33,15 @@ export class GitHubClient {
   private tokens: string[];
   private etags = new Map<string, string>();
   private languagesCache = new Map<string, Record<string, number>>();
+  private memoryCache = new Map<string, CacheEntry<any>>();
+  private rateLimitBudget: number;
+  private cacheTTL: number;
   public lastRate: RateInfo = {};
-  public metrics = { languagesCalls: 0, languagesEtagHits: 0 };
+  public metrics = { languagesCalls: 0, languagesEtagHits: 0, cacheHits: 0, cacheMisses: 0 };
 
   constructor(opts: CreateClientOptions) {
+    this.rateLimitBudget = opts.rateLimitBudget || 5000;
+    this.cacheTTL = opts.cacheTTL || 900000; // 15 minutes default
     this.tokens = opts.tokens.filter(Boolean);
     try {
       const { Octokit } = require('@octokit/rest');
@@ -107,10 +129,10 @@ export class GitHubClient {
 
   async listOrgRepos(org: string) {
     if (!this._octokit) throw new Error('Octokit not available');
-    const res = await this.withRetry(() =>
+    const res = await this.withRetry<any>(() =>
       (this._octokit as any).rest.repos.listForOrg({ org, per_page: 100 }),
     );
-    this.trackRate((res as any)?.headers);
+    this.trackRate(res?.headers);
     return res.data;
   }
 
@@ -173,15 +195,15 @@ export class GitHubClient {
     const ifNoneMatch = this.etags.get(key);
     this.metrics.languagesCalls++;
     try {
-      const res = await this.withRetry(() =>
+      const res = await this.withRetry<any>(() =>
         (this._octokit as any).rest.repos.getLanguages({
           owner,
           repo,
           headers: ifNoneMatch ? { 'If-None-Match': ifNoneMatch } : undefined,
         }),
       );
-      this.trackRate((res as any)?.headers);
-      const etag = (res as any)?.headers?.etag;
+      this.trackRate(res?.headers);
+      const etag = res?.headers?.etag;
       if (etag) this.etags.set(key, etag);
       const data = res.data as unknown as Record<string, number>;
       this.languagesCache.set(key, data);
@@ -241,10 +263,10 @@ export class GitHubClient {
 
   async listMyOrgs() {
     if (!this._octokit) throw new Error('Octokit not available');
-    const res = await this.withRetry(() =>
+    const res = await this.withRetry<any>(() =>
       (this._octokit as any).orgs.listForAuthenticatedUser({ per_page: 100 }),
     );
-    this.trackRate((res as any)?.headers);
+    this.trackRate(res?.headers);
     return (res.data || []).map((o: any) => ({ id: o.id, login: o.login }));
   }
 
@@ -317,6 +339,260 @@ export class GitHubClient {
     );
     this.trackRate((res as any)?.headers);
     return { ok: true };
+  }
+
+  // Cache helper methods
+  private getCached<T>(key: string): T | null {
+    const entry = this.memoryCache.get(key);
+    if (!entry) {
+      this.metrics.cacheMisses++;
+      return null;
+    }
+    if (Date.now() - entry.timestamp > this.cacheTTL) {
+      this.memoryCache.delete(key);
+      this.metrics.cacheMisses++;
+      return null;
+    }
+    this.metrics.cacheHits++;
+    return entry.data as T;
+  }
+
+  private setCache<T>(key: string, data: T, etag?: string): void {
+    this.memoryCache.set(key, {
+      data,
+      timestamp: Date.now(),
+      etag,
+    });
+  }
+
+  // New enhanced methods for Task 17
+
+  async getRepository(owner: string, repo: string): Promise<Repository> {
+    const cacheKey = `repo:${owner}/${repo}`;
+    const cached = this.getCached<Repository>(cacheKey);
+    if (cached) return cached;
+
+    const query = /* GraphQL */ `
+      query ($owner: String!, $repo: String!) {
+        rateLimit {
+          limit
+          remaining
+          resetAt
+        }
+        repository(owner: $owner, name: $repo) {
+          id
+          name
+          nameWithOwner
+          description
+          stargazerCount
+          forkCount
+          updatedAt
+          isPrivate
+          isEmpty
+          primaryLanguage {
+            name
+          }
+          defaultBranchRef {
+            name
+            target {
+              ... on Commit {
+                oid
+                committedDate
+              }
+            }
+          }
+          languages(first: 10, orderBy: { field: SIZE, direction: DESC }) {
+            totalSize
+            edges {
+              size
+              node {
+                name
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const res = await this.withRetry(() => (this.graphql as any)(query, { owner, repo }));
+    const rl = (res as any)?.rateLimit;
+    if (rl) {
+      this.lastRate.limit = rl.limit;
+      this.lastRate.remaining = rl.remaining;
+    }
+
+    const repoData = (res as any)?.repository;
+    if (!repoData) throw new Error(`Repository ${owner}/${repo} not found`);
+
+    const languages: LanguageStats = {
+      totalSize: repoData.languages.totalSize || 0,
+      languages: (repoData.languages.edges || []).map((edge: any) => ({
+        name: edge.node.name,
+        size: edge.size,
+        percentage: (edge.size / (repoData.languages.totalSize || 1)) * 100,
+      })),
+    };
+
+    const repository: Repository = {
+      id: String(repoData.id),
+      name: repoData.name,
+      nameWithOwner: repoData.nameWithOwner,
+      description: repoData.description || undefined,
+      primaryLanguage: repoData.primaryLanguage?.name || undefined,
+      stargazerCount: repoData.stargazerCount || 0,
+      forkCount: repoData.forkCount || 0,
+      updatedAt: repoData.updatedAt,
+      defaultBranchRef: repoData.defaultBranchRef
+        ? {
+            name: repoData.defaultBranchRef.name,
+            target: {
+              oid: repoData.defaultBranchRef.target.oid,
+              committedDate: repoData.defaultBranchRef.target.committedDate,
+            },
+          }
+        : undefined,
+      languages,
+      isPrivate: repoData.isPrivate || false,
+      isEmpty: repoData.isEmpty || false,
+    };
+
+    this.setCache(cacheKey, repository);
+    return repository;
+  }
+
+  async getRepositoryTree(owner: string, repo: string, ref?: string): Promise<TreeEntry[]> {
+    if (!this._octokit) throw new Error('Octokit not available');
+
+    const branch = ref || 'HEAD';
+    const cacheKey = `tree:${owner}/${repo}:${branch}`;
+    const cached = this.getCached<TreeEntry[]>(cacheKey);
+    if (cached) return cached;
+
+    const res = await this.withRetry(() =>
+      this._octokit!.git.getTree({
+        owner,
+        repo,
+        tree_sha: branch,
+        recursive: 'true',
+      } as any),
+    );
+
+    this.trackRate((res as any)?.headers);
+
+    const tree: TreeEntry[] = ((res as any).data.tree || []).map((item: any) => ({
+      path: item.path,
+      mode: item.mode,
+      type: item.type as 'blob' | 'tree' | 'commit',
+      sha: item.sha,
+      size: item.size,
+      url: item.url,
+    }));
+
+    this.setCache(cacheKey, tree);
+    return tree;
+  }
+
+  async getFileContent(owner: string, repo: string, path: string, ref?: string): Promise<string> {
+    if (!this._octokit) throw new Error('Octokit not available');
+
+    const cacheKey = `file:${owner}/${repo}:${path}:${ref || 'HEAD'}`;
+    const cached = this.getCached<string>(cacheKey);
+    if (cached) return cached;
+
+    const res = await this.withRetry(() =>
+      this._octokit!.repos.getContent({
+        owner,
+        repo,
+        path,
+        ref,
+      } as any),
+    );
+
+    this.trackRate((res as any)?.headers);
+
+    const data = (res as any).data;
+    if (Array.isArray(data) || data.type !== 'file') {
+      throw new Error(`Path ${path} is not a file`);
+    }
+
+    const content = Buffer.from(data.content, 'base64').toString('utf-8');
+    this.setCache(cacheKey, content);
+    return content;
+  }
+
+  async getCommitInfo(owner: string, repo: string, sha: string): Promise<CommitInfo> {
+    if (!this._octokit) throw new Error('Octokit not available');
+
+    const cacheKey = `commit:${owner}/${repo}:${sha}`;
+    const cached = this.getCached<CommitInfo>(cacheKey);
+    if (cached) return cached;
+
+    const res = await this.withRetry(() =>
+      this._octokit!.repos.getCommit({
+        owner,
+        repo,
+        ref: sha,
+      } as any),
+    );
+
+    this.trackRate((res as any)?.headers);
+
+    const commit: CommitInfo = {
+      sha: (res as any).data.sha,
+      author: {
+        name: (res as any).data.commit.author.name,
+        email: (res as any).data.commit.author.email,
+        date: (res as any).data.commit.author.date,
+      },
+      message: (res as any).data.commit.message,
+      committedDate: (res as any).data.commit.committer.date,
+    };
+
+    this.setCache(cacheKey, commit);
+    return commit;
+  }
+
+  getRateLimitStatus(): RateLimitStatus {
+    const limit = this.lastRate.limit || 5000;
+    const remaining = this.lastRate.remaining || 5000;
+    const reset = this.lastRate.reset ? new Date(this.lastRate.reset * 1000) : new Date();
+    const used = limit - remaining;
+    const budgetRemaining = Math.max(0, this.rateLimitBudget - used);
+
+    return {
+      limit,
+      remaining,
+      reset,
+      used,
+      budget: this.rateLimitBudget,
+      budgetRemaining,
+    };
+  }
+
+  async batchQuery<T>(queries: Array<() => Promise<T>>): Promise<T[]> {
+    const BATCH_SIZE = 5;
+    const results: T[] = [];
+
+    for (let i = 0; i < queries.length; i += BATCH_SIZE) {
+      const batch = queries.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map((query) => query()));
+      results.push(...batchResults);
+
+      // Check rate limit budget
+      const status = this.getRateLimitStatus();
+      if (status.budgetRemaining < 100) {
+        console.warn('Rate limit budget low, pausing batch queries');
+        break;
+      }
+    }
+
+    return results;
+  }
+
+  clearCache(): void {
+    this.memoryCache.clear();
+    this.languagesCache.clear();
+    this.etags.clear();
   }
 
   // Back-compat for callers that need raw Octokit
