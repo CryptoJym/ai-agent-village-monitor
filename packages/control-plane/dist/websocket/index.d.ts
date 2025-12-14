@@ -1,0 +1,8 @@
+/**
+ * WebSocket Module
+ *
+ * Exports WebSocket server for real-time communication.
+ */
+export { WebSocketServerManager } from './WebSocketServer';
+export type { WebSocketServerConfig } from './WebSocketServer';
+//# sourceMappingURL=index.d.ts.map

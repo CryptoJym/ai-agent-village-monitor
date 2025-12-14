@@ -16,7 +16,7 @@ export * from './state/useAgent';
 
 // Tilemap module exports - only export types not already exported by generation
 // Note: RoomType, SeededRNG, TilemapData, TilemapLayer are already exported from generation
-export {
+export type {
   // Core tilemap types (not duplicated)
   TilesetReference,
   TileMapping,
@@ -30,7 +30,10 @@ export {
   DecorationCatalog,
   DecorationItem,
   TilemapOptions,
-  // Constants
+} from './tilemap/types';
+
+// Constants from tilemap
+export {
   DEFAULT_TILE_IDS,
   AUTOTILE_MASKS,
   LAYER_NAMES,
@@ -59,3 +62,9 @@ export type AnalyticsEvent =
   | { type: 'layout_reset'; ts: number; villageId?: string };
 
 export type AnalyticsBatch = { events: AnalyticsEvent[]; clientId?: string; consent?: boolean };
+
+// Provider Adapters module exports
+export * from './adapters';
+
+// Runner module exports
+export * from './runner';

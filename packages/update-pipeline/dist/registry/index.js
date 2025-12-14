@@ -1,0 +1,1 @@
+export { KnownGoodRegistry } from './KnownGoodRegistry';
