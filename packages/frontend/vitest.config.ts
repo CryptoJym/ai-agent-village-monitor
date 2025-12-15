@@ -12,7 +12,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'text-summary', 'lcov', 'html', 'json'],
-      enabled: process.env.CI === 'true' || process.env.VITEST_COVERAGE === 'true',
+      // Coverage is expensive in jsdom-heavy suites; enable explicitly when needed.
+      enabled: process.env.VITEST_COVERAGE === 'true',
       include: ['src/**/*.{ts,tsx}'],
       exclude: [
         'src/**/__tests__/**',

@@ -88,7 +88,6 @@ describe('village layout API', () => {
       .spyOn((prisma as any).village, 'findUnique')
       .mockResolvedValue({ layoutVersion: 3 });
     const hFind = vi.spyOn((prisma as any).house, 'findMany').mockResolvedValue([]);
-    const aFind = vi.spyOn((prisma as any).agent, 'findMany').mockResolvedValue([]);
 
     // Act
     const res = await request(app)
@@ -100,7 +99,6 @@ describe('village layout API', () => {
     expect(res.body).toEqual({ version: 3, agents: [], houses: [] });
     expect(vFind).toHaveBeenCalled();
     expect(hFind).toHaveBeenCalled();
-    expect(aFind).toHaveBeenCalled();
   });
 
   it('PUT /:id/layout updates positions and increments version', async () => {

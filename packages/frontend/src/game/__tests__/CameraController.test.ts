@@ -18,7 +18,7 @@ describe('CameraController - Playable Environment Tests', () => {
   let cameraController: CameraController;
   let mockCamera: any;
   let mockInput: any;
-  let pointerCallbacks: Map<string, Function>;
+  let pointerCallbacks: Map<string, (...args: unknown[]) => void>;
 
   beforeEach(() => {
     pointerCallbacks = new Map();
@@ -60,7 +60,7 @@ describe('CameraController - Playable Environment Tests', () => {
 
     // Create mock input system with event capturing
     mockInput = {
-      on: vi.fn((event: string, callback: Function) => {
+      on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
         pointerCallbacks.set(event, callback);
       }),
       off: vi.fn(),

@@ -1,16 +1,36 @@
 // Minimal Phaser stub for jsdom tests
 class Base {
-  setData() { return this; }
-  getData() { return undefined; }
+  setData() {
+    return this;
+  }
+  getData() {
+    return undefined;
+  }
   destroy() {}
-  setDepth() { return this; }
-  setAlpha() { return this; }
-  setVisible() { return this; }
-  setPosition() { return this; }
-  setScale() { return this; }
-  setScrollFactor() { return this; }
-  setOrigin() { return this; }
-  setBlendMode() { return this; }
+  setDepth() {
+    return this;
+  }
+  setAlpha() {
+    return this;
+  }
+  setVisible() {
+    return this;
+  }
+  setPosition() {
+    return this;
+  }
+  setScale() {
+    return this;
+  }
+  setScrollFactor() {
+    return this;
+  }
+  setOrigin() {
+    return this;
+  }
+  setBlendMode() {
+    return this;
+  }
 }
 
 class Camera {
@@ -30,8 +50,8 @@ class Camera {
       y: this.scrollY,
       width: this.width / this.zoom,
       height: this.height / this.zoom,
-      centerX: this.scrollX + (this.width / this.zoom) / 2,
-      centerY: this.scrollY + (this.height / this.zoom) / 2
+      centerX: this.scrollX + this.width / this.zoom / 2,
+      centerY: this.scrollY + this.height / this.zoom / 2,
     };
   }
 
@@ -39,14 +59,36 @@ class Camera {
     this.bounds = { x, y, width, height };
     return this;
   }
-  setZoom(z: number) { this.zoom = z; return this; }
-  zoomTo(z: number) { this.zoom = z; return this; }
-  centerOn(x: number, y: number) { this.scrollX = x; this.scrollY = y; return this; }
-  pan(x: number, y: number) { this.scrollX = x; this.scrollY = y; return this; }
-  startFollow() { return this; }
-  stopFollow() { return this; }
-  getWorldPoint(x: number, y: number) { return { x, y }; }
-  getBounds() { return this.bounds; }
+  setZoom(z: number) {
+    this.zoom = z;
+    return this;
+  }
+  zoomTo(z: number) {
+    this.zoom = z;
+    return this;
+  }
+  centerOn(x: number, y: number) {
+    this.scrollX = x;
+    this.scrollY = y;
+    return this;
+  }
+  pan(x: number, y: number) {
+    this.scrollX = x;
+    this.scrollY = y;
+    return this;
+  }
+  startFollow() {
+    return this;
+  }
+  stopFollow() {
+    return this;
+  }
+  getWorldPoint(x: number, y: number) {
+    return { x, y };
+  }
+  getBounds() {
+    return this.bounds;
+  }
 }
 
 class Loader {
@@ -63,15 +105,23 @@ class Loader {
   emit(event: string, ...args: any[]) {
     const eventListeners = this.listeners.get(event);
     if (eventListeners) {
-      eventListeners.forEach(fn => fn(...args));
+      eventListeners.forEach((fn) => fn(...args));
     }
     return this;
   }
 
-  spritesheet() { return this; }
-  atlas() { return this; }
-  image() { return this; }
-  audio() { return this; }
+  spritesheet() {
+    return this;
+  }
+  atlas() {
+    return this;
+  }
+  image() {
+    return this;
+  }
+  audio() {
+    return this;
+  }
 }
 
 class Physics {
@@ -79,7 +129,7 @@ class Physics {
     bounds: { x: 0, y: 0, width: 1600, height: 1200 },
     setBounds(x: number, y: number, w: number, h: number) {
       this.bounds = { x, y, width: w, height: h };
-    }
+    },
   };
 }
 
@@ -89,18 +139,27 @@ class Pointer {
   downX = 0;
   downY = 0;
   isDown = false;
-  leftButtonDown() { return false; }
-  rightButtonDown() { return false; }
+  leftButtonDown() {
+    return false;
+  }
+  rightButtonDown() {
+    return false;
+  }
 }
 
 class InputPlugin {
   keyboard = {
     createCursorKeys() {
-      return { left: { isDown: false }, right: { isDown: false }, up: { isDown: false }, down: { isDown: false } };
+      return {
+        left: { isDown: false },
+        right: { isDown: false },
+        up: { isDown: false },
+        down: { isDown: false },
+      };
     },
     addKey() {
       return { on() {}, isDown: false };
-    }
+    },
   };
   activePointer = new Pointer();
   pointer1 = new Pointer();
@@ -111,9 +170,15 @@ class InputPlugin {
 
 class Registry {
   private data = new Map();
-  get(key: string) { return this.data.get(key); }
-  set(key: string, value: any) { this.data.set(key, value); }
-  has(key: string) { return this.data.has(key); }
+  get(key: string) {
+    return this.data.get(key);
+  }
+  set(key: string, value: any) {
+    this.data.set(key, value);
+  }
+  has(key: string) {
+    return this.data.has(key);
+  }
 }
 
 class Time {
@@ -149,17 +214,15 @@ class SceneManager {
     scene.registry = this.sharedRegistry;
     if (scene.scene) {
       scene.scene.key = key;
-      // Store reference to this SceneManager for method access
-      const manager = this;
       // Use arrow functions that delegate to the manager's methods
       // This allows spying on scene.scene.start to work properly
-      scene.scene.start = (k: string, data?: any) => manager.start(k, data);
-      scene.scene.stop = (k: string) => manager.stop(k);
-      scene.scene.restart = (k: string) => manager.restart(k);
-      scene.scene.pause = (k: string) => manager.pause(k);
-      scene.scene.resume = (k: string) => manager.resume(k);
-      scene.scene.isPaused = (k: string) => manager.isPaused(k);
-      scene.scene.isActive = (k: string) => manager.isActive(k);
+      scene.scene.start = (k: string, data?: any) => this.start(k, data);
+      scene.scene.stop = (k: string) => this.stop(k);
+      scene.scene.restart = (k: string) => this.restart(k);
+      scene.scene.pause = (k: string) => this.pause(k);
+      scene.scene.resume = (k: string) => this.resume(k);
+      scene.scene.isPaused = (k: string) => this.isPaused(k);
+      scene.scene.isActive = (k: string) => this.isActive(k);
     }
     return scene;
   }
@@ -254,7 +317,13 @@ export const GameObjects = {
     }
   },
   Text: class extends Base {
-    constructor(public scene: any, public x: number, public y: number, public text: string, public style?: any) {
+    constructor(
+      public scene: any,
+      public x: number,
+      public y: number,
+      public text: string,
+      public style?: any,
+    ) {
       super();
     }
     setOrigin() {
@@ -278,7 +347,13 @@ export const GameObjects = {
     }
   },
   Rectangle: class extends Base {
-    constructor(public x: number, public y: number, public width: number, public height: number, public fillColor?: number) {
+    constructor(
+      public x: number,
+      public y: number,
+      public width: number,
+      public height: number,
+      public fillColor?: number,
+    ) {
       super();
     }
     setOrigin() {
@@ -303,34 +378,80 @@ export const GameObjects = {
       return this;
     }
     getBounds() {
-      return { x: this.x, y: this.y, width: this.width, height: this.height, centerX: this.x + this.width/2, centerY: this.y + this.height/2 };
+      return {
+        x: this.x,
+        y: this.y,
+        width: this.width,
+        height: this.height,
+        centerX: this.x + this.width / 2,
+        centerY: this.y + this.height / 2,
+      };
     }
   },
   Arc: class extends Base {},
   Graphics: class extends Base {
-    lineStyle() { return this; }
-    lineBetween() { return this; }
-    clear() { return this; }
-    arc() { return this; }
-    strokePath() { return this; }
-    beginPath() { return this; }
-    closePath() { return this; }
-    fillRect() { return this; }
-    fillCircle() { return this; }
-    strokeCircle() { return this; }
-    fillStyle() { return this; }
-    setFillStyle() { return this; }
-    setRotation() { return this; }
-    moveTo() { return this; }
-    lineTo() { return this; }
-    stroke() { return this; }
-    fill() { return this; }
+    lineStyle() {
+      return this;
+    }
+    lineBetween() {
+      return this;
+    }
+    clear() {
+      return this;
+    }
+    arc() {
+      return this;
+    }
+    strokePath() {
+      return this;
+    }
+    beginPath() {
+      return this;
+    }
+    closePath() {
+      return this;
+    }
+    fillRect() {
+      return this;
+    }
+    fillCircle() {
+      return this;
+    }
+    strokeCircle() {
+      return this;
+    }
+    fillStyle() {
+      return this;
+    }
+    setFillStyle() {
+      return this;
+    }
+    setRotation() {
+      return this;
+    }
+    moveTo() {
+      return this;
+    }
+    lineTo() {
+      return this;
+    }
+    stroke() {
+      return this;
+    }
+    fill() {
+      return this;
+    }
   },
   Sprite: class extends Base {
-    constructor(public scene: any, public x: number, public y: number, public texture: string) {
+    constructor(
+      public scene: any,
+      public x: number,
+      public y: number,
+      public texture: string,
+    ) {
       super();
     }
-  }
+  },
 };
 export const Geom = {
   Rectangle: class {
@@ -345,10 +466,12 @@ export const Geom = {
 
     static Overlaps(rect1: any, rect2: any) {
       // Check if two rectangles overlap using AABB collision detection
-      return rect1.x < rect2.x + rect2.width &&
-             rect1.x + rect1.width > rect2.x &&
-             rect1.y < rect2.y + rect2.height &&
-             rect1.y + rect1.height > rect2.y;
+      return (
+        rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y
+      );
     }
 
     constructor(x: number = 0, y: number = 0, width: number = 0, height: number = 0) {
@@ -359,8 +482,7 @@ export const Geom = {
     }
 
     contains(x: number, y: number) {
-      return x >= this.x && x <= this.x + this.width &&
-             y >= this.y && y <= this.y + this.height;
+      return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height;
     }
 
     setTo(x: number, y: number, width: number, height: number) {
@@ -383,8 +505,8 @@ export const PhaserMath = {
       const dx = x2 - x1;
       const dy = y2 - y1;
       return globalThis.Math.sqrt(dx * dx + dy * dy);
-    }
-  }
+    },
+  },
 } as any;
 // Re-export as Math for Phaser compatibility
 export { PhaserMath as Math };
@@ -400,12 +522,12 @@ export const Keyboard = {
     RIGHT: 39,
     PLUS: 187,
     MINUS: 189,
-  }
+  },
 };
 
 export const Input = {
   Events: {},
-  Keyboard: Keyboard
+  Keyboard: Keyboard,
 } as any;
 export const Events = {
   EventEmitter: class {
@@ -430,7 +552,7 @@ export const Events = {
     emit(event: string, ...args: any[]) {
       const eventListeners = this.listeners.get(event);
       if (eventListeners) {
-        eventListeners.forEach(fn => fn(...args));
+        eventListeners.forEach((fn) => fn(...args));
       }
       return this;
     }
@@ -448,21 +570,21 @@ export const Events = {
       const eventListeners = this.listeners.get(event);
       return eventListeners ? eventListeners.size : 0;
     }
-  }
+  },
 } as any;
 
 export const Cameras = {
   Scene2D: {
-    Camera
-  }
+    Camera,
+  },
 };
 
 export const Types = {
   Input: {
     Keyboard: {
-      CursorKeys: {}
-    }
-  }
+      CursorKeys: {},
+    },
+  },
 };
 
 export class Scene {
@@ -473,9 +595,12 @@ export class Scene {
   physics: any = new Physics();
   registry = new Registry();
   add = {
-    text: (x: number, y: number, text: string, style?: any) => new GameObjects.Text(this, x, y, text, style),
-    rectangle: (x: number, y: number, w: number, h: number, color?: number) => new GameObjects.Rectangle(x, y, w, h, color),
-    circle: (x: number, y: number, r: number, color?: number) => new GameObjects.Rectangle(x, y, r*2, r*2, color),
+    text: (x: number, y: number, text: string, style?: any) =>
+      new GameObjects.Text(this, x, y, text, style),
+    rectangle: (x: number, y: number, w: number, h: number, color?: number) =>
+      new GameObjects.Rectangle(x, y, w, h, color),
+    circle: (x: number, y: number, r: number, color?: number) =>
+      new GameObjects.Rectangle(x, y, r * 2, r * 2, color),
     graphics: () => new GameObjects.Graphics(),
     sprite: (x: number, y: number, texture: string) => new GameObjects.Sprite(this, x, y, texture),
     container: (x: number, y: number) => new GameObjects.Container(this, x, y),
@@ -564,5 +689,5 @@ export default {
   BlendModes,
   AUTO,
   HEADLESS,
-  VERSION
+  VERSION,
 } as any;

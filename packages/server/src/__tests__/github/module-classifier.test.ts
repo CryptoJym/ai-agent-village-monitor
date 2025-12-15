@@ -26,9 +26,8 @@ describe('ModuleClassifier', () => {
 
       it('should classify Python test files', () => {
         const result = classifier.classify('tests/test_utils.py');
-        // TODO: Fix Python test detection
-        expect(result.type).toBe('unknown');
-        expect(result.confidence).toBe(1.0);
+        expect(result.type).toBe(ModuleType.TEST);
+        expect(result.confidence).toBe(0.95);
       });
     });
 

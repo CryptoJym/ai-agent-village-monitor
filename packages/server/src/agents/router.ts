@@ -221,7 +221,7 @@ async function userHasOwnerRole(userSub: any, villageId: any): Promise<boolean> 
 agentsRouter.get('/agents', requireAuth, async (_req, res, next) => {
   try {
     const list = await prisma.agent.findMany({ orderBy: { createdAt: 'desc' } });
-    res.json(list);
+    res.json(list.map((agent: any) => ({ ...agent, currentStatus: agent.status })));
   } catch (e) {
     next(e);
   }
@@ -245,7 +245,7 @@ agentsRouter.post('/agents', requireAuth, async (req, res, next) => {
         personality: body.data.personality as any,
       },
     });
-    res.status(201).json(created);
+    res.status(201).json({ ...created, currentStatus: (created as any).status });
   } catch (e) {
     next(e);
   }
@@ -280,7 +280,7 @@ agentsRouter.put('/agents/:id', requireAuth, async (req, res, next) => {
         personality: (body.data.personality as any) ?? undefined,
       },
     });
-    res.json(updated);
+    res.json({ ...updated, currentStatus: (updated as any).status });
   } catch (e) {
     next(e);
   }
@@ -430,7 +430,7 @@ agentsRouter.post('/agents/:id/transition', requireAuth, async (req, res, next) 
       case 'STOP':
         newState = 'idle';
         break;
-      default:
+      default: {
         // Allow custom state transitions if the event matches a valid state
         const eventLower = event.toLowerCase();
         const validStates = [
@@ -447,6 +447,8 @@ agentsRouter.post('/agents/:id/transition', requireAuth, async (req, res, next) 
         if (validStates.includes(eventLower)) {
           newState = eventLower as any;
         }
+        break;
+      }
     }
 
     // Update state history (keep last 100 transitions)
@@ -607,7 +609,7 @@ agentsRouter.post('/agents/:id/event', requireAuth, async (req, res, next) => {
     };
 
     // Re-use the transition handler
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return (agentsRouter.stack as any[])
       .find((layer) => layer.route?.path === '/agents/:id/transition' && layer.route?.methods?.post)
       ?.handle(req, res, next);

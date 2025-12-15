@@ -79,7 +79,7 @@ describe('LayerManager - Visual Rendering Tests', () => {
             destroy: vi.fn(function () {
               this.children = [];
             }),
-            iterate: vi.fn(function (callback: Function) {
+            iterate: vi.fn(function (callback: (child: any) => void) {
               this.children.forEach(callback);
             }),
           };
@@ -484,8 +484,24 @@ describe('LayerManager - Visual Rendering Tests', () => {
       // Add objects, some outside viewport
       layer.children = [
         { x: 400, y: 300, visible: true, setVisible: vi.fn(), getData: () => false },
-        { x: 2000, y: 2000, visible: true, setVisible: vi.fn(function (v: boolean) { this.visible = v; }), getData: () => false },
-        { x: 3000, y: 3000, visible: true, setVisible: vi.fn(function (v: boolean) { this.visible = v; }), getData: () => false },
+        {
+          x: 2000,
+          y: 2000,
+          visible: true,
+          setVisible: vi.fn(function (v: boolean) {
+            this.visible = v;
+          }),
+          getData: () => false,
+        },
+        {
+          x: 3000,
+          y: 3000,
+          visible: true,
+          setVisible: vi.fn(function (v: boolean) {
+            this.visible = v;
+          }),
+          getData: () => false,
+        },
       ];
 
       layerManager.cullAllLayers(mockCamera);
@@ -605,9 +621,7 @@ describe('LayerManager - Visual Rendering Tests', () => {
     it('should destroy all layers on cleanup', () => {
       layerManager.initializeStandardLayers();
 
-      const layers = layerManager.getLayerNames().map((name) =>
-        layerManager.getLayer(name)
-      );
+      const layers = layerManager.getLayerNames().map((name) => layerManager.getLayer(name));
 
       layerManager.destroy();
 

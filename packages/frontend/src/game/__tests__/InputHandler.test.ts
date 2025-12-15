@@ -27,7 +27,7 @@ describe('InputHandler - Playable Environment Tests', () => {
   let wasdKeys: any;
   let plusKey: any;
   let minusKey: any;
-  let inputCallbacks: Map<string, Function[]>;
+  let inputCallbacks: Map<string, Array<(...args: unknown[]) => void>>;
 
   beforeEach(() => {
     inputCallbacks = new Map();
@@ -52,7 +52,7 @@ describe('InputHandler - Playable Environment Tests', () => {
     // Use arrays like other event handlers for consistency with getFirstCallback helper
     plusKey = {
       isDown: false,
-      on: vi.fn((event: string, callback: Function) => {
+      on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
         if (event === 'down') {
           if (!inputCallbacks.has('plus')) {
             inputCallbacks.set('plus', []);
@@ -64,7 +64,7 @@ describe('InputHandler - Playable Environment Tests', () => {
 
     minusKey = {
       isDown: false,
-      on: vi.fn((event: string, callback: Function) => {
+      on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
         if (event === 'down') {
           if (!inputCallbacks.has('minus')) {
             inputCallbacks.set('minus', []);
@@ -112,7 +112,7 @@ describe('InputHandler - Playable Environment Tests', () => {
     // Use arrays because InputHandler registers multiple handlers for the same event
     mockInput = {
       keyboard: mockKeyboard,
-      on: vi.fn((event: string, callback: Function) => {
+      on: vi.fn((event: string, callback: (...args: unknown[]) => void) => {
         if (!inputCallbacks.has(event)) {
           inputCallbacks.set(event, []);
         }
@@ -157,7 +157,7 @@ describe('InputHandler - Playable Environment Tests', () => {
   const triggerCallbacks = (event: string, ...args: any[]) => {
     const callbacks = inputCallbacks.get(event);
     if (callbacks) {
-      callbacks.forEach(cb => cb(...args));
+      callbacks.forEach((cb) => cb(...args));
     }
   };
 
@@ -300,10 +300,7 @@ describe('InputHandler - Playable Environment Tests', () => {
 
       plusCallback!();
 
-      expect(mockCameraController.setZoom).toHaveBeenCalledWith(
-        expect.any(Number),
-        100
-      );
+      expect(mockCameraController.setZoom).toHaveBeenCalledWith(expect.any(Number), 100);
       // Should increase zoom
       const calledZoom = (mockCameraController.setZoom as any).mock.calls[0][0];
       expect(calledZoom).toBeGreaterThan(1.0);
@@ -315,10 +312,7 @@ describe('InputHandler - Playable Environment Tests', () => {
 
       minusCallback!();
 
-      expect(mockCameraController.setZoom).toHaveBeenCalledWith(
-        expect.any(Number),
-        100
-      );
+      expect(mockCameraController.setZoom).toHaveBeenCalledWith(expect.any(Number), 100);
       // Should decrease zoom
       const calledZoom = (mockCameraController.setZoom as any).mock.calls[0][0];
       expect(calledZoom).toBeLessThan(1.0);

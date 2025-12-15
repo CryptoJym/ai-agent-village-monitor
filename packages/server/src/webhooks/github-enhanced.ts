@@ -38,11 +38,13 @@ export interface WebhookEvent {
 
 export class WebhookHandler {
   private webhookQueue?: Queue;
-  private readonly secret: string | undefined;
 
   constructor() {
-    this.secret = config.WEBHOOK_SECRET;
     this.initQueue();
+  }
+
+  private getSecret(): string | undefined {
+    return process.env.WEBHOOK_SECRET ?? config.WEBHOOK_SECRET;
   }
 
   private async initQueue() {
@@ -73,7 +75,8 @@ export class WebhookHandler {
   }
 
   verifySignature(payload: Buffer, signature: string): boolean {
-    if (!this.secret) {
+    const secret = this.getSecret();
+    if (!secret) {
       return true; // No secret configured, skip verification
     }
 
@@ -81,7 +84,7 @@ export class WebhookHandler {
       return false;
     }
 
-    const hmac = crypto.createHmac('sha256', this.secret);
+    const hmac = crypto.createHmac('sha256', secret);
     hmac.update(payload);
     const digest = `sha256=${hmac.digest('hex')}`;
 
@@ -102,6 +105,7 @@ export class WebhookHandler {
       const signature = req.header('x-hub-signature-256') || '';
       const deliveryId = req.header('x-github-delivery') || '';
       const event = req.header('x-github-event') || '';
+      const secret = this.getSecret();
 
       // Get raw body for signature verification
       const rawBody = (req as any).rawBody as Buffer;
@@ -111,7 +115,7 @@ export class WebhookHandler {
       }
 
       // Verify signature
-      if (this.secret) {
+      if (secret) {
         const isValid = this.verifySignature(rawBody, signature);
         if (!isValid) {
           inc('webhook_signature_invalid', { event });
@@ -143,14 +147,10 @@ export class WebhookHandler {
 
       // Queue for async processing
       if (this.webhookQueue) {
-        await this.webhookQueue.add(
-          `${event}.${payload.action || 'default'}`,
-          webhookEvent,
-          {
-            jobId: deliveryId,
-            priority: this.getEventPriority(event),
-          },
-        );
+        await this.webhookQueue.add(`${event}.${payload.action || 'default'}`, webhookEvent, {
+          jobId: deliveryId,
+          priority: this.getEventPriority(event),
+        });
 
         inc('webhook_queued', { event, action: payload.action || 'none' });
         res.status(202).json({ ok: true, queued: true, deliveryId });
@@ -200,7 +200,9 @@ export class WebhookHandler {
     }
   }
 
-  private async getProcessor(event: string): Promise<{ default: (event: WebhookEvent) => Promise<void> }> {
+  private async getProcessor(
+    event: string,
+  ): Promise<{ default: (event: WebhookEvent) => Promise<void> }> {
     try {
       switch (event) {
         case 'push':

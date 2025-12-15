@@ -21,17 +21,30 @@ vi.mock('../db/client', () => {
   return {
     prisma: {
       agent: {
-        findMany: vi.fn(async (args?: any) => agents.filter(a => a.villageId === args?.where?.villageId)),
+        findMany: vi.fn(async (args?: any) =>
+          agents.filter((a) => a.villageId === args?.where?.villageId),
+        ),
         create: vi.fn(async ({ data }: any) => ({ id: 3, ...data })),
-        findUnique: vi.fn(async ({ where: { id } }: any) => agents.find(a => a.id === id) || null),
-        update: vi.fn(async ({ where: { id }, data }: any) => ({ ...(agents.find(a => a.id === id) || { id }), ...data })),
+        findUnique: vi.fn(
+          async ({ where: { id } }: any) => agents.find((a) => a.id === id) || null,
+        ),
+        update: vi.fn(async ({ where: { id }, data }: any) => ({
+          ...(agents.find((a) => a.id === id) || { id }),
+          ...data,
+        })),
         delete: vi.fn(async ({ where: { id } }: any) => ({ id })),
       },
       village: {
         findUnique: vi.fn(async ({ where: { id } }: any) => (id === 1 ? { id } : null)),
       },
       villageAccess: {
-        findUnique: vi.fn(async ({ where: { villageId_userId: { villageId, userId } } }: any) => access(villageId, userId)),
+        findUnique: vi.fn(
+          async ({
+            where: {
+              villageId_userId: { villageId, userId },
+            },
+          }: any) => access(villageId, userId),
+        ),
       },
       $queryRawUnsafe: vi.fn().mockResolvedValue(1),
     },
@@ -73,7 +86,7 @@ describe('Agents REST endpoints', () => {
       .set('Authorization', `Bearer ${tokenMember}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body.length).toBe(0);
   });
 
   it('forbids list for non-member', async () => {

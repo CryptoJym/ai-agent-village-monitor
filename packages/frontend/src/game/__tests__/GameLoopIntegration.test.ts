@@ -54,7 +54,7 @@ interface GameState {
 
 class SimulatedGameLoop {
   private state: GameState;
-  private listeners: Map<string, Function[]> = new Map();
+  private listeners: Map<string, Array<(...args: unknown[]) => void>> = new Map();
 
   constructor() {
     this.state = {
@@ -140,7 +140,14 @@ class SimulatedGameLoop {
   }
 
   // Building management
-  addBuilding(id: string, x: number, y: number, width: number, height: number, layer: string): SimulatedBuilding {
+  addBuilding(
+    id: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    layer: string,
+  ): SimulatedBuilding {
     const building: SimulatedBuilding = {
       id,
       x,
@@ -213,9 +220,7 @@ class SimulatedGameLoop {
     const zoom = this.state.camera.zoom;
 
     this.state.agents.forEach((agent) => {
-      const distance = Math.sqrt(
-        Math.pow(agent.x - camX, 2) + Math.pow(agent.y - camY, 2)
-      );
+      const distance = Math.sqrt(Math.pow(agent.x - camX, 2) + Math.pow(agent.y - camY, 2));
 
       // Distance-based LOD
       let distanceLOD = 'high';
@@ -231,10 +236,11 @@ class SimulatedGameLoop {
 
       // Use lower of the two
       const lodPriority = { high: 0, medium: 1, low: 2, minimal: 3 };
-      const finalLOD = lodPriority[distanceLOD as keyof typeof lodPriority] >
-                       lodPriority[zoomLOD as keyof typeof lodPriority]
-        ? distanceLOD
-        : zoomLOD;
+      const finalLOD =
+        lodPriority[distanceLOD as keyof typeof lodPriority] >
+        lodPriority[zoomLOD as keyof typeof lodPriority]
+          ? distanceLOD
+          : zoomLOD;
 
       if (agent.lodLevel !== finalLOD) {
         agent.lodLevel = finalLOD;
@@ -293,7 +299,7 @@ class SimulatedGameLoop {
   }
 
   // Event system
-  on(event: string, callback: Function): void {
+  on(event: string, callback: (...args: unknown[]) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
@@ -678,7 +684,7 @@ describe('Game Loop Integration - Playable Environment', () => {
         { x: 300, y: 500 },
       ];
 
-      let currentTarget = 1;
+      const currentTarget = 1;
 
       // Run patrol for several cycles
       for (let cycle = 0; cycle < 2; cycle++) {

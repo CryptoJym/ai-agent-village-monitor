@@ -131,7 +131,7 @@ export class ModuleClassifier {
             reason: 'File is in __tests__ directory',
           },
           {
-            test: /\/(test|tests|spec|specs)\//,
+            test: /(^|\/)(test|tests|spec|specs)\//,
             confidence: 0.95,
             reason: 'File is in test directory',
           },

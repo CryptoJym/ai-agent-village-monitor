@@ -29,7 +29,7 @@ describe('Test Utilities Example', () => {
       });
 
       expect(mockPrisma.village.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ name: 'Test Village' }),
+        data: expect.objectContaining({ orgName: 'Test Village' }),
       });
       expect(result).toEqual(mockVillage);
       expect(result.name).toBe('Test Village');

@@ -44,7 +44,7 @@ vi.mock('../db/client', () => {
     village: {
       _version: 0,
       findUnique: vi.fn(async ({ where: { id } }: any) =>
-        id === 1 ? { layoutVersion: (prisma.village as any)._version } : null,
+        String(id) === '1' ? { layoutVersion: (prisma.village as any)._version } : null,
       ),
       update: vi.fn(async ({ where: { id }, data }: any) => {
         if (data?.layoutVersion?.increment)
@@ -60,8 +60,8 @@ vi.mock('../db/client', () => {
             villageId_userId: { villageId, userId },
           },
         }: any) =>
-          villageId === 1 && (userId === 1 || userId === 2)
-            ? { villageId, userId, role: userId === 1 ? 'owner' : 'member' }
+          String(villageId) === '1' && (String(userId) === '1' || String(userId) === '2')
+            ? { villageId, userId, role: String(userId) === '1' ? 'owner' : 'member' }
             : null,
       ),
     },

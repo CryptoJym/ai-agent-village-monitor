@@ -9,8 +9,21 @@ function makeStub(): any {
   return {
     $queryRawUnsafe: async () => 1,
     user: {
-      findUnique: async (_args?: any) => ({ preferences: {} }),
-      update: async (_args?: any) => ({ ok: true }),
+      findUnique: async (args?: any) => {
+        const id = args?.where?.id;
+        if (id == null) return null;
+        return {
+          id: String(id),
+          username: `user-${String(id)}`,
+          avatarUrl: null,
+          preferences: {},
+        };
+      },
+      update: async (args?: any) => {
+        const id = args?.where?.id;
+        const data = args?.data ?? {};
+        return { id: id != null ? String(id) : 'unknown', ...data };
+      },
     },
     villageAccess: {
       // Default to owner for userId 42 in village 1 to satisfy owner-path unit test;

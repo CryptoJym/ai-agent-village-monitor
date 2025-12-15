@@ -18,17 +18,17 @@ export type JwtPayload = {
   jti?: string; // token id for refresh rotation
 };
 
-export function signAccessToken(userId: string, username: string): string {
+export function signAccessToken(userId: string | number, username: string): string {
   const JWT_SECRET = getJwtSecret();
   if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
-  const payload: JwtPayload = { sub: userId, username, type: 'access' };
+  const payload: JwtPayload = { sub: String(userId), username, type: 'access' };
   return jwt.sign(payload, JWT_SECRET, { algorithm: 'HS256', expiresIn: '1h' });
 }
 
-export function signRefreshToken(userId: string, username: string, jti: string): string {
+export function signRefreshToken(userId: string | number, username: string, jti: string): string {
   const JWT_SECRET = getJwtSecret();
   if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
-  const payload: JwtPayload = { sub: userId, username, type: 'refresh', jti };
+  const payload: JwtPayload = { sub: String(userId), username, type: 'refresh', jti };
   return jwt.sign(payload, JWT_SECRET, { algorithm: 'HS256', expiresIn: '30d' });
 }
 

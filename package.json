@@ -9,6 +9,7 @@
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:strict": "eslint packages/frontend/src packages/server/src packages/shared --ext .ts,.tsx,.js,.jsx --max-warnings=0",
     "typecheck": "pnpm -r typecheck",
+    "preview": "pnpm -C packages/frontend preview -- --port 4173",
     "format": "prettier --write .",
     "prepare": "husky",
     "prisma:generate": "pnpm -C packages/server prisma:generate",

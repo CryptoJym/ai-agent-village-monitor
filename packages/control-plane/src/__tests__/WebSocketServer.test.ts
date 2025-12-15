@@ -6,7 +6,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { WebSocketServerManager } from '../websocket/WebSocketServer';
-import { WebSocket } from 'ws';
 
 // Mock WebSocket
 vi.mock('ws', () => ({
@@ -101,12 +100,14 @@ describe('WebSocketServerManager', () => {
 });
 
 describe('WebSocketServerManager message handling', () => {
+  type SocketHandler = (...args: unknown[]) => void;
+
   let server: WebSocketServerManager;
   let mockSocket: any;
-  let messageHandler: Function;
-  let closeHandler: Function;
-  let errorHandler: Function;
-  let pongHandler: Function;
+  let messageHandler: SocketHandler;
+  let closeHandler: SocketHandler;
+  let errorHandler: SocketHandler;
+  let pongHandler: SocketHandler;
 
   beforeEach(() => {
     server = new WebSocketServerManager();
@@ -116,7 +117,7 @@ describe('WebSocketServerManager message handling', () => {
       readyState: 1, // WebSocket.OPEN
       send: vi.fn(),
       close: vi.fn(),
-      on: vi.fn((event: string, handler: Function) => {
+      on: vi.fn((event: string, handler: SocketHandler) => {
         if (event === 'message') messageHandler = handler;
         if (event === 'close') closeHandler = handler;
         if (event === 'error') errorHandler = handler;
@@ -149,25 +150,21 @@ describe('WebSocketServerManager message handling', () => {
           clientId: expect.any(String),
           remoteAddress: '127.0.0.1',
           timestamp: expect.any(Date),
-        })
+        }),
       );
 
       // Verify the clientId is a valid UUID format
       const eventData = handler.mock.calls[0][0];
       expect(eventData.clientId).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
       );
     });
 
     it('should send welcome message on connection', () => {
       simulateConnection();
 
-      expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"event"')
-      );
-      expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"event":"connected"')
-      );
+      expect(mockSocket.send).toHaveBeenCalledWith(expect.stringContaining('"type":"event"'));
+      expect(mockSocket.send).toHaveBeenCalledWith(expect.stringContaining('"event":"connected"'));
     });
 
     it('should increment client count on connection', () => {
@@ -186,19 +183,15 @@ describe('WebSocketServerManager message handling', () => {
       const message = JSON.stringify({ type: 'ping', timestamp: new Date().toISOString() });
       messageHandler(message);
 
-      expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"pong"')
-      );
+      expect(mockSocket.send).toHaveBeenCalledWith(expect.stringContaining('"type":"pong"'));
     });
 
     it('should send error for invalid JSON', () => {
       messageHandler('not valid json');
 
+      expect(mockSocket.send).toHaveBeenCalledWith(expect.stringContaining('"type":"error"'));
       expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"type":"error"')
-      );
-      expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"code":"INVALID_MESSAGE"')
+        expect.stringContaining('"code":"INVALID_MESSAGE"'),
       );
     });
 
@@ -210,7 +203,7 @@ describe('WebSocketServerManager message handling', () => {
       messageHandler(message);
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"code":"UNKNOWN_MESSAGE_TYPE"')
+        expect.stringContaining('"code":"UNKNOWN_MESSAGE_TYPE"'),
       );
     });
   });
@@ -238,17 +231,15 @@ describe('WebSocketServerManager message handling', () => {
           clientId: expect.any(String),
           userId: 'user-1',
           timestamp: expect.any(Date),
-        })
+        }),
       );
       expect(server.getAuthenticatedClientCount()).toBe(1);
 
       // Verify the authenticated response was sent to client
       expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"event":"authenticated"')
+        expect.stringContaining('"event":"authenticated"'),
       );
-      expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"userId":"user-1"')
-      );
+      expect(mockSocket.send).toHaveBeenCalledWith(expect.stringContaining('"userId":"user-1"'));
     });
 
     it('should reject authentication without token', () => {
@@ -258,9 +249,7 @@ describe('WebSocketServerManager message handling', () => {
       });
       messageHandler(message);
 
-      expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"code":"AUTH_FAILED"')
-      );
+      expect(mockSocket.send).toHaveBeenCalledWith(expect.stringContaining('"code":"AUTH_FAILED"'));
     });
   });
 
@@ -292,7 +281,7 @@ describe('WebSocketServerManager message handling', () => {
       expect(handler).toHaveBeenCalledWith(
         expect.objectContaining({
           sessionId: 'session-1',
-        })
+        }),
       );
     });
 
@@ -303,7 +292,7 @@ describe('WebSocketServerManager message handling', () => {
         readyState: 1,
         send: vi.fn(),
         close: vi.fn(),
-        on: vi.fn((event: string, handler: Function) => {
+        on: vi.fn((event: string, handler: SocketHandler) => {
           if (event === 'message') {
             // Store for later use
             (newSocket as any).messageHandler = handler;
@@ -323,7 +312,7 @@ describe('WebSocketServerManager message handling', () => {
       (newSocket as any).messageHandler(message);
 
       expect(newSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"code":"NOT_AUTHENTICATED"')
+        expect.stringContaining('"code":"NOT_AUTHENTICATED"'),
       );
     });
 
@@ -334,7 +323,7 @@ describe('WebSocketServerManager message handling', () => {
           type: 'subscribe',
           sessionId: 'session-1',
           timestamp: new Date().toISOString(),
-        })
+        }),
       );
 
       // Then unsubscribe
@@ -343,11 +332,11 @@ describe('WebSocketServerManager message handling', () => {
           type: 'unsubscribe',
           sessionId: 'session-1',
           timestamp: new Date().toISOString(),
-        })
+        }),
       );
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"event":"unsubscribed"')
+        expect.stringContaining('"event":"unsubscribed"'),
       );
     });
   });
@@ -363,14 +352,14 @@ describe('WebSocketServerManager message handling', () => {
           token: 'valid-token',
           userId: 'user-1',
           timestamp: new Date().toISOString(),
-        })
+        }),
       );
       messageHandler(
         JSON.stringify({
           type: 'subscribe',
           sessionId: 'session-1',
           timestamp: new Date().toISOString(),
-        })
+        }),
       );
     });
 
@@ -391,7 +380,7 @@ describe('WebSocketServerManager message handling', () => {
         expect.objectContaining({
           sessionId: 'session-1',
           data: 'ls -la',
-        })
+        }),
       );
     });
 
@@ -406,7 +395,7 @@ describe('WebSocketServerManager message handling', () => {
       messageHandler(message);
 
       expect(mockSocket.send).toHaveBeenCalledWith(
-        expect.stringContaining('"code":"NOT_SUBSCRIBED"')
+        expect.stringContaining('"code":"NOT_SUBSCRIBED"'),
       );
     });
   });
@@ -423,7 +412,7 @@ describe('WebSocketServerManager message handling', () => {
         expect.objectContaining({
           code: 1000,
           reason: 'Normal closure',
-        })
+        }),
       );
     });
 

@@ -221,7 +221,7 @@ export function canPlaceDecoration(
   size: { width: number; height: number },
   occupiedGrid: boolean[][],
   wallGrid: boolean[][],
-  roomBounds: Rectangle
+  roomBounds: Rectangle,
 ): boolean {
   const { x, y } = position;
   const { width, height } = size;
@@ -244,12 +244,7 @@ export function canPlaceDecoration(
       const checkX = x + dx;
       const checkY = y + dy;
 
-      if (
-        checkX < 0 ||
-        checkX >= gridWidth ||
-        checkY < 0 ||
-        checkY >= gridHeight
-      ) {
+      if (checkX < 0 || checkX >= gridWidth || checkY < 0 || checkY >= gridHeight) {
         return false;
       }
 
@@ -272,7 +267,7 @@ export function canPlaceDecoration(
 function markOccupied(
   position: { x: number; y: number },
   size: { width: number; height: number },
-  occupiedGrid: boolean[][]
+  occupiedGrid: boolean[][],
 ): void {
   const { x, y } = position;
   const { width, height } = size;
@@ -309,7 +304,7 @@ function findValidPositions(
   room: Room,
   occupiedGrid: boolean[][],
   wallGrid: boolean[][],
-  rng: SeededRNG
+  rng: SeededRNG,
 ): Array<{ x: number; y: number }> {
   const positions: Array<{ x: number; y: number }> = [];
   const { x, y, width, height } = room.bounds;
@@ -349,27 +344,31 @@ function findValidPositions(
 
     case 'centered':
       // Place in center of room
-      const centerX = Math.floor(x + (width - item.size.width) / 2);
-      const centerY = Math.floor(y + (height - item.size.height) / 2);
-      const centerPos = { x: centerX, y: centerY };
+      {
+        const centerX = Math.floor(x + (width - item.size.width) / 2);
+        const centerY = Math.floor(y + (height - item.size.height) / 2);
+        const centerPos = { x: centerX, y: centerY };
 
-      if (canPlaceDecoration(centerPos, item.size, occupiedGrid, wallGrid, room.bounds)) {
-        positions.push(centerPos);
+        if (canPlaceDecoration(centerPos, item.size, occupiedGrid, wallGrid, room.bounds)) {
+          positions.push(centerPos);
+        }
       }
       break;
 
     case 'corner':
       // Try all four corners
-      const corners = [
-        { x: x + 1, y: y + 1 }, // Top-left
-        { x: x + width - 1 - item.size.width, y: y + 1 }, // Top-right
-        { x: x + 1, y: y + height - 1 - item.size.height }, // Bottom-left
-        { x: x + width - 1 - item.size.width, y: y + height - 1 - item.size.height }, // Bottom-right
-      ];
+      {
+        const corners = [
+          { x: x + 1, y: y + 1 }, // Top-left
+          { x: x + width - 1 - item.size.width, y: y + 1 }, // Top-right
+          { x: x + 1, y: y + height - 1 - item.size.height }, // Bottom-left
+          { x: x + width - 1 - item.size.width, y: y + height - 1 - item.size.height }, // Bottom-right
+        ];
 
-      for (const corner of corners) {
-        if (canPlaceDecoration(corner, item.size, occupiedGrid, wallGrid, room.bounds)) {
-          positions.push(corner);
+        for (const corner of corners) {
+          if (canPlaceDecoration(corner, item.size, occupiedGrid, wallGrid, room.bounds)) {
+            positions.push(corner);
+          }
         }
       }
       break;
@@ -407,7 +406,7 @@ export function placeRoomDecorations(
   occupiedGrid: boolean[][],
   wallGrid: boolean[][],
   rng: SeededRNG,
-  density: number = 1.0
+  density: number = 1.0,
 ): Decoration[] {
   const decorations: Decoration[] = [];
   const roomArea = room.bounds.width * room.bounds.height;
@@ -427,13 +426,7 @@ export function placeRoomDecorations(
     }
 
     // Find valid positions
-    const validPositions = findValidPositions(
-      item,
-      room,
-      occupiedGrid,
-      wallGrid,
-      rng
-    );
+    const validPositions = findValidPositions(item, room, occupiedGrid, wallGrid, rng);
 
     if (validPositions.length === 0) {
       continue;
@@ -443,9 +436,7 @@ export function placeRoomDecorations(
     const position = rng.pick(validPositions);
 
     // Select tile ID (handle arrays)
-    const tileId = Array.isArray(item.tileId)
-      ? rng.pick(item.tileId)
-      : item.tileId;
+    const tileId = Array.isArray(item.tileId) ? rng.pick(item.tileId) : item.tileId;
 
     // Create decoration
     const decoration: Decoration = {
@@ -484,12 +475,10 @@ export function generateDecorations(
   options: {
     catalogs?: Partial<Record<RoomType, DecorationCatalog>>;
     density?: number;
-  } = {}
+  } = {},
 ): Decoration[] {
   const allDecorations: Decoration[] = [];
-  const occupiedGrid: boolean[][] = Array.from({ length: height }, () =>
-    Array(width).fill(false)
-  );
+  const occupiedGrid: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
 
   // Initialize occupied grid with walls
   for (let y = 0; y < height; y++) {
@@ -502,8 +491,7 @@ export function generateDecorations(
 
   for (const room of rooms) {
     // Get catalog for this room type
-    const catalog =
-      options.catalogs?.[room.type] ?? DEFAULT_DECORATION_CATALOGS[room.type];
+    const catalog = options.catalogs?.[room.type] ?? DEFAULT_DECORATION_CATALOGS[room.type];
 
     if (!catalog) {
       continue;
@@ -515,7 +503,7 @@ export function generateDecorations(
       occupiedGrid,
       wallGrid,
       rng,
-      density
+      density,
     );
 
     allDecorations.push(...roomDecorations);
@@ -535,7 +523,7 @@ export function generateDecorations(
 export function generateDecorationLayer(
   decorations: Decoration[],
   width: number,
-  height: number
+  height: number,
 ): number[] {
   const decorationData = new Array(width * height).fill(0);
 
@@ -572,7 +560,7 @@ export function generateDecorationLayer(
 export function addDecorationCollision(
   decorations: Decoration[],
   collision: boolean[],
-  width: number
+  width: number,
 ): void {
   for (const decoration of decorations) {
     if (!decoration.blocksMovement) {

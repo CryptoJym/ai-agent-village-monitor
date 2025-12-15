@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GitHubClient } from '../../github/client';
 import nock from 'nock';
 
-describe('GitHubClient', () => {
+const describeGitHub = process.env.SKIP_GH_TESTS === 'true' ? describe.skip : describe;
+
+describeGitHub('GitHubClient', () => {
   beforeEach(() => {
     nock.cleanAll();
   });
@@ -49,9 +51,7 @@ describe('GitHubClient', () => {
         },
       };
 
-      nock('https://api.github.com')
-        .post('/graphql')
-        .reply(200, mockResponse);
+      nock('https://api.github.com').post('/graphql').reply(200, mockResponse);
 
       const repo = await client.getRepository('owner', 'test-repo');
 
@@ -82,9 +82,7 @@ describe('GitHubClient', () => {
         },
       };
 
-      nock('https://api.github.com')
-        .post('/graphql')
-        .reply(200, mockResponse);
+      nock('https://api.github.com').post('/graphql').reply(200, mockResponse);
 
       // First call
       await client.getRepository('owner', 'test-repo');
@@ -162,9 +160,7 @@ describe('GitHubClient', () => {
           { type: 'file', name: 'app.ts' },
         ]);
 
-      await expect(
-        client.getFileContent('owner', 'test-repo', 'src'),
-      ).rejects.toThrow();
+      await expect(client.getFileContent('owner', 'test-repo', 'src')).rejects.toThrow();
     });
   });
 
@@ -241,10 +237,7 @@ describe('GitHubClient', () => {
         },
       };
 
-      nock('https://api.github.com')
-        .post('/graphql')
-        .times(2)
-        .reply(200, mockResponse);
+      nock('https://api.github.com').post('/graphql').times(2).reply(200, mockResponse);
 
       await client.getRepository('owner', 'test-repo');
       expect(client.metrics.cacheHits).toBe(0);

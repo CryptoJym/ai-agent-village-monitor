@@ -35,6 +35,7 @@ import { enqueueAgentJob } from './agents/queue';
 import { getUserVillageRole } from './auth/middleware';
 import { housesRouter } from './houses/router';
 import { roomsRouter } from './rooms/router';
+import { worldRouter } from './world/router';
 
 let isReady = false;
 export function setReady(ready: boolean) {
@@ -472,7 +473,6 @@ export function createApp(): Express {
   app.use('/api', agentsRouter);
 
   // World endpoints (protected)
-  const { worldRouter } = require('./world/router');
   app.use('/api/world', worldRouter);
 
   // Queue inspection endpoints (protected)

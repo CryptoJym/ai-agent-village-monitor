@@ -121,15 +121,16 @@ describe('SessionManager', () => {
       // Mock workspace to be slow
       const { getWorkspaceManager } = await import('../workspace/WorkspaceManager');
       const mockWs = (getWorkspaceManager as ReturnType<typeof vi.fn>)();
-      let resolveWorkspace: Function;
+      let resolveWorkspace: () => void;
       mockWs.createWorkspace.mockReturnValueOnce(
         new Promise((resolve) => {
-          resolveWorkspace = () => resolve({
-            sessionId: 'sess-initial',
-            worktreePath: '/tmp/workspace/sess-initial',
-            status: 'ready',
-          });
-        })
+          resolveWorkspace = () =>
+            resolve({
+              sessionId: 'sess-initial',
+              worktreePath: '/tmp/workspace/sess-initial',
+              status: 'ready',
+            });
+        }),
       );
 
       const statePromise = manager.startSession(config);
@@ -158,18 +159,16 @@ describe('SessionManager', () => {
       }
 
       // Try to exceed limit
-      await expect(
-        manager.startSession(createSessionConfig('sess-overflow'))
-      ).rejects.toThrow(/Maximum sessions/);
+      await expect(manager.startSession(createSessionConfig('sess-overflow'))).rejects.toThrow(
+        /Maximum sessions/,
+      );
     });
 
     it('should throw when not initialized', async () => {
       const uninitializedManager = new SessionManager(mockConfig);
       const config = createSessionConfig('uninit-test');
 
-      await expect(
-        uninitializedManager.startSession(config)
-      ).rejects.toThrow(/not initialized/);
+      await expect(uninitializedManager.startSession(config)).rejects.toThrow(/not initialized/);
     });
   });
 
@@ -254,7 +253,7 @@ describe('SessionManager', () => {
       await manager.startSession(createSessionConfig('approval-test'));
 
       expect(() =>
-        manager.resolveApproval('approval-test', 'approval-1', 'allow', 'Approved')
+        manager.resolveApproval('approval-test', 'approval-1', 'allow', 'Approved'),
       ).not.toThrow();
     });
 
@@ -262,14 +261,14 @@ describe('SessionManager', () => {
       await manager.startSession(createSessionConfig('approval-deny'));
 
       expect(() =>
-        manager.resolveApproval('approval-deny', 'approval-1', 'deny', 'Not approved')
+        manager.resolveApproval('approval-deny', 'approval-1', 'deny', 'Not approved'),
       ).not.toThrow();
     });
 
     it('should throw when resolving for non-existent session', () => {
-      expect(() =>
-        manager.resolveApproval('non-existent', 'approval-1', 'allow')
-      ).toThrow(/not found/);
+      expect(() => manager.resolveApproval('non-existent', 'approval-1', 'allow')).toThrow(
+        /not found/,
+      );
     });
   });
 
@@ -277,15 +276,11 @@ describe('SessionManager', () => {
     it('should throw when sending input without adapter', async () => {
       await manager.startSession(createSessionConfig('input-test'));
 
-      await expect(
-        manager.sendInput('input-test', 'test input')
-      ).rejects.toThrow(/No adapter/);
+      await expect(manager.sendInput('input-test', 'test input')).rejects.toThrow(/No adapter/);
     });
 
     it('should throw when sending input to non-existent session', async () => {
-      await expect(
-        manager.sendInput('non-existent', 'test input')
-      ).rejects.toThrow(/not found/);
+      await expect(manager.sendInput('non-existent', 'test input')).rejects.toThrow(/not found/);
     });
   });
 
@@ -301,7 +296,7 @@ describe('SessionManager', () => {
 
       // Verify SESSION_STATE_CHANGED event was emitted
       const stateChangeEvents = eventHandler.mock.calls.filter(
-        (call) => call[0].type === 'SESSION_STATE_CHANGED'
+        (call) => call[0].type === 'SESSION_STATE_CHANGED',
       );
       expect(stateChangeEvents.length).toBeGreaterThan(0);
 
@@ -379,7 +374,7 @@ describe('SessionManager', () => {
       };
 
       await expect(
-        manager.setProviderAdapter('adapter-test', mockAdapter)
+        manager.setProviderAdapter('adapter-test', mockAdapter),
       ).resolves.toBeUndefined();
 
       // Verify adapter methods were called
@@ -400,9 +395,9 @@ describe('SessionManager', () => {
         offEvent: vi.fn(),
       };
 
-      await expect(
-        manager.setProviderAdapter('non-existent', mockAdapter)
-      ).rejects.toThrow(/not found/);
+      await expect(manager.setProviderAdapter('non-existent', mockAdapter)).rejects.toThrow(
+        /not found/,
+      );
     });
 
     it('should allow sending input after adapter is set', async () => {
@@ -428,9 +423,7 @@ describe('SessionManager', () => {
 
       await manager.setProviderAdapter('input-adapter-test', mockAdapter);
 
-      await expect(
-        manager.sendInput('input-adapter-test', 'test input')
-      ).resolves.toBeUndefined();
+      await expect(manager.sendInput('input-adapter-test', 'test input')).resolves.toBeUndefined();
 
       expect(mockAdapter.sendInput).toHaveBeenCalledWith('test input');
     });
@@ -464,7 +457,7 @@ describe('SessionManager', () => {
 
       // Find SESSION_STARTED event
       const sessionStartedEvents = eventHandler.mock.calls.filter(
-        (call) => call[0].type === 'SESSION_STARTED'
+        (call) => call[0].type === 'SESSION_STARTED',
       );
       expect(sessionStartedEvents.length).toBe(1);
 

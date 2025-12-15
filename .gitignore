@@ -58,9 +58,14 @@ generated/pixellab/
 # Build & test artifacts
 coverage/
 dist/
+*.tsbuildinfo
+test-results.xml
 test-results/
 playwright-report/
 .vite/
+
+# Local SQLite databases
+*.db
 
 # OS files
 .DS_Store
