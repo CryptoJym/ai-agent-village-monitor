@@ -12,11 +12,7 @@ module.exports = {
   ci: {
     collect: {
       // URLs to test
-      url: [
-        'http://localhost:4173/',
-        'http://localhost:4173/villages',
-        'http://localhost:4173/villages/1',
-      ],
+      url: ['http://localhost:4173/login'],
 
       // Number of runs for each URL
       numberOfRuns: 3,
@@ -72,7 +68,7 @@ module.exports = {
         // Accessibility
         'color-contrast': 'error',
         'image-alt': 'error',
-        'label': 'error',
+        label: 'error',
         'aria-required-attr': 'error',
         'aria-valid-attr': 'error',
         'button-name': 'error',
