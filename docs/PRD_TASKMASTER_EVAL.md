@@ -1,6 +1,6 @@
 # PRD ↔ TaskMaster Implementation Trace
 
-**Evaluation Date**: December 15, 2024
+**Evaluation Date**: December 15, 2025
 **TaskMaster Tag**: prd-gpt52-research
 **PRD Version**: 1.0 (docs/PRD-FULL.md)
 **Repository**: ai-agent-village-monitor
@@ -100,7 +100,7 @@ This document maps the PRD's 3-phase development plan to TaskMaster's generated 
   - **Files**: `packages/frontend/src/api/villages.ts`, `packages/frontend/src/api/agents.ts`
 
 - `7.5` Add PerformanceManager for culling/LOD → **DONE**
-  - **Files**: `packages/frontend/src/game/systems/PerformanceMonitor.ts`
+  - **Files**: `packages/frontend/src/game/ui/PerformanceMonitor.ts`
   - **Evidence**: Contains FPS tracking, sprite culling
 
 **PRD Checklist from Section 6.1, Week 1**:
@@ -360,7 +360,7 @@ This document maps the PRD's 3-phase development plan to TaskMaster's generated 
 **Subtasks Breakdown**:
 
 - `17.1` Establish performance baselines → **DONE**
-  - **Files**: `packages/frontend/src/game/systems/PerformanceMonitor.ts`
+  - **Files**: `packages/frontend/src/game/ui/PerformanceMonitor.ts`
 
 - `17.2` Optimize Phaser sprite rendering → **DONE**
   - **Evidence**: Optimization examples in `packages/frontend/src/game/examples/`
@@ -453,7 +453,7 @@ This document maps the PRD's 3-phase development plan to TaskMaster's generated 
 
 1. **World Map Multi-Org Navigation** (PRD Feature 6)
    - **PRD Section**: 3.2 Enhanced Features (P1 Priority)
-   - **Files**: `packages/frontend/src/game/scenes/WorldMapScene.ts` **EXISTS**
+   - **Files**: `packages/frontend/src/scenes/WorldMapScene.ts` **EXISTS**
    - **TaskMaster**: Task #15 exists but marked P2 (Medium priority)
    - **Gap**: Implementation exists but TaskMaster downgraded priority
 
@@ -490,12 +490,11 @@ This document maps the PRD's 3-phase development plan to TaskMaster's generated 
    - **Status**: **PARTIAL** - file ops exist, Actions integration unclear
    - **Note**: PRD mentions Actions but doesn't detail tracking
 
-3. **Task #22-25**: Post-MVP features
-   - **#22**: Observability & monitoring (PARTIAL)
-   - **#23**: Analytics & insights (PARTIAL)
-   - **#24**: DevOps, CI/CD (PARTIAL)
-   - **#25**: Documentation & launch (PENDING)
-   - **Note**: These extend beyond PRD's 6-week MVP scope
+3. **Tasks #22–25**: Week 6 scope (Testing/Deployment/Launch)
+   - **#22**: Automated testing suite (unit/integration/E2E) — in PRD Week 6, likely incomplete
+   - **#23**: CI/CD + production deployment — in PRD Week 6, likely incomplete
+   - **#24**: Documentation + developer UX — in PRD Week 5/6, likely incomplete
+   - **#25**: Launch readiness + KPI instrumentation — in PRD (KPIs), but “dashboards” may exceed minimal MVP
 
 ---
 
@@ -529,9 +528,9 @@ This document maps the PRD's 3-phase development plan to TaskMaster's generated 
 
 ### By Status
 
-- **IMPLEMENTED (100%)**: 15 tasks
-- **PARTIAL (50-90%)**: 5 tasks (#10, #13, #14, #18, and dependencies)
-- **MISSING (<50%)**: 5 tasks (mostly post-MVP: #15, #19, #22-25)
+- **IMPLEMENTED (TaskMaster status: done)**: 13 tasks (#1-9, #11, #17, #20, #21)
+- **PARTIAL (needs follow-up)**: 6 tasks (#10, #13, #14, #15, #18, #19)
+- **PENDING / NOT VERIFIED**: 6 tasks (#12, #16, #22-25)
 
 ---
 
@@ -548,7 +547,7 @@ This document maps the PRD's 3-phase development plan to TaskMaster's generated 
 | WebSocket      | `realtime/WebSocketService.ts`          | ✅     |
 | Auth Context   | `contexts/AuthProvider.tsx`             | ✅     |
 | Bug Bots       | `bugs/BugBot.ts`                        | ⚠️     |
-| World Map      | `game/scenes/WorldMapScene.ts`          | ✅     |
+| World Map      | `scenes/WorldMapScene.ts`               | ✅     |
 | Onboarding     | `components/onboarding/VillageTour.tsx` | ⚠️     |
 
 ### Backend (packages/server/src/)
@@ -579,7 +578,7 @@ This document maps the PRD's 3-phase development plan to TaskMaster's generated 
 
 ## Recommendations for TaskMaster Status Updates
 
-### Mark as DONE (18 tasks)
+### Mark as DONE (13 tasks)
 
 ```bash
 task-master set-status --id=1 --status=done
@@ -597,12 +596,18 @@ task-master set-status --id=20 --status=done
 task-master set-status --id=21 --status=done
 ```
 
-### Keep PENDING with Notes (7 tasks)
+### Keep PENDING with Notes (12 tasks)
 
 **Task #10** (MCP integration):
 
 ```bash
 task-master update-task --id=10 --prompt="PARTIAL: Custom control plane implemented in packages/control-plane/, but standard MCP SDK integration missing. Alternative architecture uses WebSocket-based agent control. Need to verify if MCP protocol compliance is required or if custom solution is acceptable."
+```
+
+**Task #12** (GitHub Actions & file operations):
+
+```bash
+task-master update-task --id=12 --prompt="PARTIAL: GitHub workflow list/dispatch endpoints exist (/api/github/workflows, /api/github/workflows/dispatch) and the frontend ControlTab can dispatch; verify file-operation triggers and end-to-end audit trail."
 ```
 
 **Task #13** (Bug Bot Probot):
@@ -620,7 +625,13 @@ task-master update-task --id=14 --prompt="PARTIAL: Backend API complete (package
 **Task #15** (World Map):
 
 ```bash
-task-master update-task --id=15 --prompt="IMPLEMENTED: WorldMapScene exists at packages/frontend/src/game/scenes/WorldMapScene.ts despite being marked P2. Implementation complete but needs integration testing with multi-org navigation."
+task-master update-task --id=15 --prompt="IMPLEMENTED: WorldMapScene exists at packages/frontend/src/scenes/WorldMapScene.ts despite being marked P2. Implementation complete but needs integration testing with multi-org navigation."
+```
+
+**Task #16** (Permissions & access control):
+
+```bash
+task-master update-task --id=16 --prompt="PENDING: Basic JWT auth exists; verify village-level permissions (owner/member/visitor), multi-user access rules, and any admin/ops endpoints."
 ```
 
 **Task #18** (Onboarding):
@@ -635,13 +646,13 @@ task-master update-task --id=18 --prompt="PARTIAL: VillageTour component exists 
 task-master update-task --id=19 --prompt="PARTIAL: Basic settings infrastructure exists but village configuration UI and user preferences system need completion. JSONB fields in Prisma schema support this."
 ```
 
-**Tasks #22-25** (Post-MVP):
+**Tasks #22-25** (Week 6: Testing/Deployment/Launch):
 
 ```bash
-task-master update-task --id=22 --prompt="OUT OF SCOPE: Observability features are post-MVP. Basic metrics exist but advanced monitoring is not required for initial launch."
-task-master update-task --id=23 --prompt="OUT OF SCOPE: Analytics dashboard is post-MVP."
-task-master update-task --id=24 --prompt="PARTIAL: Basic CI/CD via GitHub Actions exists, advanced DevOps is post-MVP."
-task-master update-task --id=25 --prompt="IN PROGRESS: Documentation exists in docs/ and various MD files, launch preparation ongoing."
+task-master update-task --id=22 --prompt="PENDING: Add/expand unit/integration/E2E coverage for PRD critical user journeys; ensure CI runs full suite."
+task-master update-task --id=23 --prompt="PENDING: Production deployment workflow (frontend + backend + migrations) needs verification and hardening."
+task-master update-task --id=24 --prompt="PENDING: Consolidate docs into a clear implementation checklist + developer runbooks + WS event contract doc."
+task-master update-task --id=25 --prompt="PENDING: Add KPI instrumentation per PRD success metrics; dashboards may be post-MVP, but event taxonomy should exist."
 ```
 
 ---
@@ -709,7 +720,7 @@ task-master update-task --id=25 --prompt="IN PROGRESS: Documentation exists in d
 
 - **Accuracy**: 85% - Most tasks accurately reflect PRD requirements
 - **Gaps**: 10% - Some PRD features not captured (world map priority mismatch)
-- **Over-generation**: 5% - Some post-MVP tasks included
+- **Over-generation**: 5% - A few stretch tasks included (e.g., dashboard depth vs minimal MVP)
 
 **Next Steps**:
 
@@ -721,6 +732,6 @@ task-master update-task --id=25 --prompt="IN PROGRESS: Documentation exists in d
 ---
 
 **Document Version**: 1.0
-**Last Updated**: December 15, 2024
+**Last Updated**: December 15, 2025
 **Evaluator**: CreatorOfOne Lead Agent
 **Tag**: prd-gpt52-research
