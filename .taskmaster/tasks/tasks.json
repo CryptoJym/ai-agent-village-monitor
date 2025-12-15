@@ -7463,7 +7463,7 @@
         "id": "1",
         "title": "Runner sessions API hardening",
         "description": "Harden /api/runner/sessions endpoints for real use.",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "Acceptance:\n- Validate provider env (OPENAI_API_KEY/ANTHROPIC_API_KEY) before starting and return 400 with actionable error\n- Ensure orgId/villageId mapping uses authenticated user (no demo-org fallback in normal mode)\n- Avoid memory leaks: ensure session cleanup works on stop and on exit\n- Add minimal server tests for auth + validation\n- Ensure error paths are covered, including 404 SESSION_NOT_FOUND for stop/input\n\nNotes:\n- Keep current event mapping to village:<id> compatible with UI",
@@ -7475,8 +7475,10 @@
             "description": "Implement session cleanup to avoid memory leaks.",
             "dependencies": [],
             "details": "Ensure cleanup works on both stop and exit.",
-            "status": "pending",
-            "testStrategy": "Integration test for session cleanup."
+            "status": "done",
+            "testStrategy": "Integration test for session cleanup.",
+            "updatedAt": "2025-12-15T19:11:35.311Z",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -7485,7 +7487,8 @@
             "dependencies": [],
             "details": "Ensure the system returns 404 when a session is not found during stop or input actions.",
             "status": "pending",
-            "testStrategy": "Integration test for 404 SESSION_NOT_FOUND behavior."
+            "testStrategy": "Integration test for 404 SESSION_NOT_FOUND behavior.",
+            "parentId": "undefined"
           },
           {
             "id": 1,
@@ -7520,10 +7523,11 @@
             "parentId": "undefined",
             "updatedAt": "2025-12-15T19:09:15.762Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-15T19:11:36.944Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Frontend: start/stop runner session UX",
         "description": "Add a simple UI flow to start a runner session without curl. This task has been dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for implementation.",
         "status": "in-progress",
@@ -7534,7 +7538,7 @@
         "subtasks": []
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Control-plane integration plan + adapter",
         "description": "Integrate packages/control-plane with packages/server realtime layer.",
         "details": "Acceptance:\\n- Decide: keep Socket.IO as transport or bridge to control-plane WebSocketServer\\n- Implement a minimal adapter (one direction is fine)\\n- Document event contract alignment and gaps\\n\\nNotes:\\n- Goal is coherent runtime story, not a full rewrite",
@@ -7545,7 +7549,7 @@
         "subtasks": []
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Update-pipeline integration plan",
         "description": "Define how update-pipeline will run in this repo and wire a minimal path.",
         "details": "Acceptance:\\n- Decide where VersionWatcher/RolloutController run (server worker vs separate process)\\n- Implement a small integration point (e.g., expose current channel build via API)\\n- Document rollout safety + canary metrics storage",
@@ -7556,7 +7560,7 @@
         "subtasks": []
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Spec trace matrix (execution plane)",
         "description": "Produce a doc mapping spec sections to code + tests + runtime behavior.",
         "status": "in-progress",
@@ -7569,14 +7573,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-15T19:09:15.765Z",
+      "lastModified": "2025-12-15T19:11:36.946Z",
       "taskCount": 5,
-      "completedCount": 0,
+      "completedCount": 1,
       "tags": [
         "execution-plane"
-      ],
-      "created": "2025-12-15T19:09:25.794Z",
-      "description": "Tasks for execution-plane context"
+      ]
     }
   }
 }
