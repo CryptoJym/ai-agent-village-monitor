@@ -6,8 +6,8 @@ This document is a pragmatic “what was claimed vs. what’s actually present�
 
 ## 1) Handoff target (current `main`)
 
-- Latest `main` commit: `4d23412` (“fix(ci): build only frontend for lighthouse”)
-- GitHub checks: green for lint, typecheck, unit tests, core package tests, CodeQL, release drafter, and Lighthouse (integration + e2e intentionally skipped).
+- Baseline “green CI” reference point: `4d23412` (“fix(ci): build only frontend for lighthouse”)
+- Runtime glue added: `5a5d398` (“feat: add server-backed runner sessions”)
 
 ## 2) Commit timeline (what changed after the big “core packages” commit)
 
@@ -23,6 +23,7 @@ Follow-ups were required because the repo-level CI (and some workflow assumption
 - `e8ed23c` — relax Lighthouse assertions to informational while routes/budgets stabilize
 - `fa7e429` — prevent “performance budget” job from failing when artifacts are missing
 - `4d23412` — build only the frontend in Lighthouse workflow (avoid server build failing without Prisma generation)
+- `5a5d398` — server-backed runner sessions + event bridging into the existing UI Socket.IO channels
 
 ## 3) “Done” claims vs. evidence
 
