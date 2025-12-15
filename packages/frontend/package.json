@@ -7,7 +7,7 @@
     "prebuild": "node ../../scripts/generate-pixellab-manifest.mjs",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 5173",
+    "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --testPathPattern='^(?!.*integration).*\\.test\\.(ts|tsx)$'",

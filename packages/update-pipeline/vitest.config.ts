@@ -10,7 +10,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'text-summary', 'lcov', 'html', 'json'],
-      enabled: process.env.CI === 'true' || process.env.VITEST_COVERAGE === 'true',
+      enabled: process.env.VITEST_COVERAGE === 'true',
       include: ['src/**/*.{ts,js}'],
       exclude: [
         'src/__tests__/**',
