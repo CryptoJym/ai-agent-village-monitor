@@ -43,7 +43,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build application
-        run: pnpm build
+        run: pnpm -C packages/frontend build
         env:
           NODE_ENV: production
 
@@ -149,7 +149,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build application
-        run: pnpm build
+        run: pnpm -C packages/frontend build
         env:
           NODE_ENV: production
 
