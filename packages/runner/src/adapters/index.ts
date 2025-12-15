@@ -13,6 +13,9 @@ export {
   type ClaudeCodeAdapterConfig,
 } from './ClaudeCodeAdapter';
 
+// Codex adapter
+export { CodexAdapter, createCodexAdapter, type CodexAdapterConfig } from './CodexAdapter';
+
 // File watching instrumentation
 export {
   FileWatcher,

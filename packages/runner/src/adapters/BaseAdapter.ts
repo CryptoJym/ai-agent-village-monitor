@@ -53,6 +53,9 @@ export abstract class BaseAdapter implements ProviderAdapter {
   protected currentSessionId: string | null = null;
   protected detectedCapabilities: Capability | null = null;
   protected detectedVersion: string | null = null;
+  private boundOnPtyData = (event: PTYDataEvent) => this.handlePTYData(event);
+  private boundOnPtyExit = (event: { sessionId: string; exitCode: number }) =>
+    this.handlePTYExit(event);
 
   constructor(config: BaseAdapterConfig) {
     this.config = {
@@ -137,11 +140,18 @@ export abstract class BaseAdapter implements ProviderAdapter {
     // Get or initialize PTY manager
     this.ptyManager = await getPTYManager();
 
+    // Best-effort capability detection (subclasses use this to parse `--help` and set flags).
+    try {
+      await this.capabilities();
+    } catch {
+      // Capabilities are best-effort; continue with defaults.
+    }
+
     // Build command arguments
     const cmdArgs = this.buildCommandArgs(args);
 
-    // Generate session ID
-    this.currentSessionId = `${this.id}_${Date.now()}`;
+    // Use caller-provided session ID when available so PTY + events correlate to runner sessions.
+    this.currentSessionId = args.sessionId ?? `${this.id}_${Date.now()}`;
 
     // Spawn PTY process
     const pid = this.ptyManager.spawn(this.currentSessionId, {
@@ -155,8 +165,8 @@ export abstract class BaseAdapter implements ProviderAdapter {
     });
 
     // Set up event forwarding
-    this.ptyManager.on('data', this.handlePTYData.bind(this));
-    this.ptyManager.on('exit', this.handlePTYExit.bind(this));
+    this.ptyManager.on('data', this.boundOnPtyData);
+    this.ptyManager.on('exit', this.boundOnPtyExit);
 
     // Emit started event
     this.emitEvent({
@@ -198,6 +208,8 @@ export abstract class BaseAdapter implements ProviderAdapter {
     if (this.ptyManager.isActive(this.currentSessionId)) {
       this.ptyManager.kill(this.currentSessionId, 'SIGKILL');
     }
+
+    this.detachPTYListeners();
   }
 
   /**
@@ -232,11 +244,7 @@ export abstract class BaseAdapter implements ProviderAdapter {
    */
   protected parseVersion(output: string): string | null {
     // Try common version patterns
-    const patterns = [
-      /version[:\s]+v?(\d+\.\d+\.\d+)/i,
-      /v(\d+\.\d+\.\d+)/,
-      /(\d+\.\d+\.\d+)/,
-    ];
+    const patterns = [/version[:\s]+v?(\d+\.\d+\.\d+)/i, /v(\d+\.\d+\.\d+)/, /(\d+\.\d+\.\d+)/];
 
     for (const pattern of patterns) {
       const match = output.match(pattern);
@@ -306,5 +314,12 @@ export abstract class BaseAdapter implements ProviderAdapter {
 
     // Cleanup
     this.currentSessionId = null;
+    this.detachPTYListeners();
+  }
+
+  private detachPTYListeners(): void {
+    if (!this.ptyManager) return;
+    this.ptyManager.off('data', this.boundOnPtyData);
+    this.ptyManager.off('exit', this.boundOnPtyExit);
   }
 }

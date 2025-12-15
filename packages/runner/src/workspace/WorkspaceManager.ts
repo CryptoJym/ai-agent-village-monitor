@@ -73,7 +73,7 @@ export class WorkspaceManager {
       roomPath?: string;
       readOnly?: boolean;
       authToken?: string;
-    } = {}
+    } = {},
   ): Promise<WorkspaceRef> {
     const workspaceId = `ws_${randomUUID().slice(0, 8)}`;
     const worktreePath = join(this.config.baseDir, sessionId, workspaceId);
@@ -169,10 +169,13 @@ export class WorkspaceManager {
   /**
    * Ensure a cached clone exists for the repository
    */
-  private async ensureCachedClone(
-    repoRef: RepoRef,
-    authToken?: string
-  ): Promise<string> {
+  private async ensureCachedClone(repoRef: RepoRef, authToken?: string): Promise<string> {
+    // Local repos are already present on disk; use them directly (dev/testing)
+    if (repoRef.provider === 'local') {
+      await access(repoRef.path);
+      return repoRef.path;
+    }
+
     const cachePath = this.getCachePath(repoRef);
 
     try {
@@ -193,9 +196,7 @@ export class WorkspaceManager {
 
       const git = simpleGit(gitOptions);
 
-      const cloneOptions = this.config.shallowClone
-        ? ['--depth', '1', '--single-branch']
-        : [];
+      const cloneOptions = this.config.shallowClone ? ['--depth', '1', '--single-branch'] : [];
 
       // Clone as bare to save space and support multiple worktrees
       await git.clone(url, cachePath, ['--bare', ...cloneOptions]);
@@ -214,7 +215,7 @@ export class WorkspaceManager {
   private async createWorktree(
     cachePath: string,
     worktreePath: string,
-    checkout: CheckoutSpec
+    checkout: CheckoutSpec,
   ): Promise<void> {
     await mkdir(worktreePath, { recursive: true });
 
@@ -223,11 +224,16 @@ export class WorkspaceManager {
 
     try {
       // Create worktree at the specified ref
-      await git.raw(['worktree', 'add', worktreePath, ref]);
+      // Use detached HEAD to allow multiple concurrent sessions on the same ref.
+      await git.raw(['worktree', 'add', '--detach', worktreePath, ref]);
     } catch (error) {
       // If ref doesn't exist locally, fetch and retry
-      await git.fetch(['origin', ref]);
-      await git.raw(['worktree', 'add', worktreePath, ref]);
+      try {
+        await git.fetch(['origin', ref]);
+      } catch {
+        // No remote origin or fetch is unavailable; continue with retry.
+      }
+      await git.raw(['worktree', 'add', '--detach', worktreePath, ref]);
     }
   }
 
@@ -235,6 +241,9 @@ export class WorkspaceManager {
    * Get the cache path for a repository
    */
   private getCachePath(repoRef: RepoRef): string {
+    if (repoRef.provider === 'local') {
+      return repoRef.path;
+    }
     const repoKey = `${repoRef.provider}-${repoRef.owner}-${repoRef.name}`;
     return join(this.config.cacheDir, repoKey);
   }
@@ -243,7 +252,13 @@ export class WorkspaceManager {
    * Get the clone URL for a repository
    */
   private getRepoUrl(repoRef: RepoRef, authToken?: string): string {
-    const { provider, owner, name } = repoRef;
+    const { provider } = repoRef;
+
+    if (provider === 'local') {
+      return repoRef.path;
+    }
+
+    const { owner, name } = repoRef;
 
     switch (provider) {
       case 'github': {

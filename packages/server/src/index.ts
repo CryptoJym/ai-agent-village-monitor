@@ -6,6 +6,7 @@ import { createQueues } from './queue/queues';
 import { startWorkers, stopWorkers } from './queue/workers';
 import { closeRedis } from './queue/redis';
 import { defaultAgentManager } from './agents/manager';
+import { runnerSessionService } from './execution/runnerSessionService';
 
 const app = createApp();
 const server = app.listen(config.PORT, () => {
@@ -42,6 +43,7 @@ async function gracefulShutdown() {
     queues?.events.agentCommands.close(),
     queues?.events.githubSync.close(),
     defaultAgentManager.shutdown(),
+    runnerSessionService.shutdown(),
   ]);
   await closeRedis();
   server.close();

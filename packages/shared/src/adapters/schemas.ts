@@ -30,7 +30,14 @@ export const TaskSpecSchema = z.object({
 });
 
 // Approval categories
-export const ApprovalCategorySchema = z.enum(['merge', 'deps_add', 'secrets', 'deploy', 'shell', 'network']);
+export const ApprovalCategorySchema = z.enum([
+  'merge',
+  'deps_add',
+  'secrets',
+  'deploy',
+  'shell',
+  'network',
+]);
 
 // Policy Spec
 export const PolicySpecSchema = z.object({
@@ -42,6 +49,7 @@ export const PolicySpecSchema = z.object({
 
 // Start Session Args
 export const StartSessionArgsSchema = z.object({
+  sessionId: z.string().optional(),
   repoPath: z.string().min(1),
   task: TaskSpecSchema,
   policy: PolicySpecSchema,

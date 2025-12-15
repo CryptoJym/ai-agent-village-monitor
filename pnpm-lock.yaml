@@ -286,6 +286,9 @@ importers:
 
   packages/server:
     dependencies:
+      '@ai-agent-village-monitor/runner':
+        specifier: workspace:*
+        version: link:../runner
       '@octokit/graphql':
         specifier: ^8.2.0
         version: 8.2.2

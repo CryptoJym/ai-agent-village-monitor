@@ -7,7 +7,13 @@
  */
 
 // Main Runner
-export { Runner, createRunner, createDefaultRunner, type RunnerConfig, type RunnerState } from './Runner';
+export {
+  Runner,
+  createRunner,
+  createDefaultRunner,
+  type RunnerConfig,
+  type RunnerState,
+} from './Runner';
 
 // Session Management
 export {
@@ -54,6 +60,10 @@ export {
   // Base adapter
   BaseAdapter,
   type BaseAdapterConfig,
+  // Codex adapter
+  CodexAdapter,
+  createCodexAdapter,
+  type CodexAdapterConfig,
   // Claude Code adapter
   ClaudeCodeAdapter,
   createClaudeCodeAdapter,

@@ -4,7 +4,12 @@
  */
 
 import { z } from 'zod';
-import { ProviderIdSchema, PolicySpecSchema, TaskSpecSchema, ProviderEventSchema } from '../adapters/schemas';
+import {
+  ProviderIdSchema,
+  PolicySpecSchema,
+  TaskSpecSchema,
+  ProviderEventSchema,
+} from '../adapters/schemas';
 
 // Session States
 export const SessionStateSchema = z.enum([
@@ -20,12 +25,20 @@ export const SessionStateSchema = z.enum([
 ]);
 
 // Repo Reference
-export const RepoRefSchema = z.object({
-  provider: z.enum(['github', 'gitlab', 'bitbucket']),
-  owner: z.string().min(1),
-  name: z.string().min(1),
-  defaultBranch: z.string().optional(),
-});
+export const RepoRefSchema = z.discriminatedUnion('provider', [
+  z.object({
+    provider: z.enum(['github', 'gitlab', 'bitbucket']),
+    owner: z.string().min(1),
+    name: z.string().min(1),
+    defaultBranch: z.string().optional(),
+  }),
+  z.object({
+    provider: z.literal('local'),
+    path: z.string().min(1),
+    name: z.string().optional(),
+    defaultBranch: z.string().optional(),
+  }),
+]);
 
 // Checkout Spec
 export const CheckoutSpecSchema = z.discriminatedUnion('type', [
@@ -127,12 +140,14 @@ export const DiffSummaryEventSchema = BaseRunnerEventSchema.extend({
   filesChanged: z.number().int().nonnegative(),
   linesAdded: z.number().int().nonnegative(),
   linesRemoved: z.number().int().nonnegative(),
-  files: z.array(z.object({
-    path: z.string(),
-    status: z.enum(['added', 'modified', 'deleted', 'renamed']),
-    additions: z.number().int().nonnegative(),
-    deletions: z.number().int().nonnegative(),
-  })),
+  files: z.array(
+    z.object({
+      path: z.string(),
+      status: z.enum(['added', 'modified', 'deleted', 'renamed']),
+      additions: z.number().int().nonnegative(),
+      deletions: z.number().int().nonnegative(),
+    }),
+  ),
 });
 
 export const TestRunStartedEventSchema = BaseRunnerEventSchema.extend({
@@ -226,7 +241,12 @@ export const SessionCommandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('STOP'), graceful: z.boolean() }),
   z.object({ type: z.literal('PAUSE') }),
   z.object({ type: z.literal('RESUME') }),
-  z.object({ type: z.literal('APPROVE'), approvalId: z.string(), decision: z.enum(['allow', 'deny']), note: z.string().optional() }),
+  z.object({
+    type: z.literal('APPROVE'),
+    approvalId: z.string(),
+    decision: z.enum(['allow', 'deny']),
+    note: z.string().optional(),
+  }),
 ]);
 
 // Type inference

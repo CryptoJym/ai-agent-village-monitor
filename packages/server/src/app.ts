@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { AgentCommandSchema, UserPreferencesSchema } from './schemas';
 import { agentsRouter } from './agents/router';
 import { sessionsRouter } from './sessions/router';
+import { runnerSessionsRouter } from './execution/router';
 import { audit } from './audit/logger';
 import { getMetrics, inc, setGauge } from './metrics';
 import { enqueueAgentJob } from './agents/queue';
@@ -376,6 +377,9 @@ export function createApp(): Express {
 
   // Protect API routes with auth (exclude webhooks/reconcile which are public)
   app.use('/api', requireAuth);
+
+  // Runner-backed sessions (auth required)
+  app.use('/api', runnerSessionsRouter);
 
   // API rate limiting: protect command endpoint; use Redis store when available
   try {

@@ -22,12 +22,22 @@ export type SessionState =
 /**
  * Repository reference for workspace creation
  */
-export type RepoRef = {
-  provider: 'github' | 'gitlab' | 'bitbucket';
-  owner: string;
-  name: string;
-  defaultBranch?: string;
-};
+export type RepoRef =
+  | {
+      provider: 'github' | 'gitlab' | 'bitbucket';
+      owner: string;
+      name: string;
+      defaultBranch?: string;
+    }
+  | {
+      /** Local, already-cloned repository on disk (dev/testing) */
+      provider: 'local';
+      /** Absolute path to the repository */
+      path: string;
+      /** Optional label for the repo */
+      name?: string;
+      defaultBranch?: string;
+    };
 
 /**
  * Checkout specification
@@ -105,13 +115,7 @@ export type SessionRuntimeState = {
 /**
  * Approval categories
  */
-export type ApprovalCategory =
-  | 'merge'
-  | 'deps_add'
-  | 'secrets'
-  | 'deploy'
-  | 'shell'
-  | 'network';
+export type ApprovalCategory = 'merge' | 'deps_add' | 'secrets' | 'deploy' | 'shell' | 'network';
 
 /**
  * Approval request tracking

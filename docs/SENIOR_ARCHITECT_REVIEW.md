@@ -49,7 +49,9 @@ Reality: the _packages_ existed and tested, but repo-level handoff readiness req
   - mismatched test runners / CI configuration drift
   - frontend test OOM behavior in CI (handled by running tests file-by-file)
   - Lighthouse workflow assumptions (preview port mismatch; later, monorepo “build everything” pulling in server Prisma coupling)
-- The “core packages” are **not yet wired into the existing server/app runtime** (no imports from `packages/server/`), i.e. they’re currently library packages + tests rather than an end-to-end running execution plane.
+- A minimal **runtime glue** now exists in `packages/server/src/execution/*`:
+  - Server-managed runner sessions via `POST /api/runner/sessions`
+  - Event bridging from `RunnerEvent` → existing Socket.IO UI events (`agent_spawn`, `work_stream_event`, `agent_disconnect`) emitted into the village room (`village:<id>`)
 
 ## 4) Spec continuity (high-level mapping)
 
@@ -71,9 +73,10 @@ High-level mapping to implementation:
 
 These are the largest “continuity vs. completeness” gaps to be aware of:
 
-1. **No end-to-end wiring yet**
-   - The new “runner/control-plane/update-pipeline” packages are not currently integrated into `packages/server/` (search shows no imports/usage).
-   - Net: architecture is present; the application still needs the glue layer to actually run sessions, stream PTY output, enforce policy, and expose control endpoints.
+1. **End-to-end wiring is still partial**
+   - `packages/server` can now start runner sessions and stream output/events to the UI, but this is a “vertical slice” not a full orchestration layer.
+   - The `packages/control-plane` WebSocket server and `packages/update-pipeline` rollout machinery are still not integrated into the running app.
+   - There is not yet a fully supported UX flow in the frontend to start/stop sessions (API-first currently).
 
 2. **Integration/E2E test suites are not authoritative**
    - CI treats integration tests and Playwright e2e as manual/optional right now (skipped by default).
@@ -85,9 +88,9 @@ These are the largest “continuity vs. completeness” gaps to be aware of:
 ## 6) Recommended “most meaningful” next steps
 
 1. Create a spec-to-implementation trace matrix (per spec doc section → code file(s) → tests → status).
-2. Implement the **runtime glue**:
-   - Decide where the runner service lives (standalone process vs. server-managed).
-   - Integrate control-plane handlers with the server API/websocket layer.
-   - Provide an end-to-end “start session → stream PTY → apply policy → stop session” happy-path.
+2. Expand the existing **runtime glue** into a real orchestration layer:
+   - Add a frontend “start session” UX (or a CLI/dev tool) so the slice is usable without curl.
+   - Integrate `packages/control-plane` handlers with the server runtime and unify event contracts.
+   - Decide whether runner stays server-managed or becomes a separate service (and add process supervision).
 3. Re-enable integration/e2e suites as authoritative once they match current schemas and endpoints.
 4. Reinstate stricter Lighthouse/perf budgets once the frontend routes and auth model are finalized.

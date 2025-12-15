@@ -10,6 +10,7 @@
  */
 
 import { EventEmitter } from 'node:events';
+import { isAbsolute, relative } from 'node:path';
 import { createActor, type Actor, type AnyActorLogic } from 'xstate';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -20,6 +21,8 @@ import {
 } from './sessionMachine';
 import { WorkspaceManager, getWorkspaceManager } from '../workspace/WorkspaceManager';
 import { PTYManager, getPTYManager, type PTYDataEvent, type PTYExitEvent } from '../pty/PTYManager';
+import { createFileWatcher, type FileWatcher } from '../adapters/FileWatcher';
+import { createDiffSummarizer, type DiffSummarizer } from '../adapters/DiffSummarizer';
 import type {
   SessionConfig,
   SessionState,
@@ -44,6 +47,8 @@ type ActiveSession = {
   usageTickInterval?: NodeJS.Timeout;
   lastState: SessionState;
   eventSeq: number;
+  fileWatcher?: FileWatcher;
+  diffSummarizer?: DiffSummarizer;
 };
 
 /**
@@ -146,10 +151,41 @@ export class SessionManager extends EventEmitter {
         config.sessionId,
         config.repoRef,
         config.checkout,
-        { roomPath: config.roomPath }
+        { roomPath: config.roomPath },
       );
 
       actor.send({ type: 'WORKSPACE_READY', workspace });
+
+      // Start instrumentation (best-effort; disabled in tests)
+      if (!this.isTestEnv()) {
+        try {
+          session.fileWatcher = createFileWatcher(workspace.worktreePath);
+          session.fileWatcher.on('change', (evt) => {
+            // fs watcher can’t distinguish reads; treat changes as writes/deletes
+            this.emitEvent({
+              type: 'FILE_TOUCHED',
+              sessionId: config.sessionId,
+              orgId: config.orgId,
+              repoRef: config.repoRef,
+              ts: evt.timestamp,
+              seq: this.nextSeq(session),
+              path: evt.relativePath,
+              roomPath: evt.roomPath,
+              reason: evt.type === 'unlink' ? 'delete' : 'write',
+            });
+          });
+          await session.fileWatcher.start();
+        } catch {
+          // Instrumentation is best-effort; ignore failures.
+        }
+
+        try {
+          session.diffSummarizer = createDiffSummarizer(workspace.worktreePath);
+          await session.diffSummarizer.reset();
+        } catch {
+          // Ignore diff initialization failures.
+        }
+      }
     } catch (error) {
       actor.send({
         type: 'WORKSPACE_FAILED',
@@ -176,16 +212,23 @@ export class SessionManager extends EventEmitter {
       throw new Error(`Workspace not found for session ${sessionId}`);
     }
 
+    // Listen for provider events before starting the session to avoid missing early output.
+    adapter.onEvent((evt) => {
+      this.handleProviderEvent(sessionId, evt);
+    });
+
     // Start the provider session
     try {
+      const detection = await adapter.detect();
+      await adapter.capabilities().catch(() => {});
+
       const { sessionPid } = await adapter.startSession({
+        sessionId,
         repoPath: workspace.worktreePath,
         task: session.config.task,
         policy: session.config.policy,
         env: session.config.env ?? {},
       });
-
-      const detection = await adapter.detect();
 
       session.actor.send({
         type: 'PROVIDER_STARTED',
@@ -198,11 +241,6 @@ export class SessionManager extends EventEmitter {
 
       // Start usage ticker
       this.startUsageTicker(sessionId);
-
-      // Listen for provider events
-      adapter.onEvent((evt) => {
-        this.handleProviderEvent(sessionId, evt);
-      });
     } catch (error) {
       session.actor.send({
         type: 'PROVIDER_FAILED',
@@ -274,7 +312,7 @@ export class SessionManager extends EventEmitter {
     sessionId: string,
     approvalId: string,
     decision: 'allow' | 'deny',
-    note?: string
+    note?: string,
   ): void {
     const session = this.sessions.get(sessionId);
     if (!session) {
@@ -358,9 +396,7 @@ export class SessionManager extends EventEmitter {
    */
   async shutdown(): Promise<void> {
     // Stop all sessions
-    const stopPromises = Array.from(this.sessions.keys()).map((id) =>
-      this.stopSession(id, false)
-    );
+    const stopPromises = Array.from(this.sessions.keys()).map((id) => this.stopSession(id, false));
     await Promise.all(stopPromises);
 
     // Cleanup PTY manager
@@ -396,9 +432,31 @@ export class SessionManager extends EventEmitter {
     session.actor.send({ type: 'PROVIDER_EXITED', exitCode: event.exitCode });
   }
 
-  private handleProviderEvent(sessionId: string, evt: import('@ai-agent-village-monitor/shared').ProviderEvent): void {
+  private handleProviderEvent(
+    sessionId: string,
+    evt: import('@ai-agent-village-monitor/shared').ProviderEvent,
+  ): void {
     const session = this.sessions.get(sessionId);
     if (!session) return;
+
+    if (evt.type === 'HINT_FILES_TOUCHED') {
+      const workspace = this.workspaceManager.getWorkspace(sessionId);
+      const root = workspace?.worktreePath;
+      for (const p of evt.paths) {
+        const rel = root && isAbsolute(p) ? relative(root, p) : p;
+        this.emitEvent({
+          type: 'FILE_TOUCHED',
+          sessionId,
+          orgId: session.config.orgId,
+          repoRef: session.config.repoRef,
+          ts: Date.now(),
+          seq: this.nextSeq(session),
+          path: rel,
+          roomPath: evt.roomPath,
+          reason: evt.operation ?? 'read',
+        });
+      }
+    }
 
     // Forward provider events and handle specific types
     if (evt.type === 'REQUEST_APPROVAL') {
@@ -504,7 +562,7 @@ export class SessionManager extends EventEmitter {
   private emitStateChanged(
     session: ActiveSession,
     previousState: SessionState,
-    newState: SessionState
+    newState: SessionState,
   ): void {
     this.emitEvent({
       type: 'SESSION_STATE_CHANGED',
@@ -520,6 +578,7 @@ export class SessionManager extends EventEmitter {
     // Handle terminal states
     if (newState === 'COMPLETED' || newState === 'FAILED') {
       this.stopUsageTicker(session.config.sessionId);
+      void this.emitDiffSummary(session).catch(() => {});
       this.emitSessionEnded(session, newState);
       this.cleanupSession(session.config.sessionId);
     }
@@ -545,9 +604,47 @@ export class SessionManager extends EventEmitter {
     } as SessionEndedEvent);
   }
 
+  private async emitDiffSummary(session: ActiveSession): Promise<void> {
+    const workspace = this.workspaceManager.getWorkspace(session.config.sessionId);
+    const root = workspace?.worktreePath;
+    if (!root) return;
+
+    try {
+      const summarizer = session.diffSummarizer ?? createDiffSummarizer(root);
+      const diff = await summarizer.getAllChanges();
+      if (diff.filesChanged === 0) return;
+
+      this.emitEvent({
+        type: 'DIFF_SUMMARY',
+        sessionId: session.config.sessionId,
+        orgId: session.config.orgId,
+        repoRef: session.config.repoRef,
+        ts: Date.now(),
+        seq: this.nextSeq(session),
+        filesChanged: diff.filesChanged,
+        linesAdded: diff.linesAdded,
+        linesRemoved: diff.linesRemoved,
+        files: diff.files.map((f) => ({
+          path: f.path,
+          status: f.status,
+          additions: f.additions,
+          deletions: f.deletions,
+        })),
+      });
+    } catch {
+      // Diff is best-effort; ignore failures.
+    }
+  }
+
   private async cleanupSession(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session) return;
+
+    try {
+      session.fileWatcher?.stop();
+    } catch {
+      // Ignore watcher cleanup failures.
+    }
 
     // Cleanup workspace
     await this.workspaceManager.destroyWorkspace(sessionId);
@@ -565,6 +662,12 @@ export class SessionManager extends EventEmitter {
   private emitEvent(event: RunnerEvent): void {
     this.emit('event', event);
   }
+
+  private isTestEnv(): boolean {
+    return (
+      process.env.NODE_ENV === 'test' || !!process.env.VITEST || !!process.env.VITEST_WORKER_ID
+    );
+  }
 }
 
 /**
@@ -573,7 +676,7 @@ export class SessionManager extends EventEmitter {
 let sessionManager: SessionManager | null = null;
 
 export async function getSessionManager(
-  config?: Partial<SessionManagerConfig>
+  config?: Partial<SessionManagerConfig>,
 ): Promise<SessionManager> {
   if (!sessionManager) {
     sessionManager = new SessionManager(config);

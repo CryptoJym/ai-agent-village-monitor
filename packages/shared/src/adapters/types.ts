@@ -68,6 +68,8 @@ export type PolicySpec = {
  * Arguments for starting an adapter session
  */
 export type StartSessionArgs = {
+  /** Optional runner session ID to correlate PTY + events */
+  sessionId?: string;
   /** Absolute path to the repository workspace */
   repoPath: string;
   /** Task specification */
