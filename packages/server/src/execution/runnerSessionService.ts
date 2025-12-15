@@ -152,70 +152,94 @@ export class RunnerSessionService {
       providerId: input.providerId,
     });
 
-    // Create/Upsert agent + session for persistence (best-effort).
     try {
-      await prisma.agent.upsert({
-        where: { id: agentId },
-        update: {
-          name: input.agentName || agentId,
-          status: 'connected',
-          updatedAt: new Date(),
-          config: {
-            providerId: input.providerId,
-            repoRef: input.repoRef,
-            lastSessionId: sessionId,
-          } as any,
-        },
-        create: {
-          id: agentId,
-          name: input.agentName || agentId,
-          status: 'connected',
-          config: {
-            providerId: input.providerId,
-            repoRef: input.repoRef,
-          } as any,
-        },
+      // Create/Upsert agent + session for persistence (best-effort).
+      try {
+        await prisma.agent.upsert({
+          where: { id: agentId },
+          update: {
+            name: input.agentName || agentId,
+            status: 'connected',
+            updatedAt: new Date(),
+            config: {
+              providerId: input.providerId,
+              repoRef: input.repoRef,
+              lastSessionId: sessionId,
+            } as any,
+          },
+          create: {
+            id: agentId,
+            name: input.agentName || agentId,
+            status: 'connected',
+            config: {
+              providerId: input.providerId,
+              repoRef: input.repoRef,
+            } as any,
+          },
+        });
+
+        await prisma.agentSession.create({
+          data: {
+            id: sessionId,
+            agentId,
+            state: JSON.stringify({
+              providerId: input.providerId,
+              repoRef: input.repoRef,
+              status: 'active',
+            }),
+          },
+        });
+      } catch {
+        // DB is optional in minimal deployments; continue without persistence.
+      }
+
+      // Notify clients in the village so the UI can render a sprite immediately.
+      emitToVillage(input.villageId, 'agent_spawn', {
+        agentId,
+        sessionId,
+        agentType: providerToAgentType(input.providerId),
+        agentName: input.agentName || agentId,
+        repoPath:
+          input.repoRef.provider === 'local'
+            ? input.repoRef.path
+            : `${input.repoRef.provider}:${input.repoRef.owner}/${input.repoRef.name}`,
+        timestamp: new Date().toISOString(),
       });
 
-      await prisma.agentSession.create({
-        data: {
-          id: sessionId,
+      // Start session + attach adapter
+      await this.sessionManager.startSession(sessionConfig);
+
+      const adapter =
+        input.providerId === 'codex'
+          ? new this.runner.CodexAdapter()
+          : new this.runner.ClaudeCodeAdapter();
+
+      await this.sessionManager.setProviderAdapter(sessionId, adapter);
+
+      return { sessionId, agentId };
+    } catch (err) {
+      // If session creation fails after we exposed it, clean up tracking and notify clients.
+      try {
+        emitToVillage(input.villageId, 'agent_disconnect', {
           agentId,
-          state: JSON.stringify({
-            providerId: input.providerId,
-            repoRef: input.repoRef,
-            status: 'active',
-          }),
-        },
-      });
-    } catch {
-      // DB is optional in minimal deployments; continue without persistence.
+          sessionId,
+          timestamp: new Date().toISOString(),
+        });
+      } catch {
+        // Ignore WS failures during cleanup.
+      }
+
+      this.sessions.delete(sessionId);
+
+      // Best-effort stop (may no-op if session never started).
+      try {
+        await this.sessionManager.stopSession(sessionId, false);
+      } catch {
+        // Ignore stop failures during cleanup.
+      }
+
+      throw err;
     }
-
-    // Notify clients in the village so the UI can render a sprite immediately.
-    emitToVillage(input.villageId, 'agent_spawn', {
-      agentId,
-      sessionId,
-      agentType: providerToAgentType(input.providerId),
-      agentName: input.agentName || agentId,
-      repoPath:
-        input.repoRef.provider === 'local'
-          ? input.repoRef.path
-          : `${input.repoRef.provider}:${input.repoRef.owner}/${input.repoRef.name}`,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Start session + attach adapter
-    await this.sessionManager.startSession(sessionConfig);
-
-    const adapter =
-      input.providerId === 'codex'
-        ? new this.runner.CodexAdapter()
-        : new this.runner.ClaudeCodeAdapter();
-
-    await this.sessionManager.setProviderAdapter(sessionId, adapter);
-
-    return { sessionId, agentId };
   }
 
   getSessionState(sessionId: string): SessionRuntimeState | undefined {
