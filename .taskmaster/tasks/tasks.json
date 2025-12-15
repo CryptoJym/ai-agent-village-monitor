@@ -7466,36 +7466,9 @@
         "status": "in-progress",
         "dependencies": [],
         "priority": "high",
-        "details": "Acceptance:\n- Validate provider env (OPENAI_API_KEY/ANTHROPIC_API_KEY) before starting and return 400 with actionable error\n- Ensure orgId/villageId mapping uses authenticated user (no demo-org fallback in normal mode)\n- Avoid memory leaks: ensure session cleanup works on stop and on exit\n- Add minimal server tests for auth + validation\n- Ensure error paths are covered\n\nNotes:\n- Keep current event mapping to village:<id> compatible with UI",
-        "testStrategy": "Conduct unit tests for provider env validation and orgId/villageId mapping. Perform integration tests to ensure session cleanup and error handling are robust. Validate server tests for authentication and validation paths.",
+        "details": "Acceptance:\n- Validate provider env (OPENAI_API_KEY/ANTHROPIC_API_KEY) before starting and return 400 with actionable error\n- Ensure orgId/villageId mapping uses authenticated user (no demo-org fallback in normal mode)\n- Avoid memory leaks: ensure session cleanup works on stop and on exit\n- Add minimal server tests for auth + validation\n- Ensure error paths are covered, including 404 SESSION_NOT_FOUND for stop/input\n\nNotes:\n- Keep current event mapping to village:<id> compatible with UI",
+        "testStrategy": "Conduct unit tests for provider env validation and orgId/villageId mapping. Perform integration tests to ensure session cleanup and error handling are robust. Validate server tests for authentication and validation paths, including scenarios for missing OPENAI_API_KEY and unknown stop.",
         "subtasks": [
-          {
-            "id": 1,
-            "title": "Validate provider environment variables",
-            "description": "Implement validation for OPENAI_API_KEY and ANTHROPIC_API_KEY before session start.",
-            "dependencies": [],
-            "details": "Return 400 with actionable error if validation fails.",
-            "status": "pending",
-            "testStrategy": "Unit test for environment variable validation."
-          },
-          {
-            "id": 2,
-            "title": "Tighten orgId/villageId semantics",
-            "description": "Ensure orgId/villageId mapping uses authenticated user.",
-            "dependencies": [],
-            "details": "Remove demo-org fallback in normal mode.",
-            "status": "pending",
-            "testStrategy": "Integration test for orgId/villageId mapping."
-          },
-          {
-            "id": 3,
-            "title": "Add server tests for auth and validation",
-            "description": "Implement minimal server tests to cover authentication and validation.",
-            "dependencies": [],
-            "details": "Focus on auth and validation paths.",
-            "status": "pending",
-            "testStrategy": "Automated tests for server authentication and validation."
-          },
           {
             "id": 4,
             "title": "Ensure session cleanup on stop and exit",
@@ -7504,6 +7477,48 @@
             "details": "Ensure cleanup works on both stop and exit.",
             "status": "pending",
             "testStrategy": "Integration test for session cleanup."
+          },
+          {
+            "id": 5,
+            "title": "Implement 404 SESSION_NOT_FOUND behavior",
+            "description": "Add handling for 404 SESSION_NOT_FOUND when stopping or inputting to a session.",
+            "dependencies": [],
+            "details": "Ensure the system returns 404 when a session is not found during stop or input actions.",
+            "status": "pending",
+            "testStrategy": "Integration test for 404 SESSION_NOT_FOUND behavior."
+          },
+          {
+            "id": 1,
+            "title": "Validate provider environment variables",
+            "description": "Implement validation for OPENAI_API_KEY and ANTHROPIC_API_KEY before session start.",
+            "dependencies": [],
+            "details": "Return 400 with actionable error if validation fails.",
+            "status": "done",
+            "testStrategy": "Unit test for environment variable validation.",
+            "updatedAt": "2025-12-15T19:09:12.549Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Tighten orgId/villageId semantics",
+            "description": "Ensure orgId/villageId mapping uses authenticated user.",
+            "dependencies": [],
+            "details": "Remove demo-org fallback in normal mode.",
+            "status": "done",
+            "testStrategy": "Integration test for orgId/villageId mapping.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-15T19:09:14.204Z"
+          },
+          {
+            "id": 3,
+            "title": "Add server tests for auth and validation",
+            "description": "Implement minimal server tests to cover authentication and validation.",
+            "dependencies": [],
+            "details": "Focus on auth and validation paths.",
+            "status": "done",
+            "testStrategy": "Automated tests for server authentication and validation.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-15T19:09:15.762Z"
           }
         ]
       },
@@ -7554,13 +7569,13 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-15T19:01:41.366Z",
+      "lastModified": "2025-12-15T19:09:15.765Z",
       "taskCount": 5,
       "completedCount": 0,
       "tags": [
         "execution-plane"
       ],
-      "created": "2025-12-15T19:03:19.064Z",
+      "created": "2025-12-15T19:09:25.794Z",
       "description": "Tasks for execution-plane context"
     }
   }
