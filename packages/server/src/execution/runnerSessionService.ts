@@ -36,6 +36,38 @@ export class RunnerSessionService {
   private sessionManager: any | null = null;
   private sessions: Map<string, ManagedSession> = new Map();
 
+  private assertProviderEnv(providerId: ProviderId, env?: Record<string, string>): void {
+    const get = (key: string) => env?.[key] ?? process.env[key];
+    const missing: string[] = [];
+
+    if (providerId === 'codex') {
+      if (!get('OPENAI_API_KEY')) missing.push('OPENAI_API_KEY');
+    }
+
+    if (providerId === 'claude_code') {
+      if (!get('ANTHROPIC_API_KEY')) missing.push('ANTHROPIC_API_KEY');
+    }
+
+    if (missing.length === 0) return;
+
+    const err: any = new Error(
+      `Missing required provider credentials: ${missing.join(', ')} (set in server env or request env)`,
+    );
+    err.status = 400;
+    err.code = 'PROVIDER_AUTH_MISSING';
+    err.details = { providerId, missing };
+    throw err;
+  }
+
+  private assertManagedSession(sessionId: string): ManagedSession {
+    const session = this.sessions.get(sessionId);
+    if (session) return session;
+    const err: any = new Error('Session not found');
+    err.status = 404;
+    err.code = 'SESSION_NOT_FOUND';
+    throw err;
+  }
+
   async initialize(): Promise<void> {
     if (this.initPromise) return this.initPromise;
     this.initPromise = this.doInitialize();
@@ -78,12 +110,15 @@ export class RunnerSessionService {
   async startSession(
     input: StartRunnerSessionInput,
   ): Promise<{ sessionId: string; agentId: string }> {
-    await this.initialize();
-    if (!this.runner || !this.sessionManager) throw new Error('Runner not initialized');
-
     if (input.providerId !== 'codex' && input.providerId !== 'claude_code') {
       throw new Error(`Provider not yet supported by server runner: ${input.providerId}`);
     }
+
+    // Fail fast before initializing the runner to avoid heavy imports on bad requests.
+    this.assertProviderEnv(input.providerId, input.env);
+
+    await this.initialize();
+    if (!this.runner || !this.sessionManager) throw new Error('Runner not initialized');
 
     const sessionId = randomUUID();
     const agentId = `runner_${sessionId.slice(0, 8)}`;
@@ -188,11 +223,13 @@ export class RunnerSessionService {
   }
 
   async sendInput(sessionId: string, data: string): Promise<void> {
+    this.assertManagedSession(sessionId);
     if (!this.sessionManager) throw new Error('Runner not initialized');
     await this.sessionManager.sendInput(sessionId, data);
   }
 
   async stopSession(sessionId: string, graceful = true): Promise<void> {
+    this.assertManagedSession(sessionId);
     if (!this.sessionManager) throw new Error('Runner not initialized');
     await this.sessionManager.stopSession(sessionId, graceful);
   }
@@ -203,6 +240,7 @@ export class RunnerSessionService {
     decision: 'allow' | 'deny',
     note?: string,
   ): void {
+    this.assertManagedSession(sessionId);
     if (!this.sessionManager) throw new Error('Runner not initialized');
     this.sessionManager.resolveApproval(sessionId, approvalId, decision, note);
   }

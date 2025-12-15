@@ -66,7 +66,10 @@ runnerSessionsRouter.post('/runner/sessions', async (req, res, next) => {
     }
 
     const userId = req.user?.sub != null ? String(req.user.sub) : undefined;
-    const orgId = userId || 'demo-org';
+    if (!userId) {
+      return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'missing user' } });
+    }
+    const orgId = userId;
 
     const { sessionId, agentId } = await runnerSessionService.startSession({
       orgId,
