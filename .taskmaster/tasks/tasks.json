@@ -6759,7 +6759,7 @@
   "world-builder": {
     "tasks": [
       {
-        "id": "8",
+        "id": 8,
         "title": "Set Up Project Repository",
         "description": "Initialize the project repository with the necessary structure and tools.",
         "details": "Create a new GitHub repository. Set up the project structure with folders for frontend, backend, and shared resources. Initialize package.json files for both frontend and backend. Install necessary dependencies including Phaser.js, React, XState, Node.js, Express, Socket.io, Prisma, and PostgreSQL.",
@@ -6771,7 +6771,7 @@
         "updatedAt": "2025-12-09T16:15:40.960Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Configure Prisma with PostgreSQL",
         "description": "Set up Prisma ORM with PostgreSQL database for the project.",
         "details": "Install Prisma and PostgreSQL. Create a new Prisma schema file defining models for Village, House, Room, Agent, and WorldMap. Connect Prisma to a PostgreSQL database instance. Run Prisma migrations to apply the schema.",
@@ -6785,7 +6785,7 @@
         "updatedAt": "2025-12-09T16:20:58.586Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Implement Village CRUD Endpoints",
         "description": "Develop REST endpoints for managing villages in the backend.",
         "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the Village model. Implement logic to handle requests and interact with the database using Prisma.",
@@ -6799,7 +6799,7 @@
         "updatedAt": "2025-12-09T17:17:35.554Z"
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Implement House CRUD Endpoints",
         "description": "Develop REST endpoints for managing houses within villages.",
         "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the House model. Implement logic to handle requests, including triggering repository analysis on house creation.",
@@ -6813,7 +6813,7 @@
         "updatedAt": "2025-12-09T17:17:35.561Z"
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "Implement Agent CRUD Endpoints",
         "description": "Develop REST endpoints for managing agents.",
         "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the Agent model. Implement logic to handle state updates and interactions with the database.",
@@ -6827,7 +6827,7 @@
         "updatedAt": "2025-12-09T17:17:35.567Z"
       },
       {
-        "id": "13",
+        "id": 13,
         "title": "Implement Room CRUD Endpoints",
         "description": "Develop REST endpoints for managing rooms within houses.",
         "details": "Create Express routes for GET, POST, PUT, and DELETE operations on the Room model. Implement logic to handle requests and manage room data.",
@@ -6841,7 +6841,7 @@
         "updatedAt": "2025-12-09T17:17:35.572Z"
       },
       {
-        "id": "14",
+        "id": 14,
         "title": "Set Up Jest for Backend Testing",
         "description": "Configure Jest for testing the backend with TypeScript support.",
         "details": "Install Jest and necessary TypeScript support packages. Configure Jest to work with TypeScript and set up coverage reporting and database mocking.",
@@ -6855,7 +6855,7 @@
         "updatedAt": "2025-12-09T17:17:39.417Z"
       },
       {
-        "id": "15",
+        "id": 15,
         "title": "Write API Integration Tests",
         "description": "Create integration tests for all backend CRUD endpoints.",
         "details": "Develop integration tests using Jest for the Village, House, Agent, and Room endpoints. Aim for 80%+ coverage.",
@@ -6869,7 +6869,7 @@
         "updatedAt": "2025-12-09T17:17:39.425Z"
       },
       {
-        "id": "16",
+        "id": 16,
         "title": "Set Up Vitest for Frontend Testing",
         "description": "Configure Vitest for testing the frontend with Phaser.js mocking.",
         "details": "Install Vitest and configure it to work with the frontend setup. Mock Phaser.js to enable testing of game scenes and components.",
@@ -6883,7 +6883,7 @@
         "updatedAt": "2025-12-09T17:17:39.430Z"
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "Create GitHub GraphQL Client Wrapper",
         "description": "Develop a client wrapper for interacting with the GitHub GraphQL API.",
         "details": "Build a TypeScript-based client wrapper for the GitHub GraphQL API. Implement rate limiting, request batching, error handling, and a caching layer.",
@@ -6897,7 +6897,7 @@
         "updatedAt": "2025-12-09T17:23:25.139Z"
       },
       {
-        "id": "18",
+        "id": 18,
         "title": "Implement Repository Tree Fetcher",
         "description": "Fetch and process the complete repository structure using GitHub GraphQL.",
         "details": "Use the GitHub GraphQL API to recursively fetch the repository tree. Gather file metadata, commit information, and language statistics.",
@@ -6911,7 +6911,7 @@
         "updatedAt": "2025-12-09T17:23:25.146Z"
       },
       {
-        "id": "19",
+        "id": 19,
         "title": "Implement Language Detection with go-enry",
         "description": "Integrate go-enry for language detection and classification.",
         "details": "Set up go-enry to detect primary languages and classify files by language. Use this data for language-based styling decisions.",
@@ -6925,7 +6925,7 @@
         "updatedAt": "2025-12-09T17:31:23.024Z"
       },
       {
-        "id": "20",
+        "id": 20,
         "title": "Create Module Classifier",
         "description": "Classify files into module types based on their roles.",
         "details": "Develop a system to classify files into types such as component, service, repository, etc. Support multiple languages including JS/TS, Python, Go, Rust, and Java.",
@@ -6939,7 +6939,7 @@
         "updatedAt": "2025-12-09T17:31:30.798Z"
       },
       {
-        "id": "21",
+        "id": 21,
         "title": "Build Dependency Graph Analyzer",
         "description": "Analyze and build a dependency graph from repository imports.",
         "details": "Use Tree-sitter to parse import statements and build a directed dependency graph. Calculate module coupling metrics.",
@@ -6953,7 +6953,7 @@
         "updatedAt": "2025-12-09T17:33:20.983Z"
       },
       {
-        "id": "22",
+        "id": 22,
         "title": "Set Up Webhook Endpoint",
         "description": "Create a webhook endpoint to receive GitHub events.",
         "details": "Develop a POST /api/webhooks/github endpoint with signature verification and event type routing. Implement an async processing queue for handling events.",
@@ -6967,7 +6967,7 @@
         "updatedAt": "2025-12-09T17:23:25.153Z"
       },
       {
-        "id": "23",
+        "id": 23,
         "title": "Implement Webhook Event Processing",
         "description": "Process GitHub events to update agent states and activities.",
         "details": "Handle push, pull_request, and check_run events to trigger work activity and agent state changes.",
@@ -6981,7 +6981,7 @@
         "updatedAt": "2025-12-09T17:23:25.158Z"
       },
       {
-        "id": "24",
+        "id": 24,
         "title": "Write GitHub Integration Tests",
         "description": "Test the GitHub client and webhook processing with mock responses.",
         "details": "Develop tests to ensure the GitHub client handles API interactions correctly and webhook processing updates states as expected.",
@@ -6995,7 +6995,7 @@
         "updatedAt": "2025-12-09T20:54:52.164Z"
       },
       {
-        "id": "25",
+        "id": 25,
         "title": "Refactor Scene Structure in Phaser",
         "description": "Organize Phaser scenes for the game.",
         "details": "Create BootScene, PreloadScene, VillageScene, and HouseScene in Phaser. Ensure each scene is responsible for specific game aspects.",
@@ -7009,7 +7009,7 @@
         "updatedAt": "2025-12-09T17:17:43.406Z"
       },
       {
-        "id": "26",
+        "id": 26,
         "title": "Implement Camera System with Zoom/Pan",
         "description": "Develop a camera controller for navigation in the game.",
         "details": "Create a camera system with zoom (0.5x to 2x) and pan capabilities. Implement smooth lerp for transitions and constrain movement to world edges.",
@@ -7023,7 +7023,7 @@
         "updatedAt": "2025-12-09T17:17:43.413Z"
       },
       {
-        "id": "27",
+        "id": 27,
         "title": "Create Input Handler for Game Controls",
         "description": "Build a unified input system for various control methods.",
         "details": "Implement keyboard, mouse, touch, and gamepad controls for movement and interaction. Ensure all input methods are intuitive and responsive.",
@@ -7037,7 +7037,7 @@
         "updatedAt": "2025-12-09T17:17:43.420Z"
       },
       {
-        "id": "28",
+        "id": 28,
         "title": "Build Asset Manifest System",
         "description": "Develop a system for dynamic asset loading in the game.",
         "details": "Create JSON manifest files for assets. Implement dynamic loading based on scene requirements with progress tracking and error handling.",
@@ -7051,7 +7051,7 @@
         "updatedAt": "2025-12-09T17:17:43.425Z"
       },
       {
-        "id": "29",
+        "id": 29,
         "title": "Create Sprite Loading Pipeline",
         "description": "Develop a pipeline for loading and managing sprites in the game.",
         "details": "Implement sprite sheet parsing, animation definition loading, and texture atlas support. Include a runtime sprite generation hook for dynamic sprites.",
@@ -7065,7 +7065,7 @@
         "updatedAt": "2025-12-09T17:17:43.431Z"
       },
       {
-        "id": "30",
+        "id": 30,
         "title": "Implement Tileset Loading System",
         "description": "Create a system for loading and managing tilesets in the game.",
         "details": "Develop a tileset system with Tiled JSON import, auto-tile support, and multiple layers. Extract collision data for game physics.",
@@ -7079,7 +7079,7 @@
         "updatedAt": "2025-12-09T17:17:43.437Z"
       },
       {
-        "id": "31",
+        "id": 31,
         "title": "Create Basic UI Layer with React Overlay",
         "description": "Integrate React for UI elements in the game.",
         "details": "Build a React overlay for the game HUD, dialog, menu, and agent inspector panel. Ensure seamless integration with Phaser scenes.",
@@ -7093,7 +7093,7 @@
         "updatedAt": "2025-12-09T17:17:43.442Z"
       },
       {
-        "id": "32",
+        "id": 32,
         "title": "Write Scene Transition Tests",
         "description": "Develop tests for scene loading and transitions in the game.",
         "details": "Create tests to verify that scenes load correctly and transitions occur smoothly without errors.",
@@ -7107,7 +7107,7 @@
         "updatedAt": "2025-12-09T17:33:20.990Z"
       },
       {
-        "id": "33",
+        "id": 33,
         "title": "Create Prando Seeded RNG Wrapper",
         "description": "Implement a deterministic random number generator using Prando.",
         "details": "Integrate Prando for deterministic random number generation. Use repo and commit hash for seed generation to ensure reproducibility.",
@@ -7121,7 +7121,7 @@
         "updatedAt": "2025-12-09T17:17:47.406Z"
       },
       {
-        "id": "34",
+        "id": 34,
         "title": "Implement BSP Tree Generator",
         "description": "Develop a Binary Space Partitioning algorithm for building generation.",
         "details": "Build a BSP generator with configurable split ratios and depth constraints. Ensure balanced tree generation for room placement.",
@@ -7135,7 +7135,7 @@
         "updatedAt": "2025-12-09T17:17:47.413Z"
       },
       {
-        "id": "35",
+        "id": 35,
         "title": "Create Room Placement Algorithm",
         "description": "Develop an algorithm for placing rooms within BSP leaves.",
         "details": "Implement room placement by shrinking leaf bounds and calculating room size from module complexity. Center rooms within leaves and store metadata.",
@@ -7149,7 +7149,7 @@
         "updatedAt": "2025-12-09T17:17:47.418Z"
       },
       {
-        "id": "36",
+        "id": 36,
         "title": "Implement Delaunay Triangulation",
         "description": "Connect rooms using Delaunay triangulation for corridor generation.",
         "details": "Use Delaunay triangulation to connect room centers. Extract edges and calculate distances for corridor paths.",
@@ -7163,7 +7163,7 @@
         "updatedAt": "2025-12-09T17:17:47.423Z"
       },
       {
-        "id": "37",
+        "id": 37,
         "title": "Build Kruskal's MST for Corridors",
         "description": "Generate a corridor network using Kruskal's Minimum Spanning Tree algorithm.",
         "details": "Use a Union-Find data structure to build a minimum spanning tree. Add extra edges for loops to enhance navigation.",
@@ -7177,7 +7177,7 @@
         "updatedAt": "2025-12-09T17:17:47.428Z"
       },
       {
-        "id": "38",
+        "id": 38,
         "title": "Create Corridor Path Carving Algorithm",
         "description": "Carve corridors in the grid based on the MST.",
         "details": "Implement path carving with L-shaped or straight paths. Configure path width and place doors at room entries.",
@@ -7191,7 +7191,7 @@
         "updatedAt": "2025-12-09T17:17:57.490Z"
       },
       {
-        "id": "39",
+        "id": 39,
         "title": "Implement Room Connection Doors",
         "description": "Place doors at corridor-room intersections for connectivity.",
         "details": "Detect intersections and place door tiles. Store connection metadata for navigation.",
@@ -7205,7 +7205,7 @@
         "updatedAt": "2025-12-09T17:17:57.497Z"
       },
       {
-        "id": "40",
+        "id": 40,
         "title": "Write BSP Algorithm Tests",
         "description": "Develop tests for the BSP algorithm to ensure correctness and determinism.",
         "details": "Create tests to verify that the same seed produces the same layout and all rooms are connected without overlap.",
@@ -7219,7 +7219,7 @@
         "updatedAt": "2025-12-09T17:33:20.997Z"
       },
       {
-        "id": "41",
+        "id": 41,
         "title": "Create Tilemap Data Structure",
         "description": "Define the tilemap format for the game environment.",
         "details": "Develop a tilemap format with multi-layer support, tile IDs, collision flags, and export to JSON for rendering.",
@@ -7233,7 +7233,7 @@
         "updatedAt": "2025-12-09T17:23:29.194Z"
       },
       {
-        "id": "42",
+        "id": 42,
         "title": "Implement 4-bit Auto-Tiling",
         "description": "Build an auto-tiler for seamless tile transitions.",
         "details": "Calculate neighbor masks and map to a 16-tile wall set. Ensure seamless transitions and handle corners appropriately.",
@@ -7247,7 +7247,7 @@
         "updatedAt": "2025-12-09T17:23:29.201Z"
       },
       {
-        "id": "43",
+        "id": 43,
         "title": "Create Floor Tile Placement System",
         "description": "Develop a system for placing floor tiles based on room types.",
         "details": "Implement floor tile placement with room-type based tiles, corridor tiles, and biome variations.",
@@ -7261,7 +7261,7 @@
         "updatedAt": "2025-12-09T17:23:29.208Z"
       },
       {
-        "id": "44",
+        "id": 44,
         "title": "Implement Wall Tile Placement System",
         "description": "Develop a system for placing wall tiles with auto-tiling.",
         "details": "Place auto-tiled walls with inner/outer variants and shadow tiles. Attach decorations at specified points.",
@@ -7275,7 +7275,7 @@
         "updatedAt": "2025-12-09T17:23:29.213Z"
       },
       {
-        "id": "45",
+        "id": 45,
         "title": "Create Door Tile Placement System",
         "description": "Develop a system for placing door tiles with interaction zones.",
         "details": "Implement door frames with open/closed states and interaction zones for transitions.",
@@ -7290,7 +7290,7 @@
         "updatedAt": "2025-12-09T17:23:29.219Z"
       },
       {
-        "id": "46",
+        "id": 46,
         "title": "Build Decoration Placement System",
         "description": "Develop a system for placing decorations in rooms.",
         "details": "Create a decoration engine with furniture catalogs and placement rules. Ensure collision avoidance and density controls.",
@@ -7304,7 +7304,7 @@
         "updatedAt": "2025-12-09T17:23:29.225Z"
       },
       {
-        "id": "47",
+        "id": 47,
         "title": "Implement Room-Type Decorations",
         "description": "Add specific decorations based on room types.",
         "details": "Place room-specific items such as monitors in component rooms and server racks in service rooms.",
@@ -7318,7 +7318,7 @@
         "updatedAt": "2025-12-09T17:31:37.374Z"
       },
       {
-        "id": "48",
+        "id": 48,
         "title": "Write Tilemap Generation Tests",
         "description": "Develop tests for tilemap generation to ensure correctness.",
         "details": "Create tests to verify that tilemaps are generated correctly with all layers and features.",
@@ -7332,7 +7332,7 @@
         "updatedAt": "2025-12-09T17:23:29.231Z"
       },
       {
-        "id": "49",
+        "id": 49,
         "title": "Create Phaser Tilemap Renderer",
         "description": "Render tilemaps in Phaser with multiple layers.",
         "details": "Load tilemap JSON and create Phaser.Tilemaps. Ensure correct layer ordering and culling for performance.",
@@ -7346,7 +7346,7 @@
         "updatedAt": "2025-12-09T17:23:29.238Z"
       },
       {
-        "id": "50",
+        "id": 50,
         "title": "Implement Multi-Layer Rendering System",
         "description": "Develop a system for rendering multiple tilemap layers.",
         "details": "Render ground, wall, decoration, and above-player layers. Ensure correct layer visibility and ordering.",
@@ -7360,7 +7360,7 @@
         "updatedAt": "2025-12-09T17:31:43.811Z"
       },
       {
-        "id": "51",
+        "id": 51,
         "title": "Set Up Collision Layer",
         "description": "Implement collision detection for tilemaps and dynamic objects.",
         "details": "Use Arcade physics for collision detection. Set up tilemap collision and dynamic object interactions.",
@@ -7374,7 +7374,7 @@
         "updatedAt": "2025-12-09T20:46:13.490Z"
       },
       {
-        "id": "52",
+        "id": 52,
         "title": "Create Room Label System",
         "description": "Develop a system for displaying room labels based on module names.",
         "details": "Display module names as room labels with visibility based on zoom level. Implement font scaling and click-to-view details.",
@@ -7388,7 +7388,7 @@
         "updatedAt": "2025-12-09T17:31:54.153Z"
       },
       {
-        "id": "53",
+        "id": 53,
         "title": "Implement Minimap Feature",
         "description": "Develop a minimap for navigation and room highlights.",
         "details": "Create a scaled view of the map with player position and room highlights. Implement click-to-navigate functionality.",
@@ -7402,7 +7402,7 @@
         "updatedAt": "2025-12-09T20:46:13.496Z"
       },
       {
-        "id": "54",
+        "id": 54,
         "title": "Build Door/Portal System",
         "description": "Develop mechanics for door interactions and room transitions.",
         "details": "Implement door interaction zones and room-to-room transitions. Include house exits and cross-village portals.",
@@ -7416,7 +7416,7 @@
         "updatedAt": "2025-12-09T20:46:13.503Z"
       },
       {
-        "id": "55",
+        "id": 55,
         "title": "Create Scene Transitions",
         "description": "Implement transitions between scenes with effects and state preservation.",
         "details": "Develop fade effects and loading states for scene transitions. Preserve state and implement animation hooks.",
@@ -7430,7 +7430,7 @@
         "updatedAt": "2025-12-09T20:46:23.002Z"
       },
       {
-        "id": "56",
+        "id": 56,
         "title": "Optimize Rendering Performance",
         "description": "Improve rendering performance to achieve 60fps target.",
         "details": "Implement tile culling, batch rendering, and object pooling to optimize performance.",
@@ -7451,7 +7451,117 @@
       "completedCount": 49,
       "tags": [
         "world-builder"
-      ]
+      ],
+      "created": "2025-12-15T18:59:31.823Z",
+      "description": "Tasks for world-builder context",
+      "updated": "2025-12-15T18:59:31.823Z"
+    }
+  },
+  "execution-plane": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Runner sessions API hardening",
+        "description": "Harden /api/runner/sessions endpoints for real use.",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Acceptance:\n- Validate provider env (OPENAI_API_KEY/ANTHROPIC_API_KEY) before starting and return 400 with actionable error\n- Ensure orgId/villageId mapping uses authenticated user (no demo-org fallback in normal mode)\n- Avoid memory leaks: ensure session cleanup works on stop and on exit\n- Add minimal server tests for auth + validation\n- Ensure error paths are covered\n\nNotes:\n- Keep current event mapping to village:<id> compatible with UI",
+        "testStrategy": "Conduct unit tests for provider env validation and orgId/villageId mapping. Perform integration tests to ensure session cleanup and error handling are robust. Validate server tests for authentication and validation paths.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Validate provider environment variables",
+            "description": "Implement validation for OPENAI_API_KEY and ANTHROPIC_API_KEY before session start.",
+            "dependencies": [],
+            "details": "Return 400 with actionable error if validation fails.",
+            "status": "pending",
+            "testStrategy": "Unit test for environment variable validation."
+          },
+          {
+            "id": 2,
+            "title": "Tighten orgId/villageId semantics",
+            "description": "Ensure orgId/villageId mapping uses authenticated user.",
+            "dependencies": [],
+            "details": "Remove demo-org fallback in normal mode.",
+            "status": "pending",
+            "testStrategy": "Integration test for orgId/villageId mapping."
+          },
+          {
+            "id": 3,
+            "title": "Add server tests for auth and validation",
+            "description": "Implement minimal server tests to cover authentication and validation.",
+            "dependencies": [],
+            "details": "Focus on auth and validation paths.",
+            "status": "pending",
+            "testStrategy": "Automated tests for server authentication and validation."
+          },
+          {
+            "id": 4,
+            "title": "Ensure session cleanup on stop and exit",
+            "description": "Implement session cleanup to avoid memory leaks.",
+            "dependencies": [],
+            "details": "Ensure cleanup works on both stop and exit.",
+            "status": "pending",
+            "testStrategy": "Integration test for session cleanup."
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Frontend: start/stop runner session UX",
+        "description": "Add a simple UI flow to start a runner session without curl. This task has been dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for implementation.",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Acceptance:\\n- Dev-only panel/button to POST /api/runner/sessions\\n- Shows sessionId + live output via existing work_stream_event feed\\n- Allows stop + send input\\n- Works with E2E_TEST_MODE login helper locally\\n\\nNotes:\\n- Keep behind feature flag/env so prod UX is unaffected\\n- Ensure the implementation aligns with the Omnara COO lead session guidelines.",
+        "testStrategy": "Ensure UI elements are functional and responsive. Validate session start/stop functionality through manual testing and automated UI tests. Verify feature flag behavior to ensure no impact on production UX.",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Control-plane integration plan + adapter",
+        "description": "Integrate packages/control-plane with packages/server realtime layer.",
+        "details": "Acceptance:\\n- Decide: keep Socket.IO as transport or bridge to control-plane WebSocketServer\\n- Implement a minimal adapter (one direction is fine)\\n- Document event contract alignment and gaps\\n\\nNotes:\\n- Goal is coherent runtime story, not a full rewrite",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Update-pipeline integration plan",
+        "description": "Define how update-pipeline will run in this repo and wire a minimal path.",
+        "details": "Acceptance:\\n- Decide where VersionWatcher/RolloutController run (server worker vs separate process)\\n- Implement a small integration point (e.g., expose current channel build via API)\\n- Document rollout safety + canary metrics storage",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Spec trace matrix (execution plane)",
+        "description": "Produce a doc mapping spec sections to code + tests + runtime behavior.",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "medium",
+        "details": "Acceptance:\\n- For AGENT_RUNNER_SPEC + PROVIDER_ADAPTERS_SPEC: list major sections and link to files\\n- For runtime glue: document request/response schemas and Socket.IO event mapping\\n- Include 'implemented / partial / not started' status per section\\n- Progress: Dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for spec trace matrix generation.",
+        "testStrategy": null,
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2025-12-15T19:01:41.366Z",
+      "taskCount": 5,
+      "completedCount": 0,
+      "tags": [
+        "execution-plane"
+      ],
+      "created": "2025-12-15T19:03:19.064Z",
+      "description": "Tasks for execution-plane context"
     }
   }
 }
