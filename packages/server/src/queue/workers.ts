@@ -11,6 +11,7 @@ export type WorkerHandles = {
   agentCommands?: Worker;
   githubSync?: Worker;
   repoAnalysis?: Worker;
+  githubWebhooks?: Worker;
 };
 
 export function startWorkers(log = console): WorkerHandles | null {
@@ -267,12 +268,28 @@ export function startWorkers(log = console): WorkerHandles | null {
     return { ...result, jobId: job.id };
   };
 
+  const githubWebhooksProc: Processor = async (job) => {
+    log.info?.(`[worker] github-webhooks processing ${job.id} ${job.name}`, { data: job.data });
+    const data = job.data as any;
+    const event = String(data?.event ?? '').trim();
+    const payload = data?.payload;
+    if (!event) throw new Error('invalid job payload');
+    const { processGitHubWebhookEvent } = await import('../github/webhooks');
+    const result = await processGitHubWebhookEvent(event, payload);
+    return { ok: true, ...result, jobId: job.id };
+  };
+
   const agentCommands = new Worker('agent-commands', agentProc, baseOpts);
   // Dead-letter queue for exhausted jobs
   // We create the DLQ lazily here to avoid forcing it elsewhere
   const { Queue } = require('bullmq');
   const dlq = new Queue('agent-commands-dlq', { connection });
   const githubSync = new Worker('github-sync', syncProc, baseOpts);
+  const githubWebhooks = new Worker('github-webhooks', githubWebhooksProc, {
+    ...baseOpts,
+    concurrency: 10,
+  });
+  const webhookDlq = new Queue('github-webhooks-dlq', { connection });
   const repoAnalysis = new Worker('repo-analysis', repoAnalysisProc, {
     ...baseOpts,
     concurrency: 2,
@@ -317,6 +334,23 @@ export function startWorkers(log = console): WorkerHandles | null {
     log.error?.('[worker] github-sync failed', { jobId: job?.id, err: err?.message }),
   );
 
+  githubWebhooks.on('failed', async (job, err) => {
+    log.error?.('[worker] github-webhooks failed', { jobId: job?.id, err: err?.message });
+    try {
+      const attempts = job?.opts?.attempts ?? 1;
+      const made = job?.attemptsMade ?? 0;
+      if (made >= attempts) {
+        await webhookDlq.add(
+          'failed',
+          { name: job?.name, data: job?.data, failedReason: err?.message },
+          { removeOnComplete: 1000, removeOnFail: 1000 },
+        );
+      }
+    } catch {
+      // Swallow DLQ handling errors to avoid crashing worker listener.
+    }
+  });
+
   repoAnalysis.on('failed', async (job, err) => {
     log.error?.('[worker] repo-analysis failed', { jobId: job?.id, err: err?.message });
     try {
@@ -334,7 +368,7 @@ export function startWorkers(log = console): WorkerHandles | null {
     }
   });
 
-  return { agentCommands, githubSync, repoAnalysis };
+  return { agentCommands, githubSync, githubWebhooks, repoAnalysis };
 }
 
 export async function stopWorkers(handles?: WorkerHandles) {
@@ -342,6 +376,7 @@ export async function stopWorkers(handles?: WorkerHandles) {
   await Promise.allSettled([
     handles.agentCommands?.close(),
     handles.githubSync?.close(),
+    handles.githubWebhooks?.close(),
     handles.repoAnalysis?.close(),
   ]);
 }

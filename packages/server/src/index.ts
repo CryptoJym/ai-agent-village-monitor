@@ -43,6 +43,7 @@ async function gracefulShutdown() {
     queues?.events.agentCommands.close(),
     queues?.events.githubSync.close(),
     queues?.events.repoAnalysis.close(),
+    queues?.events.githubWebhooks.close(),
     defaultAgentManager.shutdown(),
     runnerSessionService.shutdown(),
   ]);
