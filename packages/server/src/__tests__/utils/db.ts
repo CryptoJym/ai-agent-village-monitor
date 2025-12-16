@@ -48,32 +48,47 @@ export async function teardownTestDatabase() {
 /**
  * Clean all data from the database
  * Useful for ensuring test isolation
+ *
+ * Tables are deleted in reverse order of dependencies to avoid FK constraint violations.
+ * This list should match all models in packages/server/prisma/schema.prisma
  */
 export async function cleanDatabase(prismaClient: PrismaClient = prisma) {
-  // Delete in reverse order of dependencies
+  // Delete in reverse order of dependencies (children first, then parents)
   const tablenames = [
-    'Decoration',
-    'RoomMetric',
-    'Room',
-    'AgentMetric',
-    'AgentActivity',
-    'Agent',
-    'House',
-    'VillageMetric',
-    'VillageAccess',
-    'Village',
-    'Session',
-    'User',
-    'Bug',
+    // Sprite generation tables
+    'GeneratedSprite',
+    'Tileset',
+    // WorldNode tree (self-referential)
     'WorldNode',
+    // Agent-related (depends on Agent, House)
+    'WorkStreamEvent',
+    'AgentSession',
+    'HouseAgent',
+    // Room (depends on House)
+    'Room',
+    // Agent (depends on User, can reference House/Room)
+    'Agent',
+    // House (depends on Village)
+    'House',
+    // WorldMap (depends on Village, 1:1)
+    'WorldMap',
+    // BugBot (depends on Village) - note: @@map("bug_bots")
+    'bug_bots',
+    // Village access (depends on Village, User)
+    'VillageAccess',
+    // OAuth tokens - note: @@map("oauth_tokens")
+    'oauth_tokens',
+    // Village (base entity)
+    'Village',
+    // User (base entity)
+    'User',
   ];
 
   for (const tablename of tablenames) {
     try {
       await prismaClient.$executeRawUnsafe(`DELETE FROM "${tablename}"`);
     } catch (error) {
-      // Table might not exist, ignore
-      console.warn(`Could not clean table ${tablename}:`, error);
+      // Table might not exist or already empty, ignore silently
     }
   }
 
@@ -113,7 +128,7 @@ export function setupTransactionalTests() {
  * Execute a function within a test transaction
  */
 export async function withTestTransaction<T>(
-  callback: (prisma: PrismaClient) => Promise<T>
+  callback: (prisma: PrismaClient) => Promise<T>,
 ): Promise<T> {
   const prisma = getTestPrisma();
 
