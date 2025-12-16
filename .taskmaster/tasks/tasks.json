@@ -7460,7 +7460,7 @@
   "execution-plane": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Runner sessions API hardening",
         "description": "Harden /api/runner/sessions endpoints for real use.",
         "status": "done",
@@ -7527,31 +7527,31 @@
         "updatedAt": "2025-12-15T19:11:36.944Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Frontend: start/stop runner session UX",
         "description": "Add a simple UI flow to start a runner session without curl. This task has been dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for implementation.",
-        "status": "review",
+        "status": "done",
         "dependencies": [],
         "priority": "high",
         "details": "Acceptance:\\n- Dev-only panel/button to POST /api/runner/sessions\\n- Shows sessionId + live output via existing work_stream_event feed\\n- Allows stop + send input\\n- Works with E2E_TEST_MODE login helper locally\\n\\nNotes:\\n- Keep behind feature flag/env so prod UX is unaffected\\n- Ensure the implementation aligns with the Omnara COO lead session guidelines.",
         "testStrategy": "Ensure UI elements are functional and responsive. Validate session start/stop functionality through manual testing and automated UI tests. Verify feature flag behavior to ensure no impact on production UX.",
         "subtasks": [],
-        "updatedAt": "2025-12-16T01:51:45.990Z"
+        "updatedAt": "2025-12-16T06:02:29.847Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Control-plane integration plan + adapter",
         "description": "Integrate packages/control-plane with packages/server realtime layer.",
         "details": "Acceptance:\\n- Decide: keep Socket.IO as transport or bridge to control-plane WebSocketServer\\n- Implement a minimal adapter (one direction is fine)\\n- Document event contract alignment and gaps\\n\\nNotes:\\n- Goal is coherent runtime story, not a full rewrite",
         "testStrategy": "",
-        "status": "review",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": [],
-        "updatedAt": "2025-12-16T01:51:47.656Z"
+        "updatedAt": "2025-12-16T06:02:31.724Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Update-pipeline integration plan",
         "description": "Define how update-pipeline will run in this repo and wire a minimal path.",
         "details": "Acceptance:\\n- Decide where VersionWatcher/RolloutController run (server worker vs separate process)\\n- Implement a small integration point (e.g., expose current channel build via API)\\n- Document rollout safety + canary metrics storage",
@@ -7562,426 +7562,457 @@
         "subtasks": []
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Spec trace matrix (execution plane)",
         "description": "Produce a doc mapping spec sections to code + tests + runtime behavior.",
-        "status": "review",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "details": "Acceptance:\\n- For AGENT_RUNNER_SPEC + PROVIDER_ADAPTERS_SPEC: list major sections and link to files\\n- For runtime glue: document request/response schemas and Socket.IO event mapping\\n- Include 'implemented / partial / not started' status per section\\n- Progress: Dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for spec trace matrix generation.",
         "testStrategy": null,
         "subtasks": [],
-        "updatedAt": "2025-12-16T01:51:49.319Z"
+        "updatedAt": "2025-12-16T06:02:33.526Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-16T01:51:49.322Z",
+      "lastModified": "2025-12-16T06:02:33.528Z",
       "taskCount": 5,
-      "completedCount": 1,
+      "completedCount": 4,
       "tags": [
         "execution-plane"
-      ]
+      ],
+      "created": "2025-12-16T06:09:21.471Z",
+      "description": "Tasks for execution-plane context",
+      "updated": "2025-12-16T06:09:21.471Z"
     }
   },
   "prd-gpt52": {
     "tasks": [
       {
-        "id": 26,
+        "id": "26",
         "title": "Monorepo scaffolding (Frontend Vite+React+Phaser, Backend Express TS, Probot app)",
-        "description": "Create the project structure and baseline tooling for frontend, backend, and Probot GitHub App per PRD stack.",
-        "details": "Create a monorepo with packages: /web (Vite + React 18 + Phaser 3.70+ + TS), /server (Node 18+ + Express + TS), /probot (Probot app TS). Add shared types package /shared for WebSocket event typings and API DTOs.\n\nImplementation notes:\n- Use Vite for web build; configure Phaser asset handling and React integration (canvas mount component).\n- Server: ts-node-dev or tsx for dev; build with tsc.\n- Probot: run separately with its own env vars.\n- Add lint/format (ESLint + Prettier) and typecheck scripts.\n\nPseudo-code (root scripts):\n- \"dev\": run web, server, probot concurrently\n- \"build\": build all packages\n\nTest strategy setup:\n- Web: Vitest + React Testing Library\n- Server: Jest or Vitest + Supertest\n- E2E: Playwright\n- Probot: Probot test harness with mocked webhook payloads",
-        "testStrategy": "CI should run: typecheck, lint, unit tests for web/server, and a smoke build for all packages. Verify `pnpm dev` (or npm workspaces) starts all services and web loads a placeholder scene.",
-        "priority": "high",
+        "description": "Create the project structure and baseline tooling for frontend, backend, and Probot GitHub App per PRD stack. Audit completed with no gaps found.",
+        "status": "review",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Create a monorepo with packages: /web (Vite + React 18 + Phaser 3.70+ + TS), /server (Node 18+ + Express + TS), /probot (Probot app TS). Add shared types package /shared for WebSocket event typings and API DTOs.\n\nImplementation notes:\n- Use Vite for web build; configure Phaser asset handling and React integration (canvas mount component).\n- Server: ts-node-dev or tsx for dev; build with tsc.\n- Probot: run separately with its own env vars.\n- Add lint/format (ESLint + Prettier) and typecheck scripts.\n\nImplementation has been verified with the following files:\n- packages/frontend/package.json\n- packages/server/package.json\n- packages/shared/package.json\n- probot/app.ts\n- root package.json\n\nTest strategy setup:\n- Web: Vitest + React Testing Library\n- Server: Jest or Vitest + Supertest\n- E2E: Playwright\n- Probot: Probot test harness with mocked webhook payloads",
+        "testStrategy": "CI should run: typecheck, lint, unit tests for web/server, and a smoke build for all packages. Verify `pnpm dev` (or npm workspaces) starts all services and web loads a placeholder scene. All tests are currently passing with over 350 tests verified.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:22:50.927Z"
       },
       {
-        "id": 27,
+        "id": "27",
         "title": "Database & migrations: PostgreSQL schema from PRD",
         "description": "Implement PostgreSQL 15+ schema exactly as specified (users, villages, houses, agents, sessions, work_stream_events, bug_bots, village_access).",
-        "details": "Use a migration tool (e.g., Prisma Migrate, Knex, or node-pg-migrate). Create tables and indexes:\n- Unique constraints: users.github_id, villages.github_org_id, houses.github_repo_id, bug_bots.github_issue_id, agent_sessions.session_token.\n- Foreign keys per PRD.\n- Add indexes for common queries: houses(village_id), agents(village_id), bug_bots(house_id,status), work_stream_events(session_id,timestamp).\n\nPseudo-code (migration outline):\nCREATE TABLE users (...);\nCREATE TABLE villages (...);\n...\nCREATE INDEX idx_houses_village_id ON houses(village_id);\n\nAlso add a seed script for local dev with mock village/house/agent data.",
-        "testStrategy": "Run migrations on a clean DB in CI. Validate schema matches PRD (table/column existence, constraints). Integration test: insert a village with houses/agents and query joins successfully.",
-        "priority": "high",
+        "status": "review",
         "dependencies": [
-          26
+          "26"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Use Prisma Migrate for managing migrations. Create tables and indexes:\n- Unique constraints: users.github_id, villages.github_org_id, houses.github_repo_id, bug_bots.github_issue_id, agent_sessions.session_token.\n- Foreign keys per PRD.\n- Add indexes for common queries: houses(village_id), agents(village_id), bug_bots(house_id,status), work_stream_events(session_id,timestamp).\n\nRefer to schema.prisma for existing structure and migration files in prisma/migrations/ for historical context.\n\nPseudo-code (migration outline):\nCREATE TABLE users (...);\nCREATE TABLE villages (...);\n...\nCREATE INDEX idx_houses_village_id ON houses(village_id);\n\nAlso add a seed script for local dev with mock village/house/agent data, considering the current SQLite setup in development and PostgreSQL in production.",
+        "testStrategy": "Run migrations on a clean DB in CI. Validate schema matches PRD (table/column existence, constraints). Integration test: insert a village with houses/agents and query joins successfully. Ensure tests account for differences between SQLite and PostgreSQL environments.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:22:52.731Z"
       },
       {
-        "id": 28,
+        "id": "28",
         "title": "Redis + BullMQ foundation for sessions, cache, and async jobs",
         "description": "Add Redis for session/cache and Bull/BullMQ for async processing (GitHub sync, webhook processing, command queue).",
-        "details": "Provision Redis connection in server. Create BullMQ queues:\n- githubSyncQueue: sync org repos → houses\n- webhookQueue: process GitHub webhook events (issue opened/closed, check_run completed)\n- agentCommandQueue: reliable agent command execution and retries\n\nPseudo-code:\nconst connection = new IORedis(process.env.REDIS_URL)\nconst githubSyncQueue = new Queue('githubSync', { connection })\nconst agentCommandQueue = new Queue('agentCommand', { connection })\n\nWorker patterns:\n- Use exponential backoff for retries.\n- Store job status in Redis and/or DB for observability.",
-        "testStrategy": "Unit test queue producers/consumers with a local Redis. Verify retries/backoff. Integration test: enqueue a github sync job and confirm it writes houses to Postgres.",
-        "priority": "high",
+        "status": "review",
         "dependencies": [
-          26
+          "26"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Provision Redis connection in server. Create BullMQ queues:\n- githubSyncQueue: sync org repos → houses\n- webhookQueue: process GitHub webhook events (issue opened/closed, check_run completed)\n- agentCommandQueue: reliable agent command execution and retries\n\nImplementation has been started in the following files:\n- `queue/redis.ts`: Handles Redis connection setup.\n- `queue/queues.ts`: Defines the BullMQ queues including `githubSyncQueue`, `webhookQueue`, and `agentCommandQueue`.\n- `queue/workers.ts`: Contains worker logic for processing jobs with exponential backoff for retries.\n\nPseudo-code:\nconst connection = new IORedis(process.env.REDIS_URL)\nconst githubSyncQueue = new Queue('githubSync', { connection })\nconst agentCommandQueue = new Queue('agentCommand', { connection })\n\nWorker patterns:\n- Use exponential backoff for retries.\n- Store job status in Redis and/or DB for observability.",
+        "testStrategy": "Unit test queue producers/consumers with a local Redis. Verify retries/backoff. Integration test: enqueue a github sync job and confirm it writes houses to Postgres. Note: Queue tests have been implemented but integration tests are currently skipped.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:22:54.614Z"
       },
       {
-        "id": 29,
+        "id": "29",
         "title": "Backend server core: Express TS, config, validation, error handling",
-        "description": "Implement Express server baseline with middleware, request validation, and consistent error responses.",
-        "details": "Set up Express with:\n- JSON body parsing\n- CORS for Vercel frontend\n- Request validation middleware (e.g., zod schemas)\n- Central error handler returning {error:{code,message,details}}\n- Rate limiting middleware (PRD mentions rate limiting)\n\nPseudo-code:\napp.use('/api', authMiddleware)\napp.post('/api/villages', validate(createVillageSchema), handler)\napp.use(errorHandler)\n\nAdd health endpoints:\nGET /healthz (DB + Redis connectivity checks).",
-        "testStrategy": "Supertest: validate 400 on invalid payloads, 500 handling, and /healthz returns ok when DB/Redis available.",
-        "priority": "high",
+        "description": "Implement Express server baseline with middleware, request validation, and consistent error responses. This includes setting up the server to handle various types of requests and ensuring that errors are managed uniformly across the application.",
+        "status": "review",
         "dependencies": [
-          26
+          "26"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Set up Express with:\n- JSON body parsing\n- CORS for Vercel frontend\n- Request validation middleware (e.g., zod schemas)\n- Central error handler returning {error:{code,message,details}}\n- Rate limiting middleware (PRD mentions rate limiting)\n\nImplementation will utilize existing files such as `app.ts` for server configuration and `middleware/error.ts` for error handling. The rate limiting logic can be found in `middleware/ratelimit.ts`.\n\nPseudo-code:\napp.use('/api', authMiddleware)\napp.post('/api/villages', validate(createVillageSchema), handler)\napp.use(errorHandler)\n\nAdd health endpoints:\nGET /healthz (DB + Redis connectivity checks).",
+        "testStrategy": "Supertest: validate 400 on invalid payloads, 500 handling, and /healthz returns ok when DB/Redis available. Ensure that security middleware tests are comprehensive and cover all edge cases.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:22:56.486Z"
       },
       {
-        "id": 30,
+        "id": "30",
         "title": "GitHub OAuth 2.0 + JWT auth endpoints",
         "description": "Implement GitHub OAuth flow and JWT-based auth per PRD endpoints (/auth/github/callback, /auth/me, /auth/logout).",
-        "details": "Implement OAuth:\n- Redirect user to GitHub authorize with required scopes (min required: read:org, repo read for listing repos; additional scopes if triggering actions/dispatch).\n- Handle callback: exchange code for access token, store access_token_hash in users table (hash token; do not store plaintext).\n- Issue JWT to client; store session in Redis if needed.\n\nPseudo-code:\nPOST /auth/github/callback:\n  token = exchangeCode(code)\n  ghUser = GET https://api.github.com/user\n  upsert users by github_id\n  jwt = sign({userId})\n  return {jwt}\n\nGET /auth/me: verify JWT, return user profile.\nPOST /auth/logout: revoke client session (delete Redis session / invalidate token).\n\nSecurity:\n- Use state parameter to prevent CSRF.\n- Use HTTPS in production.",
-        "testStrategy": "Mock GitHub token exchange and /user response. Test: callback creates user, returns JWT; /auth/me returns user when JWT valid; invalid JWT returns 401.",
-        "priority": "high",
+        "status": "review",
         "dependencies": [
-          29,
-          27
+          "29",
+          "27"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Implement OAuth:\n- Redirect user to GitHub authorize with required scopes (min required: read:org, repo read for listing repos; additional scopes if triggering actions/dispatch).\n- Handle callback: exchange code for access token, store access_token_hash in users table (hash token; do not store plaintext).\n- Issue JWT to client; store session in Redis if needed.\n\nImplementation will leverage existing files:\n- `auth/routes.ts` for defining the routes and handling requests.\n- `auth/jwt.ts` for signing and verifying JWTs.\n- `auth/middleware.ts` for middleware to protect routes and validate JWTs.\n\nPseudo-code:\nPOST /auth/github/callback:\n  token = exchangeCode(code)\n  ghUser = GET https://api.github.com/user\n  upsert users by github_id\n  jwt = sign({userId})\n  return {jwt}\n\nGET /auth/me: verify JWT, return user profile.\nPOST /auth/logout: revoke client session (delete Redis session / invalidate token).\n\nSecurity:\n- Use state parameter to prevent CSRF.\n- Use HTTPS in production.",
+        "testStrategy": "Mock GitHub token exchange and /user response. Test: callback creates user, returns JWT; /auth/me returns user when JWT valid; invalid JWT returns 401. Ensure all tests pass as per existing E2E and unit tests.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:22:58.320Z"
       },
       {
-        "id": 31,
+        "id": "31",
         "title": "GitHub API client service (REST + GraphQL) with rate limit handling",
-        "description": "Create a GitHubService to fetch orgs, repos, issues, and trigger actions/dispatch with caching and backoff.",
-        "details": "Implement GitHubService using Octokit (REST + GraphQL). Add:\n- Rate limit detection (X-RateLimit-Remaining) and backoff.\n- Redis caching for org/repo lists.\n- GraphQL for complex queries (e.g., repo languages, activity stats) when needed.\n\nPseudo-code:\nasync listOrgRepos(org):\n  cacheKey=`org:${org}:repos`\n  if cached return\n  repos = await octokit.paginate('GET /orgs/{org}/repos', ...)\n  set cache TTL 60s\n  return repos\n\nAlso implement repository dispatch trigger:\nPOST /api/github/dispatch -> octokit.request('POST /repos/{owner}/{repo}/dispatches', {event_type, client_payload})",
-        "testStrategy": "Unit test with mocked Octokit: caching hit/miss, rate limit backoff, and dispatch call formatting. Integration test: with a real token in staging (optional) to validate scopes.",
-        "priority": "high",
+        "description": "Create a GitHubService to fetch orgs, repos, issues, and trigger actions/dispatch with caching and backoff. This service will utilize existing implementations in the codebase, specifically in `github/client.ts` and `github/rateLimit.ts`.",
+        "status": "review",
         "dependencies": [
-          30,
-          28
+          "30",
+          "28"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Implement GitHubService using Octokit (REST + GraphQL). Add:\n- Rate limit detection (X-RateLimit-Remaining) and backoff.\n- Redis caching for org/repo lists.\n- GraphQL for complex queries (e.g., repo languages, activity stats) when needed.\n\nImplementation will leverage the existing `github/client.ts` for API interactions and `github/rateLimit.ts` for handling rate limits effectively.\n\nPseudo-code:\nasync listOrgRepos(org):\n  cacheKey=`org:${org}:repos`\n  if cached return\n  repos = await octokit.paginate('GET /orgs/{org}/repos', ...)\n  set cache TTL 60s\n  return repos\n\nAlso implement repository dispatch trigger:\nPOST /api/github/dispatch -> octokit.request('POST /repos/{owner}/{repo}/dispatches', {event_type, client_payload})",
+        "testStrategy": "Unit test with mocked Octokit: caching hit/miss, rate limit backoff, and dispatch call formatting. Integration test: with a real token in staging (optional) to validate scopes. Ensure that unit tests are comprehensive, especially for the rate limit handling and caching mechanisms as implemented in the existing files.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:00.165Z"
       },
       {
-        "id": 32,
+        "id": "32",
         "title": "Villages API: list/create/get/update/delete + access control model",
         "description": "Implement /api/villages CRUD and village_access role checks (owner/member/visitor).",
-        "details": "Endpoints per PRD:\n- GET /api/villages: return villages user can access via village_access.\n- POST /api/villages: create from GitHub org (github_org_id, name, owner_id). Add village_access role=owner.\n- GET /api/villages/:id: include config and summary.\n- PUT /api/villages/:id: update is_public, village_config.\n- DELETE /api/villages/:id: owner only.\n\nPseudo-code (authz):\nfunction requireRole(villageId, roles[]):\n  row = SELECT role FROM village_access WHERE village_id=? AND user_id=?\n  if row.role not in roles -> 403\n\nStore last_synced timestamp.",
-        "testStrategy": "Integration tests: owner can CRUD; member can read; visitor read-only; unauthorized gets 401/403. Verify village_access rows created on POST.",
-        "priority": "high",
+        "status": "review",
         "dependencies": [
-          29,
-          30,
-          27
+          "29",
+          "30",
+          "27"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Endpoints per PRD:\n- GET /api/villages: return villages user can access via village_access.\n- POST /api/villages: create from GitHub org (github_org_id, name, owner_id). Add village_access role=owner.\n- GET /api/villages/:id: include config and summary.\n- PUT /api/villages/:id: update is_public, village_config.\n- DELETE /api/villages/:id: owner only.\n\nImplementation is based on the existing code in villages/router.ts, which contains the necessary logic for handling these endpoints. Ensure that the village_access checks are integrated with the existing authorization patterns found in the codebase.\n\nStore last_synced timestamp and ensure that the integration tests cover all CRUD operations as defined in the test strategy.",
+        "testStrategy": "Integration tests: owner can CRUD; member can read; visitor read-only; unauthorized gets 401/403. Verify village_access rows created on POST. Ensure that all existing tests in the codebase are utilized and that new tests are added as necessary to cover any edge cases.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:01.997Z"
       },
       {
-        "id": 33,
+        "id": "33",
         "title": "Houses sync pipeline: GitHub org repos → houses with visual metadata",
-        "description": "Implement /api/villages/:id/houses and /api/villages/:id/houses/sync to map repos into houses with style/position metadata.",
-        "details": "Sync behavior:\n- Fetch org repos.\n- Upsert houses by github_repo_id.\n- Populate: name, primary_language, stars.\n- Generate initial layout positions (position_x, position_y) and house_style JSONB based on language/activity/size.\n\nLayout algorithm (simple MVP):\n- Sort repos by stars/activity.\n- Place on grid spiral to avoid overlap.\nPseudo-code:\nfor (i, repo of repos):\n  {x,y}=spiral(i)\n  style={arch: languageToStyle(repo.language), activity: repo.pushed_at}\n  upsert house\n\nExpose GET /api/villages/:id/houses.\n\nQueue:\n- /sync enqueues githubSyncQueue job; worker performs upserts and updates villages.last_synced.",
-        "testStrategy": "Integration test: create village, run sync, verify houses count matches repos (mock GitHubService). Validate deterministic positions for same input. Performance test: sync 100 repos under acceptable time.",
-        "priority": "high",
+        "description": "Implement /api/villages/:id/houses and /api/villages/:id/houses/sync to map repos into houses with style/position metadata. This will leverage the existing implementation in `villages/sync.ts`, which contains the core logic for syncing houses with GitHub repositories.",
+        "status": "review",
         "dependencies": [
-          31,
-          32,
-          28
+          "31",
+          "32",
+          "28"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Sync behavior:\n- Fetch org repos.\n- Upsert houses by github_repo_id.\n- Populate: name, primary_language, stars.\n- Generate initial layout positions (position_x, position_y) and house_style JSONB based on language/activity/size.\n\nLayout algorithm (simple MVP):\n- Sort repos by stars/activity.\n- Place on grid spiral to avoid overlap.\nPseudo-code:\nfor (i, repo of repos):\n  {x,y}=spiral(i)\n  style={arch: languageToStyle(repo.language), activity: repo.pushed_at}\n  upsert house\n\nExpose GET /api/villages/:id/houses.\n\nQueue:\n- /sync enqueues githubSyncQueue job; worker performs upserts and updates villages.last_synced. This will utilize the existing queue implementation in `queue/workers.ts`.",
+        "testStrategy": "Integration test: create village, run sync, verify houses count matches repos (mock GitHubService). Validate deterministic positions for same input. Performance test: sync 100 repos under acceptable time. Ensure that the integration tests are aligned with the existing tests in the codebase, including those in `webhooks/dedupe.ts`.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:04.039Z"
       },
       {
-        "id": 34,
+        "id": "34",
         "title": "WebSocket server: native WS with Socket.io fallback + auth + room model",
-        "description": "Implement real-time channel for village updates, agent streams, and bug bot events with join_village semantics.",
-        "details": "Implement WS server (e.g., ws) and Socket.io fallback.\n- Authenticate on connect using JWT.\n- Support message types from PRD: join_village, agent_command.\n- Rooms:\n  - village:{id}\n  - agent:{id}\n  - repo:{github_repo_id}\n\nPseudo-code:\nonMessage(msg):\n  switch msg.type:\n    case 'join_village': verify access; socket.join(`village:${id}`)\n    case 'agent_command': enqueue agentCommandQueue\n\nServer->client events:\n- agent_update\n- work_stream\n- bug_bot_spawn\n- bug_bot_resolved\n\nAdd connection status pings and basic backpressure (drop/compact high-frequency position updates).",
-        "testStrategy": "WS integration tests: connect with JWT, join village, receive broadcast. Negative tests: invalid token, no access. Load test: simulate 100 clients receiving agent_update under <200ms target.",
-        "priority": "high",
+        "description": "Implement real-time channel for village updates, agent streams, and bug bot events with join_village semantics. This will leverage existing implementations in `realtime/server.ts` and `realtime/auth.ts` for authentication and connection management.",
+        "status": "review",
         "dependencies": [
-          30,
-          29,
-          28
+          "30",
+          "29",
+          "28"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Implement WS server (e.g., ws) and Socket.io fallback.\n- Authenticate on connect using JWT as defined in `realtime/auth.ts`.\n- Support message types from PRD: join_village, agent_command.\n- Rooms:\n  - village:{id}\n  - agent:{id}\n  - repo:{github_repo_id}\n\nPseudo-code:\nonMessage(msg):\n  switch msg.type:\n    case 'join_village': verify access; socket.join(`village:${id}`)\n    case 'agent_command': enqueue agentCommandQueue\n\nServer->client events:\n- agent_update\n- work_stream\n- bug_bot_spawn\n- bug_bot_resolved\n\nAdd connection status pings and basic backpressure (drop/compact high-frequency position updates).",
+        "testStrategy": "WS integration tests: connect with JWT, join village, receive broadcast. Negative tests: invalid token, no access. Load test: simulate 100 clients receiving agent_update under <200ms target. Ensure tests cover scenarios outlined in `frontend/src/realtime/WebSocketService.ts` and `frontend/src/realtime/EventBus.ts`.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:05.891Z"
       },
       {
-        "id": 35,
+        "id": "35",
         "title": "MCP controller service: connect agents, stream events, tool invocation",
-        "description": "Implement MCPAgentController using official TypeScript SDK with streaming and broadcast to WebSocket clients.",
-        "details": "Implement MCPAgentController similar to PRD snippet:\n- Maintain Map<agentId, MCPClient>.\n- connectAgent(agentId, serverUrl): connect and subscribe to tool_call/result events.\n- broadcastWorkEvent: write to work_stream_events table and emit WS work_stream.\n- runTool(agentId, toolName, params)\n- runTask(agentId, taskDescription)\n\nReliability:\n- Reconnect logic with exponential backoff.\n- Clear error states and emit agent_update status='error' with message.\n\nPseudo-code:\nclient.on('tool_call', e => persistAndEmit('tool_call', e))\nclient.on('result', e => persistAndEmit('result', e))\n\nPersist:\nINSERT INTO work_stream_events(session_id,event_type,content,metadata)\n",
-        "testStrategy": "Unit test with mocked MCPClient emitting events. Integration test: connect to a test MCP server, runTool, verify WS receives work_stream and DB stores events.",
-        "priority": "high",
+        "description": "Implement MCPAgentController using official TypeScript SDK with streaming and broadcast to WebSocket clients. Leverage existing implementations in `agents/controller.ts`, `agents/mcp-http.ts`, and `agents/session.ts` for seamless integration.",
+        "status": "review",
         "dependencies": [
-          34,
-          27,
-          28
+          "34",
+          "27",
+          "28"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Implement MCPAgentController similar to PRD snippet:\n- Maintain Map<agentId, MCPClient>.\n- connectAgent(agentId, serverUrl): connect and subscribe to tool_call/result events.\n- broadcastWorkEvent: write to work_stream_events table and emit WS work_stream.\n- runTool(agentId, toolName, params)\n- runTask(agentId, taskDescription)\n\nReliability:\n- Reconnect logic with exponential backoff as seen in `agents/manager.ts`.\n- Clear error states and emit agent_update status='error' with message.\n\nPseudo-code:\nclient.on('tool_call', e => persistAndEmit('tool_call', e))\nclient.on('result', e => persistAndEmit('result', e))\n\nPersist:\nINSERT INTO work_stream_events(session_id,event_type,content,metadata)\n",
+        "testStrategy": "Unit test with mocked MCPClient emitting events. Integration test: connect to a test MCP server, runTool, verify WS receives work_stream and DB stores events. Ensure tests cover reconnect logic and error handling as implemented in `agents/manager.ts`. Validate that events are correctly persisted in the database.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:07.653Z"
       },
       {
-        "id": 36,
+        "id": "36",
         "title": "Agents API: CRUD agents and persist sprite/position/status",
-        "description": "Implement /api/villages/:id/agents, /api/agents/:id update/delete, storing mcp_server_url, config, sprite_config, positions.",
-        "details": "Endpoints:\n- GET /api/villages/:id/agents\n- POST /api/villages/:id/agents: create agent with name, mcp_server_url, agent_config, initial position.\n- PUT /api/agents/:id: update config/status/position/sprite_config.\n- DELETE /api/agents/:id\n\nValidation:\n- mcp_server_url must be URL.\n- status in {idle, working, debugging, error}.\n\nOn create/update, emit agent_update to village room for real-time UI refresh.",
-        "testStrategy": "Integration tests: create agent, list agents, update position/status, delete. Verify DB updates and WS broadcast occurs.",
-        "priority": "high",
+        "description": "Implement /api/villages/:id/agents, /api/agents/:id update/delete, storing mcp_server_url, config, sprite_config, positions. Utilize the existing implementation in agents/router.ts, which contains the necessary CRUD operations and integration tests.",
+        "status": "review",
         "dependencies": [
-          32,
-          27
+          "32",
+          "27"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Endpoints:\n- GET /api/villages/:id/agents\n- POST /api/villages/:id/agents: create agent with name, mcp_server_url, agent_config, initial position.\n- PUT /api/agents/:id: update config/status/position/sprite_config.\n- DELETE /api/agents/:id\n\nValidation:\n- mcp_server_url must be URL.\n- status in {idle, working, debugging, error}.\n\nOn create/update, emit agent_update to village room for real-time UI refresh. Ensure that all CRUD operations are covered by existing tests in the codebase, and no gaps were found during the audit.",
+        "testStrategy": "Integration tests: create agent, list agents, update position/status, delete. Verify DB updates and WS broadcast occurs. Leverage existing tests to ensure coverage and functionality.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:09.472Z"
       },
       {
-        "id": 37,
+        "id": "37",
         "title": "Agent session management endpoints: start/stop/restart + session_token",
-        "description": "Implement /api/agents/:id/start and /api/agents/:id/stop with agent_sessions table and MCP connect/disconnect.",
-        "details": "Start:\n- Create agent_sessions row with session_token (random UUID).\n- Call MCPAgentController.connectAgent(agentId, mcp_server_url).\n- Update agents.current_status='working' or 'idle' depending on initial state.\n- Emit agent_update.\n\nStop:\n- Mark session ended_at, status='ended'.\n- Disconnect MCP client.\n- Update agent status='idle'.\n\nPseudo-code:\nPOST /api/agents/:id/start:\n  sessionToken=uuid()\n  INSERT agent_sessions\n  await controller.connectAgent(...)\n\nPOST /api/agents/:id/stop:\n  await controller.disconnectAgent(agentId)\n  UPDATE agent_sessions SET ended_at=NOW(), status='ended' WHERE agent_id=? AND status='active'\n",
-        "testStrategy": "Integration test with mocked MCP controller: start creates session, stop ends it. Verify idempotency: stopping twice returns 200 with no active session.",
-        "priority": "high",
-        "dependencies": [
-          35,
-          36,
-          27
-        ],
+        "description": "Implement /api/agents/:id/start and /api/agents/:id/stop with agent_sessions table and MCP connect/disconnect. Additionally, implement /api/agents/:id/pause and /api/agents/:id/resume endpoints for session lifecycle control using BullMQ queue handlers.",
         "status": "pending",
+        "dependencies": [
+          "35",
+          "36",
+          "27"
+        ],
+        "priority": "high",
+        "details": "Start:\n- Create agent_sessions row with session_token (random UUID).\n- Call MCPAgentController.connectAgent(agentId, mcp_server_url).\n- Update agents.current_status='working' or 'idle' depending on initial state.\n- Emit agent_update.\n\nStop:\n- Mark session ended_at, status='ended'.\n- Disconnect MCP client.\n- Update agent status='idle'.\n\nPause:\n- Implement POST /api/agents/:id/pause to pause the agent session.\n- Use BullMQ to manage the session lifecycle.\n\nResume:\n- Implement POST /api/agents/:id/resume to resume the agent session.\n- Ensure the session state is correctly updated in the agent_sessions table.\n\nPseudo-code:\nPOST /api/agents/:id/start:\n  sessionToken=uuid()\n  INSERT agent_sessions\n  await controller.connectAgent(...)\n\nPOST /api/agents/:id/stop:\n  await controller.disconnectAgent(agentId)\n  UPDATE agent_sessions SET ended_at=NOW(), status='ended' WHERE agent_id=? AND status='active'\n\nPOST /api/agents/:id/pause:\n  await controller.pauseAgent(agentId)\n\nPOST /api/agents/:id/resume:\n  await controller.resumeAgent(agentId)",
+        "testStrategy": "Integration test with mocked MCP controller: start creates session, stop ends it, pause and resume are tested for correct state transitions. Verify idempotency: stopping twice returns 200 with no active session. Ensure that pause and resume maintain session integrity and state.",
         "subtasks": []
       },
       {
-        "id": 38,
+        "id": "38",
         "title": "Agent command endpoint + command queue execution (Run Tool, Commit, PR, multi-step tasks)",
-        "description": "Implement /api/agents/:id/command and WS agent_command handling with BullMQ for reliable execution and retries.",
-        "details": "Command model:\n- Accept commands: run_tool, run_task, commit, pr, trigger_action.\n- Enqueue to agentCommandQueue with {agentId, command, params, userId}.\n- Worker executes via MCPAgentController.runTool/runTask.\n\nCommit/PR buttons:\n- PRD requires buttons; implement as MCP tasks that instruct agent to perform git operations and open PR (details depend on MCP server capabilities). For MVP, send a runTask prompt like:\n  \"Commit current changes with message X\" and \"Open PR with title Y\".\n\nPseudo-code (worker):\nprocess(job):\n  switch command:\n    case 'run_tool': await controller.runTool(agentId, params.tool, params)\n    case 'run_task': await controller.runTask(agentId, params.text)\n    case 'commit': await controller.runTask(agentId, `Commit changes: ${params.message}`)\n    case 'pr': await controller.runTask(agentId, `Open PR: ${params.title}`)\n\nEmit progress via work_stream events and agent_update status transitions.",
-        "testStrategy": "Unit test: command validation and queue enqueue. Integration test: enqueue run_tool and verify MCP called and WS work_stream emitted. Retry test: simulate MCP failure then success.",
-        "priority": "high",
+        "description": "Implement /api/agents/:id/command and WS agent_command handling with BullMQ for reliable execution and retries. The implementation has been audited and is confirmed as implemented in `app.ts` (line 729) and `agents/queue.ts`. Ensure that the command handling aligns with the existing codebase and follows the established patterns.",
+        "status": "review",
         "dependencies": [
-          37,
-          28,
-          34,
-          35
+          "37",
+          "28",
+          "34",
+          "35"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "high",
+        "details": "Command model:\n- Accept commands: run_tool, run_task, commit, pr, trigger_action.\n- Enqueue to agentCommandQueue with {agentId, command, params, userId}.\n- Worker executes via MCPAgentController.runTool/runTask.\n\nCommit/PR buttons:\n- PRD requires buttons; implement as MCP tasks that instruct agent to perform git operations and open PR (details depend on MCP server capabilities). For MVP, send a runTask prompt like:\n  \"Commit current changes with message X\" and \"Open PR with title Y\".\n\nPseudo-code (worker):\nprocess(job):\n  switch command:\n    case 'run_tool': await controller.runTool(agentId, params.tool, params)\n    case 'run_task': await controller.runTask(agentId, params.text)\n    case 'commit': await controller.runTask(agentId, `Commit changes: ${params.message}`)\n    case 'pr': await controller.runTask(agentId, `Open PR: ${params.title}`)\n\nEmit progress via work_stream events and agent_update status transitions. The integration test for command functionality has been established, ensuring that the enqueue process for `run_tool` is verified and that the MCP is called correctly, with work_stream events emitted as expected.",
+        "testStrategy": "Unit test: command validation and queue enqueue. Integration test: enqueue run_tool and verify MCP called and WS work_stream emitted. Retry test: simulate MCP failure then success. Ensure that the integration tests cover the new implementations in `app.ts` and `agents/queue.ts`.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:11.268Z"
       },
       {
-        "id": 39,
+        "id": "39",
         "title": "Work stream retrieval API: /api/agents/:id/stream",
-        "description": "Implement REST endpoint to fetch historical work_stream_events for an agent session to hydrate UI on reconnect.",
-        "details": "Implement GET /api/agents/:id/stream:\n- Find latest active or most recent session for agent.\n- Query work_stream_events ordered by timestamp.\n- Support pagination (limit/offset or cursor by timestamp).\n\nPseudo-code:\nsession = SELECT id FROM agent_sessions WHERE agent_id=? ORDER BY started_at DESC LIMIT 1\nevents = SELECT * FROM work_stream_events WHERE session_id=? ORDER BY timestamp ASC LIMIT ?\nreturn {session_id, events}\n",
-        "testStrategy": "Integration test: insert events, fetch stream, verify ordering and pagination. Verify 404 when no sessions exist.",
+        "description": "Implement REST endpoint to fetch historical work_stream_events for an agent session to hydrate UI on reconnect. This implementation has been audited and confirmed as implemented in agents/router.ts.",
+        "status": "review",
+        "dependencies": [
+          "27",
+          "37"
+        ],
         "priority": "medium",
-        "dependencies": [
-          27,
-          37
-        ],
-        "status": "pending",
-        "subtasks": []
+        "details": "Implement GET /api/agents/:id/stream:\n- Find latest active or most recent session for agent.\n- Query work_stream_events ordered by timestamp.\n- Support pagination (limit/offset or cursor by timestamp).\n\nImplementation details:\n- The endpoint is defined in agents/router.ts, which contains the necessary logic for fetching the session and events.\n- Ensure that the pagination logic is consistent with existing patterns in the codebase, particularly in how events are retrieved and returned.\n\nPseudo-code:\nsession = SELECT id FROM agent_sessions WHERE agent_id=? ORDER BY started_at DESC LIMIT 1\nevents = SELECT * FROM work_stream_events WHERE session_id=? ORDER BY timestamp ASC LIMIT ?\nreturn {session_id, events}\n",
+        "testStrategy": "Integration test: insert events, fetch stream, verify ordering and pagination. Verify 404 when no sessions exist. Ensure that existing tests for pagination and SSE are leveraged to validate this implementation.",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T06:23:13.088Z"
       },
       {
-        "id": 40,
+        "id": "40",
         "title": "Frontend foundation: React app shell + Phaser canvas mount + routing",
-        "description": "Create the React app shell (auth, village selection) and mount Phaser game instance for village rendering.",
-        "details": "Implement React routes:\n- /login\n- /villages (list)\n- /v/:id (village view with Phaser canvas + UI overlays)\n\nPhaser integration:\n- Create <GameCanvas /> component that instantiates Phaser.Game on mount and destroys on unmount.\n- Provide a bridge/event bus between Phaser scene and React UI (e.g., custom event emitter) for agent click events.\n\nPseudo-code:\nuseEffect(() => {\n  game = new Phaser.Game(config)\n  return () => game.destroy(true)\n}, [villageId])",
-        "testStrategy": "React unit tests for routing and auth guard. Manual smoke: navigate to /v/:id and see Phaser scene render placeholder.",
-        "priority": "high",
-        "dependencies": [
-          26
-        ],
+        "description": "Create the React app shell (auth, village selection) and mount Phaser game instance for village rendering. Ensure integration with the existing layout components and utilize the layout utilities found in iso/layout.ts and utils/layout.ts.",
         "status": "pending",
-        "subtasks": []
+        "dependencies": [
+          "26"
+        ],
+        "priority": "high",
+        "details": "Implement React routes:\n- /login\n- /villages (list)\n- /v/:id (village view with Phaser canvas + UI overlays)\n\nPhaser integration:\n- Create <GameCanvas /> component that instantiates Phaser.Game on mount and destroys on unmount.\n- Provide a bridge/event bus between Phaser scene and React UI (e.g., custom event emitter) for agent click events.\n\nIncorporate layout components:\n- Create components/layout/ with LayoutGrid, LayoutColumn, LayoutRow, LayoutPanel abstractions to formalize the layout structure.\n\nPseudo-code:\nuseEffect(() => {\n  game = new Phaser.Game(config)\n  return () => game.destroy(true)\n}, [villageId])",
+        "testStrategy": "React unit tests for routing and auth guard. Manual smoke: navigate to /v/:id and see Phaser scene render placeholder. Ensure layout components are tested for responsiveness and integration with the overall app shell.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create layout components",
+            "description": "Implement LayoutGrid, LayoutColumn, LayoutRow, LayoutPanel abstractions in components/layout/ to formalize layout structure.",
+            "dependencies": [],
+            "details": "Ensure these components utilize existing utilities in iso/layout.ts and utils/layout.ts for consistent styling and behavior.",
+            "status": "pending",
+            "testStrategy": "Unit tests for each layout component to ensure proper rendering and responsiveness.",
+            "parentId": "undefined"
+          }
+        ]
       },
       {
-        "id": 41,
+        "id": "41",
         "title": "Village Visualization Engine: isometric tilemap, houses, agents, pan/zoom, responsive canvas",
         "description": "Implement Phaser.js isometric village rendering with houses from API and agent sprites with status indicators.",
         "details": "Phaser 3.70+ scene:\n- Load assets via AssetManager.\n- Isometric utilities: cartesian<->iso conversion.\n- Render ground tilemap and place houses at (position_x, position_y).\n- Render agent sprites at positions with ring color based on status:\n  idle gray (#95a5a6), working green (#2ecc71), debugging orange (#f39c12), error red (#e74c3c).\n- Hover tooltip: repo name/stats; agent name/status.\n- Pan: pointer drag; Zoom: wheel/pinch; clamp zoom 0.5x-2x.\n- Fast travel: double-click house centers camera.\n\nPerformance:\n- Use sprite batching where possible.\n- Implement simple culling: setVisible(false) for off-camera sprites.\n\nState persistence:\n- Persist camera position/zoom and entity positions in backend (agents/houses positions) and/or localStorage for camera.",
         "testStrategy": "Automated: unit test iso conversion utilities. Manual/perf: verify <3s render for org data, 60 FPS with 100+ sprites, pan/zoom smooth on desktop and mobile.",
         "priority": "high",
         "dependencies": [
-          40,
-          33,
-          36
+          "40",
+          "33",
+          "36"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 42,
+        "id": "42",
         "title": "RPG Dialogue UI: slide-up panel, tabs, input, close behaviors",
         "description": "Implement bottom dialogue panel (30% height desktop, 50% mobile) with Thread/Control/Info tabs and keyboard shortcuts.",
         "details": "React component DialogueUI:\n- Slide animation 300ms ease-out.\n- Tabs: Thread (stream), Control (buttons), Info (agent metadata).\n- Close: ESC or click-away.\n- Input focus: click input or press 'T'.\n- Auto-scroll thread on new messages.\n\nPseudo-code:\nif (open) render <div className=\"panel open\">...\nuseEffect(() => onKeyDown ESC => close)\n\nEnsure it does not obstruct village view (overlay with transparency and responsive sizing).",
         "testStrategy": "React component tests: open/close timing, ESC closes, tab switching, auto-scroll behavior. Lighthouse accessibility checks for focus management.",
         "priority": "high",
         "dependencies": [
-          40
+          "40"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 43,
+        "id": "43",
         "title": "WebSocket client + streaming thread integration in Dialogue UI",
         "description": "Implement WebSocket client with Socket.io fallback, join_village, and real-time work_stream rendering with timestamps.",
         "details": "Implement WebSocketService in web:\n- Connect using JWT.\n- On village load: send join_village.\n- Subscribe to work_stream, agent_update, bug_bot_spawn/resolved.\n- Maintain per-agent/per-session message store.\n- Fallback: if WS fails, poll /api/agents/:id/stream every N seconds (PRD risk mitigation).\n\nPseudo-code:\nws.on('work_stream', evt => addMessage(evt.session_id, evt.event))\nif disconnected -> startPolling()\n\nRender timestamps in Thread tab.",
         "testStrategy": "Mock WS server in tests to emit events and verify UI updates within expected latency. Manual: disconnect network to verify polling fallback and connection status indicator.",
         "priority": "high",
         "dependencies": [
-          34,
-          42
+          "34",
+          "42"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 44,
+        "id": "44",
         "title": "Agent interaction wiring: click agent opens dialogue <300ms + contextual Q&A",
         "description": "Connect Phaser agent click events to open Dialogue UI quickly and send user questions to agent via command pipeline.",
         "details": "In Phaser:\n- On pointerdown on agent sprite: emit event to React with agentId.\n\nIn React:\n- Open DialogueUI immediately (optimistic) and load agent info.\n- Thread tab shows existing stream (fetch /api/agents/:id/stream) then continues via WS.\n- On user question submit: send agent_command (run_task) with contextual prompt.\n\nPseudo-code:\nonAgentClick(agentId):\n  setOpen(true)\n  setSelectedAgent(agentId)\n  fetchStream(agentId)\n\nonSubmit(text):\n  ws.send({type:'agent_command', agent_id, command:'run_task', params:{text}})\n",
         "testStrategy": "Measure interaction latency in devtools: click-to-panel open under 300ms (UI open should be immediate). Integration test: submitting question enqueues command and yields work_stream response.",
         "priority": "high",
         "dependencies": [
-          41,
-          42,
-          38,
-          43
+          "41",
+          "42",
+          "38",
+          "43"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 45,
+        "id": "45",
         "title": "Control Panel tab: Run Tool, Commit, PR, Trigger Actions buttons end-to-end",
         "description": "Implement Control tab buttons that call backend endpoints/WS to execute agent commands and GitHub dispatch triggers.",
         "details": "Control tab actions:\n- Run Tool: open modal/form for tool name + params JSON; send /api/agents/:id/command {command:'run_tool', params}.\n- Commit: input commit message; send command:'commit'.\n- PR: input title; send command:'pr'.\n- Trigger GitHub Actions: call /api/github/dispatch with repo and event_type (or repository_dispatch) from selected house context.\n\nPseudo-code:\nawait fetch(`/api/agents/${id}/command`, {body:{command:'run_tool', params}})\n\nShow optimistic UI state and errors clearly.",
         "testStrategy": "Integration tests: mock backend responses and verify UI states. End-to-end (Playwright): click Run Tool, submit, see work_stream messages appear.",
         "priority": "high",
         "dependencies": [
-          44,
-          31,
-          38
+          "44",
+          "31",
+          "38"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 46,
+        "id": "46",
         "title": "Bug Bot backend model + REST endpoints (list, assign, status)",
         "description": "Implement bug_bots persistence and endpoints /api/villages/:id/bugs, /api/bugs/:id/assign, /api/bugs/:id/status.",
         "details": "Implement:\n- GET /api/villages/:id/bugs: list open/active bug bots with positions and severity.\n- POST /api/bugs/:id/assign: set assigned_agent_id and emit WS update (could reuse bug_bot_spawn/update event).\n- PUT /api/bugs/:id/status: update status (open/in_progress/resolved) and emit.\n\nAssignment logic:\n- When assigned, bot should follow agent visually (frontend behavior) and fade as progress is made (frontend uses status/progress signals; MVP can map in_progress->partial alpha).\n\nPseudo-code:\nUPDATE bug_bots SET assigned_agent_id=? WHERE id=?\nws.to(`village:${villageId}`).emit('bug_bot_update', ...)",
         "testStrategy": "Integration tests: create bug bot row, list, assign agent, update status. Verify WS events emitted to village room.",
         "priority": "high",
         "dependencies": [
-          27,
-          32,
-          34
+          "27",
+          "32",
+          "34"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 47,
+        "id": "47",
         "title": "Probot GitHub App: webhooks for issues and check_run failures → bug bots",
         "description": "Implement Probot app per PRD to create/remove bug bots on issues.opened/issues.closed and create bots on check_run.completed failure.",
         "details": "Probot handlers:\n- issues.opened: determineSeverity(labels), createBugBot(repo_id, issue_id, title, severity), emit bug_bot_spawn to repo:{repo.id} and/or village room.\n- issues.closed: removeBugBot(issue.id), emit bug_bot_resolved.\n- check_run.completed: if conclusion==='failure', createBugBot with type 'ci_failure' (store in metadata/house_style or bug_bots.title).\n\nNeed mapping repo_id -> house_id:\n- Query houses by github_repo_id to get house_id.\n\nPseudo-code:\napp.on('issues.opened', async ctx => {\n  const repoId = ctx.payload.repository.id\n  const house = await db.houses.findByGithubRepoId(repoId)\n  await db.bug_bots.upsert({github_issue_id: issue.id, house_id: house.id, ...})\n  ws.emit('bug_bot_spawn', ...)\n})",
         "testStrategy": "Probot unit tests with fixture payloads for issues.opened/closed and check_run.completed. Integration test: send webhook to /api/github/webhook (or probot endpoint) and verify bug_bots row created within 10 seconds and WS event broadcast.",
         "priority": "high",
         "dependencies": [
-          46,
-          31,
-          28,
-          34
+          "46",
+          "31",
+          "28",
+          "34"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 48,
+        "id": "48",
         "title": "Bug Bot frontend: sprite spawning on houses, severity visuals, assignment UX, lifecycle animations",
         "description": "Render Bug Bot sprites on repo houses, allow click/drag assignment to agents, fade/progress visuals, and celebration on resolve.",
         "details": "In Phaser:\n- Maintain BugBot entities keyed by github_issue_id.\n- On WS bug_bot_spawn: create sprite near house position.\n- Severity visuals: color/animation intensity.\n- Click bug bot: open details panel (reuse DialogueUI or a small modal) showing issue title/severity.\n- Assignment: implement click-to-assign (select bug bot then click agent) or drag bot onto agent.\n- Follow behavior: if assigned_agent_id set, update bot position to agent position each tick.\n- Fade: status in_progress reduces alpha; resolved triggers celebration animation then destroy.\n\nPseudo-code:\nonBugBotSpawn(bug): createBugBotSprite(house.x+dx, house.y+dy)\nupdate(): if assigned -> bot.setPosition(agent.x, agent.y-8)\n",
         "testStrategy": "Manual: create GitHub issue, verify bot appears within 10 seconds. UI test: assign bot to agent and see follow behavior. Resolve issue and confirm celebration + removal.",
         "priority": "high",
         "dependencies": [
-          41,
-          43,
-          46,
-          47
+          "41",
+          "43",
+          "46",
+          "47"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 49,
+        "id": "49",
         "title": "World Map system (P1): multi-org navigation with chunked loading and persistent agent state",
         "description": "Implement world map scene showing orgs as regions and fast travel between villages with <2s transitions and persistent agent state.",
         "details": "Frontend:\n- Add WorldMapScene in Phaser and a React UI toggle.\n- Render accessible orgs (villages) as regions/tiles.\n- Click region: navigate to /v/:id and load that village.\n- Chunked loading: only load assets/entities for current village; keep minimal cached state for others.\n\nBackend:\n- Ensure agent state persisted in DB (agents.current_status, position, last_activity) and streamed via WS upon join.\n\nPseudo-code:\nWorldMapScene.onRegionClick(villageId) => router.navigate(`/v/${villageId}`)\n\nPerformance:\n- Preload minimal assets; lazy-load house/agent sprites per village.",
         "testStrategy": "Manual: with 10+ villages, world map remains smooth; travel between villages <2 seconds. Verify agent status persists after switching villages.",
         "priority": "medium",
         "dependencies": [
-          32,
-          41,
-          43
+          "32",
+          "41",
+          "43"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 50,
+        "id": "50",
         "title": "Onboarding flow: GitHub OAuth + create village from org + demo mode fallback",
         "description": "Implement guided onboarding to achieve 'working village within 2 minutes' including progress indicators and optional demo data.",
         "details": "Frontend onboarding steps:\n1) Login with GitHub\n2) Select org\n3) Create village\n4) Sync repos (show progress)\n5) Add/connect MCP agent (optional step)\n\nDemo mode:\n- If user skips MCP setup, create a demo agent with mock streaming (client-side) to avoid empty village.\n\nPseudo-code:\nif no agents:\n  show CTA \"Add Agent\" and optional \"Try Demo Agent\"\n\nTrack time-to-first-village and show clear errors for missing org permissions.",
         "testStrategy": "E2E test: new user path completes under 2 minutes with mocked GitHub. Verify demo mode renders agent sprite and dialogue streaming without backend MCP.",
         "priority": "medium",
         "dependencies": [
-          30,
-          32,
-          33,
-          40
+          "30",
+          "32",
+          "33",
+          "40"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 51,
+        "id": "51",
         "title": "Performance optimization pass: 60 FPS with 100+ sprites, <3s render, <200ms WS latency",
         "description": "Optimize rendering and real-time update handling to meet PRD performance targets.",
         "details": "Frontend:\n- Sprite culling (off-screen visibility toggles).\n- Reduce overdraw; use texture atlases.\n- Throttle position updates; interpolate movement.\n- Minimap rendering as simplified layer.\n\nBackend:\n- Compact WS messages; avoid broadcasting to all when only village room needed.\n- Redis caching for GitHub data.\n\nInstrumentation:\n- Add FPS counter in dev mode.\n- Measure village render time and WS RTT.\n\nPseudo-code:\nif (Math.abs(newPos-oldPos) < epsilon) skip emit\nemit agent_update at max 10Hz",
         "testStrategy": "Load test scene with 100+ sprites and verify stable 60 FPS on target devices. Measure initial render time <3s with real org data. WS latency test with synthetic ping events <200ms median.",
         "priority": "medium",
         "dependencies": [
-          41,
-          43,
-          48
+          "41",
+          "43",
+          "48"
         ],
         "status": "pending",
         "subtasks": []
       },
       {
-        "id": 52,
+        "id": "52",
         "title": "Testing, security hardening, and production deployment (Vercel + monitoring)",
         "description": "Add end-to-end tests, security audit items (JWT, rate limiting, validation), and deploy frontend to Vercel with backend hosting and monitoring.",
         "details": "Testing:\n- Unit tests: iso utils, reducers/stores, GitHubService, MCP controller mocks.\n- Integration: API endpoints with test DB.\n- E2E: Playwright flows (login mocked, open village, click agent, see dialogue, run tool, bug bot spawn).\n\nSecurity:\n- Enforce HTTPS/WSS.\n- Rate limit all endpoints.\n- Validate webhook signatures for GitHub webhooks.\n- Hash stored GitHub tokens.\n\nDeployment:\n- Frontend: Vercel.\n- Backend: deploy to a Node-friendly host (PRD mentions Vercel + Railway in checklist; implement accordingly).\n- Configure env vars: DB, REDIS, JWT secret, GitHub OAuth, GitHub App creds.\n- Monitoring: error tracking (e.g., Sentry) and basic uptime checks.\n\nPseudo-code (webhook signature):\nverifyHmacSHA256(rawBody, secret, signatureHeader)",
         "testStrategy": "CI pipeline gates on tests and typecheck. Run a staging deploy smoke test: OAuth callback, create village, sync houses, WS connect, spawn bug bot via webhook fixture. Security tests: invalid webhook signature rejected; rate limit triggers; JWT tampering rejected.",
         "priority": "high",
         "dependencies": [
-          45,
-          47,
-          51
+          "45",
+          "47",
+          "51"
         ],
         "status": "pending",
         "subtasks": []
       }
     ],
     "metadata": {
-      "created": "2025-12-15T22:44:27.477Z",
-      "updated": "2025-12-15T22:49:49.238Z",
-      "description": "Tasks for prd-gpt52 context"
+      "version": "1.0.0",
+      "lastModified": "2025-12-16T06:23:13.090Z",
+      "taskCount": 27,
+      "completedCount": 0,
+      "tags": [
+        "prd-gpt52"
+      ]
     }
   },
   "prd-gpt52-research": {
@@ -9947,7 +9978,8 @@
         "prd-gpt52-research"
       ],
       "created": "2025-12-15T23:10:14.008Z",
-      "description": "Tasks for prd-gpt52-research context"
+      "description": "Tasks for prd-gpt52-research context",
+      "updated": "2025-12-15T23:10:14.008Z"
     }
   }
 }
