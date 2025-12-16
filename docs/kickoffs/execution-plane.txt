@@ -1,0 +1,62 @@
+You are Opus Lead Orchestrator.
+
+Goal: run a 3-subagent parallel sprint using Task Master tag: execution-plane.
+
+Repo:
+- /Users/jamesbrady/Projects/utlyze/ai-agent-village/canonical/ai-agent-village-monitor
+
+Hard rules:
+- Do NOT run task-master init.
+- Do NOT hand-edit .taskmaster/*.json (use Task Master CLI only).
+- Use branches + PRs (one branch per task).
+- Respect file boundaries (no overlap).
+- Update Task Master with Plan + Progress + Done notes.
+
+Preflight (run first):
+1) cd repo
+2) task-master tags use execution-plane
+3) task-master validate-dependencies
+4) task-master list
+
+Tasks to execute in parallel:
+
+Subagent A (Frontend) — Task #2 "Frontend: start/stop runner session UX"
+- Branch: ep-2-runner-session-dev-ui
+- Allowed files: packages/frontend/src/**
+- Must run tests:
+  - pnpm -C packages/frontend test
+  - pnpm -C packages/frontend typecheck
+- Acceptance:
+  - Dev-only panel/button to POST /api/runner/sessions
+  - Shows sessionId + live output via existing work_stream_event feed
+  - Allows stop + send input
+  - Works with E2E_TEST_MODE / dev-auth helper locally
+
+Subagent B (Docs) — Task #3 "Control-plane integration plan + adapter"
+- Branch: ep-3-control-plane-integration-plan
+- Allowed files: docs/**
+- Deliverable: docs/CONTROL_PLANE_INTEGRATION_PLAN.md
+- Acceptance:
+  - Decide: keep Socket.IO as transport or bridge to control-plane WebSocketServer
+  - Document event contract alignment and gaps (file paths + event names)
+  - Goal is coherent runtime story, not a full rewrite
+
+Subagent C (Docs) — Task #5 "Spec trace matrix (execution plane)"
+- Branch: ep-5-execution-plane-trace-matrix
+- Allowed files: docs/**
+- Deliverable: docs/EXECUTION_PLANE_TRACE_MATRIX.md
+- Acceptance:
+  - For AGENT_RUNNER_SPEC + PROVIDER_ADAPTERS_SPEC: list major sections and link to files
+  - For runtime glue: document request/response schemas and Socket.IO event mapping
+  - Include 'implemented / partial / not started' status per section
+
+For each subagent:
+- task-master set-status <id> in-progress
+- task-master update-task --append <id> "Plan: <tight plan + acceptance criteria>"
+- Implement, commit, push, open PR
+- task-master update-task --append <id> "Done: <what changed> | Files: <paths> | Tests: <commands/results>"
+- task-master set-status <id> done (or review if you want human verification)
+
+Finally:
+- task-master list
+- Provide a short summary of what shipped and links to PRs.

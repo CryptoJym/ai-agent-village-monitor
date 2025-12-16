@@ -42,7 +42,8 @@
     "omnara:auto": "scripts/omnara-auto.sh",
     "oa": "scripts/omnara-auto.sh",
     "omnara:hard": "scripts/omnara-hard.sh",
-    "oh": "scripts/omnara-hard.sh"
+    "oh": "scripts/omnara-hard.sh",
+    "omnara:launch:execution-plane": "bash scripts/omnara/launch-execution-plane.sh"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",

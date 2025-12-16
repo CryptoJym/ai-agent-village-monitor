@@ -9,6 +9,7 @@ AI-powered task management and monitoring in a pnpm monorepo. Tasks are orchestr
 - Install: `pnpm install`
 - Dev (all workspaces): `pnpm -w dev`
 - View tasks: `task-master list`
+- Launch Opus orchestration (execution-plane): `pnpm omnara:launch:execution-plane`
 - Optional: initialize Task Master first run: `task-master init`
 
 ## Project Structure & Modules
