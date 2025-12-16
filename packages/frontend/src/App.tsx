@@ -35,6 +35,7 @@ import { HelpMenu } from './ui/HelpMenu';
 import { HelpHint } from './ui/HelpHint';
 import { CommandPalette } from './ui/CommandPalette';
 import { UserMenu } from './components/auth/UserMenu';
+import { RunnerSessionPanel } from './components/dev/RunnerSessionPanel';
 
 export default function App() {
   try {
@@ -345,7 +346,14 @@ export default function App() {
         }}
       >
         <OfflineBanner />
-        <header style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-sm)', alignItems: 'center' }}>
+        <header
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 'var(--space-sm)',
+            alignItems: 'center',
+          }}
+        >
           <h1 style={{ margin: 0, fontSize: 'var(--font-title)' }}>AI Agent Village Monitor</h1>
           <LocaleSwitcher />
           {villageId && <RoleBadge role={viewerRole} />}
@@ -536,7 +544,14 @@ export default function App() {
             }}
           />
         </div>
-        <div style={{ marginTop: 'var(--space-md)', display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            marginTop: 'var(--space-md)',
+            display: 'flex',
+            gap: 'var(--space-sm)',
+            flexWrap: 'wrap',
+          }}
+        >
           <button
             type="button"
             aria-label="Dialogue"
@@ -575,11 +590,14 @@ export default function App() {
                 )}
               </dl>
             ) : (
-              <p>No house selected. Click a house in the world or open the dialogue to choose an agent.</p>
+              <p>
+                No house selected. Click a house in the world or open the dialogue to choose an
+                agent.
+              </p>
             )}
             <p>
-              Keyboard tip: press T to open the dialogue, ? for controls, H for high contrast, and Esc to
-              close overlays.
+              Keyboard tip: press T to open the dialogue, ? for controls, H for high contrast, and
+              Esc to close overlays.
             </p>
           </div>
         </details>
@@ -612,6 +630,12 @@ export default function App() {
         <Suspense fallback={null}>
           <CommandPalette />
         </Suspense>
+        {/* Dev-only runner session panel */}
+        {import.meta.env.VITE_DEV_RUNNER_PANEL === 'true' && (
+          <Suspense fallback={null}>
+            <RunnerSessionPanel />
+          </Suspense>
+        )}
       </div>
       <AnalyticsConsentBanner />
     </ToastProvider>
