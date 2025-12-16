@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, tm-prd-gpt52-eval-20251216 ]
   push:
-    branches: [ main, master ]
+    branches: [ main, master, tm-prd-gpt52-eval-20251216 ]
   workflow_dispatch:
 
 concurrency:
@@ -107,7 +107,15 @@ jobs:
       - name: Generate Prisma Client (server only)
         if: matrix.pkg == 'server'
         run: pnpm -C packages/server prisma:generate
+      - name: Apply Prisma schema (server only)
+        if: matrix.pkg == 'server'
+        working-directory: packages/server
+        env:
+          DATABASE_URL: file:./test.db
+        run: npx prisma migrate deploy --schema=prisma/schema.prisma || npx prisma db push --schema=prisma/schema.prisma --accept-data-loss
       - name: Run unit tests with coverage
+        env:
+          DATABASE_URL: file:./test.db
         run: |
           if [ "${{ matrix.pkg }}" = "server" ]; then
             pnpm -C packages/server test:unit:ci
