@@ -1,0 +1,418 @@
+import { useState, useEffect, useRef } from 'react';
+import { eventBus } from '../../realtime/EventBus';
+
+interface RunnerSession {
+  sessionId: string;
+  configId: string;
+  status: 'running' | 'stopped';
+}
+
+interface WorkStreamEvent {
+  id?: string;
+  agentId: string;
+  sessionId?: string;
+  type: string;
+  payload: Record<string, unknown>;
+  timestamp: string;
+}
+
+export function RunnerSessionPanel() {
+  const [session, setSession] = useState<RunnerSession | null>(null);
+  const [configId, setConfigId] = useState('default-runner-config');
+  const [output, setOutput] = useState<string[]>([]);
+  const [inputText, setInputText] = useState('');
+  const [isStarting, setIsStarting] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
+  const [isSendingInput, setIsSendingInput] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const outputEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new output arrives
+  useEffect(() => {
+    outputEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [output]);
+
+  // Subscribe to work_stream_event for live output
+  useEffect(() => {
+    const handleWorkStreamEvent = (event: WorkStreamEvent) => {
+      // Filter events for our session
+      if (session && event.sessionId === session.sessionId) {
+        const timestamp = new Date(event.timestamp).toLocaleTimeString();
+        const payloadStr = JSON.stringify(event.payload, null, 2);
+        setOutput((prev) => [...prev, `[${timestamp}] ${event.type}: ${payloadStr}`]);
+      }
+    };
+
+    eventBus.on('work_stream_event', handleWorkStreamEvent);
+    return () => {
+      eventBus.off('work_stream_event', handleWorkStreamEvent);
+    };
+  }, [session]);
+
+  const startSession = async () => {
+    setIsStarting(true);
+    setError(null);
+    setOutput([]);
+
+    try {
+      const response = await fetch('/api/runner/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ configId }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to start session: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      setSession({
+        sessionId: data.sessionId,
+        configId,
+        status: 'running',
+      });
+      setOutput((prev) => [
+        ...prev,
+        `Session started: ${data.sessionId}`,
+        'Listening for work_stream_event updates...',
+      ]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      setOutput((prev) => [...prev, `ERROR: ${message}`]);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const stopSession = async () => {
+    if (!session) return;
+
+    setIsStopping(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/runner/sessions/${session.sessionId}/stop`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to stop session: ${response.status} ${errorText}`);
+      }
+
+      setOutput((prev) => [...prev, `Session stopped: ${session.sessionId}`]);
+      setSession((prev) => (prev ? { ...prev, status: 'stopped' } : null));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      setOutput((prev) => [...prev, `ERROR stopping session: ${message}`]);
+    } finally {
+      setIsStopping(false);
+    }
+  };
+
+  const sendInput = async () => {
+    if (!session || !inputText.trim()) return;
+
+    setIsSendingInput(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/runner/sessions/${session.sessionId}/input`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ input: inputText }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to send input: ${response.status} ${errorText}`);
+      }
+
+      setOutput((prev) => [...prev, `> ${inputText}`]);
+      setInputText('');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      setOutput((prev) => [...prev, `ERROR sending input: ${message}`]);
+    } finally {
+      setIsSendingInput(false);
+    }
+  };
+
+  const clearOutput = () => {
+    setOutput([]);
+    setError(null);
+  };
+
+  const clearSession = () => {
+    setSession(null);
+    setOutput([]);
+    setError(null);
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        width: '500px',
+        maxHeight: '600px',
+        backgroundColor: '#1e293b',
+        border: '2px solid #fbbf24',
+        borderRadius: '8px',
+        padding: '16px',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        fontFamily: 'monospace',
+        fontSize: '13px',
+        color: '#e2e8f0',
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingBottom: '8px',
+          borderBottom: '1px solid #fbbf24',
+        }}
+      >
+        <h3 style={{ margin: 0, color: '#fbbf24', fontSize: '14px' }}>
+          Runner Session Panel (DEV)
+        </h3>
+        <div style={{ fontSize: '11px', color: '#94a3b8' }}>VITE_DEV_RUNNER_PANEL</div>
+      </div>
+
+      {/* Error display */}
+      {error && (
+        <div
+          style={{
+            backgroundColor: '#7f1d1d',
+            color: '#fca5a5',
+            padding: '8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Session info */}
+      {session && (
+        <div
+          style={{
+            backgroundColor: '#0f172a',
+            padding: '8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+          }}
+        >
+          <div>Session ID: {session.sessionId}</div>
+          <div>Config: {session.configId}</div>
+          <div>
+            Status:{' '}
+            <span
+              style={{
+                color: session.status === 'running' ? '#4ade80' : '#94a3b8',
+              }}
+            >
+              {session.status}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Controls */}
+      {!session ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <label style={{ fontSize: '12px' }}>
+            Config ID:
+            <input
+              type="text"
+              value={configId}
+              onChange={(e) => setConfigId(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}
+            />
+          </label>
+          <button
+            onClick={startSession}
+            disabled={isStarting || !configId.trim()}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: '#10b981',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isStarting || !configId.trim() ? 'not-allowed' : 'pointer',
+              opacity: isStarting || !configId.trim() ? 0.6 : 1,
+            }}
+          >
+            {isStarting ? 'Starting...' : 'Start Session'}
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={stopSession}
+            disabled={isStopping || session.status === 'stopped'}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              backgroundColor: '#ef4444',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isStopping || session.status === 'stopped' ? 'not-allowed' : 'pointer',
+              opacity: isStopping || session.status === 'stopped' ? 0.6 : 1,
+            }}
+          >
+            {isStopping ? 'Stopping...' : 'Stop Session'}
+          </button>
+          <button
+            onClick={clearSession}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              backgroundColor: '#6b7280',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Clear Session
+          </button>
+        </div>
+      )}
+
+      {/* Output area */}
+      <div
+        style={{
+          flex: 1,
+          backgroundColor: '#0f172a',
+          border: '1px solid #475569',
+          borderRadius: '4px',
+          padding: '8px',
+          overflowY: 'auto',
+          minHeight: '200px',
+          maxHeight: '300px',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          lineHeight: '1.5',
+        }}
+      >
+        {output.length === 0 ? (
+          <div style={{ color: '#64748b', fontStyle: 'italic' }}>
+            No output yet. Start a session to see live events.
+          </div>
+        ) : (
+          <>
+            {output.map((line, index) => (
+              <div key={index} style={{ marginBottom: '4px' }}>
+                {line}
+              </div>
+            ))}
+            <div ref={outputEndRef} />
+          </>
+        )}
+      </div>
+
+      {/* Clear output button */}
+      {output.length > 0 && (
+        <button
+          onClick={clearOutput}
+          style={{
+            padding: '6px 10px',
+            backgroundColor: '#475569',
+            color: '#e2e8f0',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '11px',
+          }}
+        >
+          Clear Output
+        </button>
+      )}
+
+      {/* Input area (only when session is running) */}
+      {session && session.status === 'running' && (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendInput();
+              }
+            }}
+            placeholder="Send input to session..."
+            style={{
+              flex: 1,
+              padding: '6px',
+              backgroundColor: '#0f172a',
+              color: '#e2e8f0',
+              border: '1px solid #475569',
+              borderRadius: '4px',
+              fontFamily: 'monospace',
+            }}
+          />
+          <button
+            onClick={sendInput}
+            disabled={isSendingInput || !inputText.trim()}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#3b82f6',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: isSendingInput || !inputText.trim() ? 'not-allowed' : 'pointer',
+              opacity: isSendingInput || !inputText.trim() ? 0.6 : 1,
+            }}
+          >
+            {isSendingInput ? 'Sending...' : 'Send'}
+          </button>
+        </div>
+      )}
+
+      {/* Footer info */}
+      <div
+        style={{
+          fontSize: '10px',
+          color: '#64748b',
+          paddingTop: '8px',
+          borderTop: '1px solid #334155',
+        }}
+      >
+        Dev-only panel for testing runner sessions. Uses work_stream_event feed.
+      </div>
+    </div>
+  );
+}
