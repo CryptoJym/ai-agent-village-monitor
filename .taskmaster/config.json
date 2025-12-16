@@ -13,8 +13,8 @@
       "temperature": 0.1
     },
     "fallback": {
-      "provider": "openai",
-      "modelId": "gpt-4o-mini",
+      "provider": "codex-cli",
+      "modelId": "gpt-5.2",
       "maxTokens": 128000,
       "temperature": 0.2
     }
