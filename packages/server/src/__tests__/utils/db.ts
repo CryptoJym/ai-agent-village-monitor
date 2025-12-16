@@ -48,32 +48,42 @@ export async function teardownTestDatabase() {
 /**
  * Clean all data from the database
  * Useful for ensuring test isolation
+ *
+ * Tables are deleted in reverse order of dependencies to avoid FK constraint violations.
+ * This list matches the actual Prisma schema models.
  */
 export async function cleanDatabase(prismaClient: PrismaClient = prisma) {
-  // Delete in reverse order of dependencies
+  // Delete in reverse order of dependencies (leaf tables first, root tables last)
   const tablenames = [
-    'Decoration',
-    'RoomMetric',
+    // Events and sessions (leaf nodes)
+    'WorkStreamEvent',
+    'AgentSession',
+    // Junction tables
+    'HouseAgent',
+    'VillageAccess',
+    // Entity tables (in dependency order)
+    'GeneratedSprite',
     'Room',
-    'AgentMetric',
-    'AgentActivity',
     'Agent',
     'House',
-    'VillageMetric',
-    'VillageAccess',
-    'Village',
-    'Session',
-    'User',
-    'Bug',
+    'WorldMap',
     'WorldNode',
+    'bug_bots', // Using actual table name from @@map
+    'Tileset',
+    'Village',
+    'oauth_tokens', // Using actual table name from @@map
+    'User',
   ];
 
   for (const tablename of tablenames) {
     try {
       await prismaClient.$executeRawUnsafe(`DELETE FROM "${tablename}"`);
     } catch (error) {
-      // Table might not exist, ignore
-      console.warn(`Could not clean table ${tablename}:`, error);
+      // Table might not exist or be empty, continue
+      // Only log in debug mode to reduce noise
+      if (process.env.DEBUG_DB_CLEANUP) {
+        console.warn(`Could not clean table ${tablename}:`, (error as Error).message);
+      }
     }
   }
 
@@ -113,7 +123,7 @@ export function setupTransactionalTests() {
  * Execute a function within a test transaction
  */
 export async function withTestTransaction<T>(
-  callback: (prisma: PrismaClient) => Promise<T>
+  callback: (prisma: PrismaClient) => Promise<T>,
 ): Promise<T> {
   const prisma = getTestPrisma();
 
@@ -130,6 +140,9 @@ export async function withTestTransaction<T>(
 
 /**
  * Seed basic test data
+ * Creates a complete entity hierarchy for testing:
+ * User -> Village + VillageAccess -> House -> Room
+ *         \-> Agent (via HouseAgent junction)
  */
 export async function seedTestData(prismaClient: PrismaClient = prisma) {
   // Create test user
@@ -143,13 +156,19 @@ export async function seedTestData(prismaClient: PrismaClient = prisma) {
     },
   });
 
-  // Create test village
+  // Create test village with VillageAccess for user
   const village = await prismaClient.village.create({
     data: {
-      name: 'Test Village',
-      githubOrgId: '987654321',
-      ownerId: user.id,
-      visibility: 'PUBLIC',
+      orgName: 'Test Org',
+      githubOrgId: BigInt(987654321),
+      seed: 'test-seed-123',
+      provider: 'github',
+      access: {
+        create: {
+          userId: user.id,
+          role: 'owner',
+        },
+      },
     },
   });
 
@@ -157,26 +176,48 @@ export async function seedTestData(prismaClient: PrismaClient = prisma) {
   const house = await prismaClient.house.create({
     data: {
       villageId: village.id,
-      repoId: BigInt(111222333),
-      name: 'Test House',
-      x: 0,
-      y: 0,
-      size: 'medium',
+      repoName: 'test-org/test-repo',
+      githubRepoId: BigInt(111222333),
+      primaryLanguage: 'TypeScript',
+      stars: 100,
+      buildingSize: 'medium',
+      positionX: 10.0,
+      positionY: 20.0,
+      footprintWidth: 5,
+      footprintHeight: 4,
     },
   });
 
   // Create test agent
   const agent = await prismaClient.agent.create({
     data: {
-      githubRepoId: '444555666',
-      repoId: BigInt(444555666),
       name: 'Test Agent',
-      villageId: village.id,
+      userId: user.id,
+      spriteKey: 'agent-default',
+      currentState: 'idle',
+      positionX: 15.0,
+      positionY: 25.0,
+      currentHouseId: house.id,
+      energy: 100,
+      frustration: 0,
+      workload: 0,
+      streak: 0,
+      errorStreak: 0,
+      personality: JSON.stringify({
+        introversion: 0.5,
+        diligence: 0.8,
+        creativity: 0.6,
+        patience: 0.7,
+      }),
+    },
+  });
+
+  // Assign agent to house via HouseAgent junction
+  await prismaClient.houseAgent.create({
+    data: {
       houseId: house.id,
-      ownerId: user.id,
-      state: 'idle',
-      x: 0,
-      y: 0,
+      agentId: agent.id,
+      role: 'developer',
     },
   });
 
@@ -184,13 +225,17 @@ export async function seedTestData(prismaClient: PrismaClient = prisma) {
   const room = await prismaClient.room.create({
     data: {
       houseId: house.id,
-      path: '/src/index.ts',
-      name: 'index.ts',
+      name: 'Main Entrance',
       roomType: 'entrance',
       moduleType: 'root',
-      complexity: 5,
+      modulePath: 'src/index.ts',
       x: 0,
       y: 0,
+      width: 10,
+      height: 8,
+      complexity: 5,
+      fileCount: 1,
+      totalSize: 2048,
     },
   });
 
