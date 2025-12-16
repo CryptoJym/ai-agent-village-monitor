@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { eventBus } from '../../realtime/EventBus';
 
 interface RunnerSession {
   sessionId: string;
-  configId: string;
+  agentId: string;
+  villageId: string;
+  providerId: 'codex' | 'claude_code';
+  repoPath: string;
   status: 'running' | 'stopped';
 }
 
@@ -18,7 +21,16 @@ interface WorkStreamEvent {
 
 export function RunnerSessionPanel() {
   const [session, setSession] = useState<RunnerSession | null>(null);
-  const [configId, setConfigId] = useState('default-runner-config');
+  const [villageId, setVillageId] = useState('demo');
+  const [providerId, setProviderId] = useState<'codex' | 'claude_code'>('codex');
+  const [repoPath, setRepoPath] = useState('');
+  const [checkoutRef, setCheckoutRef] = useState('main');
+  const [roomPath, setRoomPath] = useState('');
+  const [agentName, setAgentName] = useState('');
+  const [taskTitle, setTaskTitle] = useState('Smoke');
+  const [taskGoal, setTaskGoal] = useState(
+    'Run a quick sanity command and describe the repo at a high level.',
+  );
   const [output, setOutput] = useState<string[]>([]);
   const [inputText, setInputText] = useState('');
   const [isStarting, setIsStarting] = useState(false);
@@ -55,13 +67,45 @@ export function RunnerSessionPanel() {
     setOutput([]);
 
     try {
+      const trimmedRepoPath = repoPath.trim();
+      const trimmedVillageId = villageId.trim() || 'demo';
+      const trimmedCheckoutRef = checkoutRef.trim() || 'main';
+      const trimmedRoomPath = roomPath.trim();
+      const trimmedAgentName = agentName.trim();
+      const trimmedTaskTitle = taskTitle.trim();
+      const trimmedTaskGoal = taskGoal.trim();
+
+      if (!trimmedRepoPath) {
+        throw new Error('Repo path is required (local checkout path on the server host).');
+      }
+      if (!trimmedTaskTitle) {
+        throw new Error('Task title is required.');
+      }
+      if (!trimmedTaskGoal) {
+        throw new Error('Task goal is required.');
+      }
+
       const response = await fetch('/api/runner/sessions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ configId }),
+        body: JSON.stringify({
+          villageId: trimmedVillageId,
+          agentName: trimmedAgentName || undefined,
+          providerId,
+          repoRef: { provider: 'local', path: trimmedRepoPath },
+          checkout: { type: 'branch', ref: trimmedCheckoutRef },
+          roomPath: trimmedRoomPath || undefined,
+          task: {
+            title: trimmedTaskTitle,
+            goal: trimmedTaskGoal,
+            constraints: [],
+            acceptance: [],
+            roomPath: trimmedRoomPath || undefined,
+          },
+        }),
       });
 
       if (!response.ok) {
@@ -72,12 +116,15 @@ export function RunnerSessionPanel() {
       const data = await response.json();
       setSession({
         sessionId: data.sessionId,
-        configId,
+        agentId: data.agentId,
+        villageId: trimmedVillageId,
+        providerId,
+        repoPath: trimmedRepoPath,
         status: 'running',
       });
       setOutput((prev) => [
         ...prev,
-        `Session started: ${data.sessionId}`,
+        `Session started: ${data.sessionId} (agentId=${data.agentId})`,
         'Listening for work_stream_event updates...',
       ]);
     } catch (err) {
@@ -98,7 +145,11 @@ export function RunnerSessionPanel() {
     try {
       const response = await fetch(`/api/runner/sessions/${session.sessionId}/stop`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
+        body: JSON.stringify({ graceful: true }),
       });
 
       if (!response.ok) {
@@ -130,7 +181,7 @@ export function RunnerSessionPanel() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ input: inputText }),
+        body: JSON.stringify({ data: inputText }),
       });
 
       if (!response.ok) {
@@ -224,7 +275,10 @@ export function RunnerSessionPanel() {
           }}
         >
           <div>Session ID: {session.sessionId}</div>
-          <div>Config: {session.configId}</div>
+          <div>Agent ID: {session.agentId}</div>
+          <div>Village: {session.villageId}</div>
+          <div>Provider: {session.providerId}</div>
+          <div>Repo: {session.repoPath}</div>
           <div>
             Status:{' '}
             <span
@@ -242,11 +296,11 @@ export function RunnerSessionPanel() {
       {!session ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <label style={{ fontSize: '12px' }}>
-            Config ID:
+            Village ID:
             <input
               type="text"
-              value={configId}
-              onChange={(e) => setConfigId(e.target.value)}
+              value={villageId}
+              onChange={(e) => setVillageId(e.target.value)}
               style={{
                 width: '100%',
                 padding: '6px',
@@ -259,17 +313,153 @@ export function RunnerSessionPanel() {
               }}
             />
           </label>
+          <label style={{ fontSize: '12px' }}>
+            Provider:
+            <select
+              value={providerId}
+              onChange={(e) => setProviderId(e.target.value as RunnerSession['providerId'])}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}
+            >
+              <option value="codex">codex</option>
+              <option value="claude_code">claude_code</option>
+            </select>
+          </label>
+          <label style={{ fontSize: '12px' }}>
+            Repo path (local):
+            <input
+              type="text"
+              value={repoPath}
+              onChange={(e) => setRepoPath(e.target.value)}
+              placeholder="/absolute/path/to/a/git/repo"
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}
+            />
+          </label>
+          <label style={{ fontSize: '12px' }}>
+            Checkout branch:
+            <input
+              type="text"
+              value={checkoutRef}
+              onChange={(e) => setCheckoutRef(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}
+            />
+          </label>
+          <label style={{ fontSize: '12px' }}>
+            Room path (optional):
+            <input
+              type="text"
+              value={roomPath}
+              onChange={(e) => setRoomPath(e.target.value)}
+              placeholder="packages/server"
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}
+            />
+          </label>
+          <label style={{ fontSize: '12px' }}>
+            Agent name (optional):
+            <input
+              type="text"
+              value={agentName}
+              onChange={(e) => setAgentName(e.target.value)}
+              placeholder="dev-smoke"
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}
+            />
+          </label>
+          <label style={{ fontSize: '12px' }}>
+            Task title:
+            <input
+              type="text"
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+              }}
+            />
+          </label>
+          <label style={{ fontSize: '12px' }}>
+            Task goal:
+            <textarea
+              value={taskGoal}
+              onChange={(e) => setTaskGoal(e.target.value)}
+              rows={3}
+              style={{
+                width: '100%',
+                padding: '6px',
+                marginTop: '4px',
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontFamily: 'monospace',
+                resize: 'vertical',
+              }}
+            />
+          </label>
           <button
             onClick={startSession}
-            disabled={isStarting || !configId.trim()}
+            disabled={isStarting || !repoPath.trim() || !taskTitle.trim() || !taskGoal.trim()}
             style={{
               padding: '8px 12px',
               backgroundColor: '#10b981',
               color: '#fff',
               border: 'none',
               borderRadius: '4px',
-              cursor: isStarting || !configId.trim() ? 'not-allowed' : 'pointer',
-              opacity: isStarting || !configId.trim() ? 0.6 : 1,
+              cursor:
+                isStarting || !repoPath.trim() || !taskTitle.trim() || !taskGoal.trim()
+                  ? 'not-allowed'
+                  : 'pointer',
+              opacity:
+                isStarting || !repoPath.trim() || !taskTitle.trim() || !taskGoal.trim() ? 0.6 : 1,
             }}
           >
             {isStarting ? 'Starting...' : 'Start Session'}
