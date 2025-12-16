@@ -60,6 +60,7 @@ export class AssetLoader {
   private manifest: AssetManifest;
   private loadedAssets: Set<string> = new Set();
   private failedAssets: Set<string> = new Set();
+  private eventsBound = false;
 
   // Callbacks
   private onProgressCallback?: (progress: LoadProgress) => void;
@@ -72,18 +73,26 @@ export class AssetLoader {
   }
 
   /**
+   * Queue all assets from manifest (for use inside a Scene.preload method).
+   *
+   * Note: does NOT call `this.scene.load.start()`; Phaser will automatically start
+   * the loader at the end of `preload()`.
+   */
+  queueAll(): void {
+    this.setupLoadEvents();
+    this.loadSpritesheets();
+    this.loadTilemaps();
+    this.loadTilesets();
+    this.loadImages();
+    this.loadAudio();
+  }
+
+  /**
    * Load all assets from manifest
    */
   loadAll(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.setupLoadEvents();
-
-      // Load all asset types
-      this.loadSpritesheets();
-      this.loadTilemaps();
-      this.loadTilesets();
-      this.loadImages();
-      this.loadAudio();
+    return new Promise((resolve) => {
+      this.queueAll();
 
       this.scene.load.once('complete', () => {
         if (this.onCompleteCallback) {
@@ -145,6 +154,9 @@ export class AssetLoader {
   }
 
   private setupLoadEvents() {
+    if (this.eventsBound) return;
+    this.eventsBound = true;
+
     this.scene.load.on('progress', (progress: number) => {
       if (this.onProgressCallback) {
         this.onProgressCallback({
@@ -211,7 +223,13 @@ export class AssetLoader {
     if (!asset) return;
 
     try {
-      this.scene.load.tilemapTiledJSON(key, asset.path);
+      const loader = this.scene.load as any;
+      if (typeof loader.tilemapTiledJSON !== 'function') {
+        this.failedAssets.add(key);
+        console.warn(`[AssetLoader] tilemapTiledJSON not available, skipping ${key}`);
+        return;
+      }
+      loader.tilemapTiledJSON(key, asset.path);
     } catch (error) {
       console.error(`[AssetLoader] Error loading tilemap ${key}:`, error);
       // Use fallback for missing tilemaps
@@ -328,5 +346,42 @@ export class AssetLoader {
    */
   getFailedAssets(): string[] {
     return Array.from(this.failedAssets);
+  }
+
+  /**
+   * Create placeholder textures for known texture assets that failed to load.
+   *
+   * This keeps sprites/tilesets from hard-failing due to missing assets.
+   * (Tilemaps are JSON and cannot be replaced by textures here.)
+   */
+  registerFallbackTextures(opts?: { size?: number; fill?: string; stroke?: string }): void {
+    const size = opts?.size ?? 32;
+    const fill = opts?.fill ?? '#ff00ff';
+    const stroke = opts?.stroke ?? '#000000';
+
+    const textureKeys = new Set<string>([
+      ...Object.keys(this.manifest.images || {}),
+      ...Object.keys(this.manifest.tilesets || {}),
+      ...Object.keys(this.manifest.spritesheets || {}),
+    ]);
+
+    for (const key of textureKeys) {
+      if (!this.failedAssets.has(key)) continue;
+      if (this.scene.textures.exists(key)) continue;
+
+      try {
+        const tex = this.scene.textures.createCanvas(key, size, size);
+        if (!tex) continue;
+        const ctx = tex.getContext();
+        ctx.fillStyle = fill;
+        ctx.fillRect(0, 0, size, size);
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, size - 2, size - 2);
+        tex.refresh();
+      } catch (error) {
+        console.warn(`[AssetLoader] Failed to create fallback texture for ${key}:`, error);
+      }
+    }
   }
 }

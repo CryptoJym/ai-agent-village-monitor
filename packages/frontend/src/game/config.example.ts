@@ -25,6 +25,10 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   height: window.innerHeight,
   parent: 'game-container',
   backgroundColor: '#1a1a1a',
+  input: {
+    gamepad: true,
+    activePointers: 2,
+  },
   scene: [BootScene, PreloadScene, VillageScene, HouseScene],
   physics: {
     default: 'arcade',
