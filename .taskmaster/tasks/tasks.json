@@ -7460,7 +7460,7 @@
   "execution-plane": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Runner sessions API hardening",
         "description": "Harden /api/runner/sessions endpoints for real use.",
         "status": "done",
@@ -7527,29 +7527,31 @@
         "updatedAt": "2025-12-15T19:11:36.944Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Frontend: start/stop runner session UX",
         "description": "Add a simple UI flow to start a runner session without curl. This task has been dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for implementation.",
-        "status": "in-progress",
+        "status": "review",
         "dependencies": [],
         "priority": "high",
         "details": "Acceptance:\\n- Dev-only panel/button to POST /api/runner/sessions\\n- Shows sessionId + live output via existing work_stream_event feed\\n- Allows stop + send input\\n- Works with E2E_TEST_MODE login helper locally\\n\\nNotes:\\n- Keep behind feature flag/env so prod UX is unaffected\\n- Ensure the implementation aligns with the Omnara COO lead session guidelines.",
         "testStrategy": "Ensure UI elements are functional and responsive. Validate session start/stop functionality through manual testing and automated UI tests. Verify feature flag behavior to ensure no impact on production UX.",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-16T01:51:45.990Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Control-plane integration plan + adapter",
         "description": "Integrate packages/control-plane with packages/server realtime layer.",
         "details": "Acceptance:\\n- Decide: keep Socket.IO as transport or bridge to control-plane WebSocketServer\\n- Implement a minimal adapter (one direction is fine)\\n- Document event contract alignment and gaps\\n\\nNotes:\\n- Goal is coherent runtime story, not a full rewrite",
         "testStrategy": "",
-        "status": "pending",
+        "status": "review",
         "dependencies": [],
         "priority": "medium",
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-16T01:51:47.656Z"
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Update-pipeline integration plan",
         "description": "Define how update-pipeline will run in this repo and wire a minimal path.",
         "details": "Acceptance:\\n- Decide where VersionWatcher/RolloutController run (server worker vs separate process)\\n- Implement a small integration point (e.g., expose current channel build via API)\\n- Document rollout safety + canary metrics storage",
@@ -7560,28 +7562,26 @@
         "subtasks": []
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Spec trace matrix (execution plane)",
         "description": "Produce a doc mapping spec sections to code + tests + runtime behavior.",
-        "status": "in-progress",
+        "status": "review",
         "dependencies": [],
         "priority": "medium",
         "details": "Acceptance:\\n- For AGENT_RUNNER_SPEC + PROVIDER_ADAPTERS_SPEC: list major sections and link to files\\n- For runtime glue: document request/response schemas and Socket.IO event mapping\\n- Include 'implemented / partial / not started' status per section\\n- Progress: Dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for spec trace matrix generation.",
         "testStrategy": null,
-        "subtasks": []
+        "subtasks": [],
+        "updatedAt": "2025-12-16T01:51:49.319Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-15T19:11:36.946Z",
+      "lastModified": "2025-12-16T01:51:49.322Z",
       "taskCount": 5,
       "completedCount": 1,
       "tags": [
         "execution-plane"
-      ],
-      "created": "2025-12-15T22:44:21.460Z",
-      "description": "Tasks for execution-plane context",
-      "updated": "2025-12-15T22:44:21.460Z"
+      ]
     }
   },
   "prd-gpt52": {
