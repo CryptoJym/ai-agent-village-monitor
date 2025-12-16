@@ -5,10 +5,12 @@ export type AppQueues = {
   agentCommands: Queue;
   githubSync: Queue;
   repoAnalysis: Queue;
+  githubWebhooks: Queue;
   events: {
     agentCommands: QueueEvents;
     githubSync: QueueEvents;
     repoAnalysis: QueueEvents;
+    githubWebhooks: QueueEvents;
   };
   defaultJobOpts: JobsOptions;
 };
@@ -35,12 +37,17 @@ export function createQueues(): AppQueues | null {
     connection,
     defaultJobOptions: { ...defaultJobOpts, attempts: 5 },
   });
+  const githubWebhooks = new Queue('github-webhooks', {
+    connection,
+    defaultJobOptions: { ...defaultJobOpts, attempts: 5 },
+  });
 
   const events = {
     agentCommands: new QueueEvents('agent-commands', { connection }),
     githubSync: new QueueEvents('github-sync', { connection }),
     repoAnalysis: new QueueEvents('repo-analysis', { connection }),
+    githubWebhooks: new QueueEvents('github-webhooks', { connection }),
   };
 
-  return { agentCommands, githubSync, repoAnalysis, events, defaultJobOpts };
+  return { agentCommands, githubSync, repoAnalysis, githubWebhooks, events, defaultJobOpts };
 }
