@@ -3,14 +3,22 @@ import { z } from 'zod';
 import { prisma } from '../db/client';
 import { requireAuth, requireVillageRole } from '../auth/middleware';
 import { sanitizeString } from '../middleware/sanitize';
+import { enqueueHouseRepoAnalysis } from './repoAnalysisQueue';
 
 export const housesRouter = Router();
 
 // Input validation schemas
 const CreateHouseSchema = z.object({
   villageId: z.string().min(1),
-  repoName: z.string().min(1).max(200).transform((v) => sanitizeString(v, { maxLen: 200 })),
-  githubRepoId: z.string().optional().transform((v) => v ? BigInt(v) : undefined),
+  repoName: z
+    .string()
+    .min(1)
+    .max(200)
+    .transform((v) => sanitizeString(v, { maxLen: 200 })),
+  githubRepoId: z
+    .string()
+    .optional()
+    .transform((v) => (v ? BigInt(v) : undefined)),
   primaryLanguage: z.string().optional(),
   stars: z.number().int().optional(),
   openIssues: z.number().int().optional(),
@@ -110,8 +118,13 @@ housesRouter.post('/', requireAuth, async (req, res, next) => {
       },
     });
 
-    // TODO: Trigger background repo analysis job to populate rooms
-    // This would analyze the repository structure and create Room records
+    // Trigger background repo analysis job to populate rooms + interior tilemap.
+    // Best-effort: failures should not block house creation.
+    try {
+      await enqueueHouseRepoAnalysis({ houseId: house.id });
+    } catch {
+      // Ignore queue failures; UI can retry analysis via admin tooling later.
+    }
 
     res.status(201).json(house);
   } catch (e) {

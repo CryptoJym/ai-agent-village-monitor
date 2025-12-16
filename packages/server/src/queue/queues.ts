@@ -4,9 +4,11 @@ import { getRedis } from './redis';
 export type AppQueues = {
   agentCommands: Queue;
   githubSync: Queue;
+  repoAnalysis: Queue;
   events: {
     agentCommands: QueueEvents;
     githubSync: QueueEvents;
+    repoAnalysis: QueueEvents;
   };
   defaultJobOpts: JobsOptions;
 };
@@ -29,11 +31,16 @@ export function createQueues(): AppQueues | null {
     connection,
     defaultJobOptions: { ...defaultJobOpts, attempts: 8 },
   });
+  const repoAnalysis = new Queue('repo-analysis', {
+    connection,
+    defaultJobOptions: { ...defaultJobOpts, attempts: 5 },
+  });
 
   const events = {
     agentCommands: new QueueEvents('agent-commands', { connection }),
     githubSync: new QueueEvents('github-sync', { connection }),
+    repoAnalysis: new QueueEvents('repo-analysis', { connection }),
   };
 
-  return { agentCommands, githubSync, events, defaultJobOpts };
+  return { agentCommands, githubSync, repoAnalysis, events, defaultJobOpts };
 }

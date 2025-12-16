@@ -3,6 +3,13 @@ export type AuditEventType =
   | 'auth.login'
   | 'auth.refresh.rotate'
   | 'auth.logout'
+  // House/repo analysis events
+  | 'house.repo_analysis_enqueued'
+  | 'house.repo_analysis_deduped'
+  | 'house.repo_analysis_completed'
+  // GitHub webhook events
+  | 'github.webhook_enqueued'
+  | 'github.webhook_deduped'
   // WebSocket events
   | 'ws.connect'
   | 'ws.disconnect'
