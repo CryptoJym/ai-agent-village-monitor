@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@ai-agent-village-monitor/runner": "workspace:*",
+    "@ai-agent-village-monitor/update-pipeline": "workspace:*",
     "@octokit/graphql": "^8.2.0",
     "@octokit/plugin-retry": "^6.0.1",
     "@octokit/plugin-throttling": "^9.3.0",

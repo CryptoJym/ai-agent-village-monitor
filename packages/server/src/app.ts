@@ -464,6 +464,14 @@ export function createApp(): Express {
     app.use('/api/admin', requireAuth, express.Router());
   }
 
+  // Update pipeline endpoints (admin only, feature-flagged)
+  try {
+    const { updatePipelineRouter } = require('./update-pipeline');
+    app.use('/api/update-pipeline', requireAuth, updatePipelineRouter);
+  } catch {
+    // Update pipeline router optional; skip if not available
+  }
+
   // Villages endpoints (protected)
   app.use('/api/villages', villagesRouter);
 

@@ -7,6 +7,7 @@ import { startWorkers, stopWorkers } from './queue/workers';
 import { closeRedis } from './queue/redis';
 import { defaultAgentManager } from './agents/manager';
 import { runnerSessionService } from './execution/runnerSessionService';
+import { initUpdatePipeline, shutdownUpdatePipeline } from './update-pipeline';
 
 const app = createApp();
 const server = app.listen(config.PORT, () => {
@@ -19,9 +20,18 @@ const server = app.listen(config.PORT, () => {
 const io = createSocketServer(server);
 setIO(io);
 
-// Start queues/workers if Redis configured and not running tests
+// Check if running in test environment
 const isTestEnv =
   process.env.NODE_ENV === 'test' || process.env.VITEST || process.env.VITEST_WORKER_ID;
+
+// Initialize update pipeline (feature-flagged via UPDATE_PIPELINE_ENABLED)
+if (!isTestEnv) {
+  initUpdatePipeline().catch((err) => {
+    console.error('[update-pipeline] Init error:', err);
+  });
+}
+
+// Start queues/workers if Redis configured and not running tests
 const queues = !isTestEnv ? createQueues() : null;
 const workers = !isTestEnv ? startWorkers(console) : null;
 
@@ -38,6 +48,7 @@ if (!isTestEnv) {
 
 async function gracefulShutdown() {
   console.log('[server] shutting down...');
+  shutdownUpdatePipeline();
   await Promise.allSettled([
     workers ? stopWorkers(workers) : Promise.resolve(),
     queues?.events.agentCommands.close(),
