@@ -10,6 +10,7 @@ import { appendEvent, endActiveSession, ensureActiveSession } from '../agents/se
 export type WorkerHandles = {
   agentCommands?: Worker;
   githubSync?: Worker;
+  repoAnalysis?: Worker;
 };
 
 export function startWorkers(log = console): WorkerHandles | null {
@@ -47,7 +48,11 @@ export function startWorkers(log = console): WorkerHandles | null {
           }
           await appendEvent(sessionId!, 'session_started', 'agent session started');
         }
-        audit.log('agent.session_starting', { agentId: agentIdStr, jobId: String(job.id), sessionId });
+        audit.log('agent.session_starting', {
+          agentId: agentIdStr,
+          jobId: String(job.id),
+          sessionId,
+        });
         await controller.start(agentIdRaw);
         try {
           audit.log('session_started', {
@@ -69,7 +74,11 @@ export function startWorkers(log = console): WorkerHandles | null {
           message: 'session started',
           ts: Date.now(),
         });
-        audit.log('agent.session_started', { agentId: agentIdStr, jobId: String(job.id), sessionId });
+        audit.log('agent.session_started', {
+          agentId: agentIdStr,
+          jobId: String(job.id),
+          sessionId,
+        });
       } else if (kind === 'stop') {
         audit.log('agent.session_stopping', { agentId: agentIdStr, jobId: String(job.id) });
         await controller.stop(agentIdRaw);
@@ -178,8 +187,7 @@ export function startWorkers(log = console): WorkerHandles | null {
                   message: evt.message || 'error',
                   ts: Date.now(),
                 });
-                if (prisma && sessionId)
-                  await appendEvent(sessionId, 'error', evt.message);
+                if (prisma && sessionId) await appendEvent(sessionId, 'error', evt.message);
               }
             } catch {
               // Ignore streaming side-effect failures; continue emitting events.
@@ -221,7 +229,11 @@ export function startWorkers(log = console): WorkerHandles | null {
     } catch (e: any) {
       log.error?.('[worker] agent-commands error', { jobId: job.id, err: e?.message });
       try {
-        audit.log('agent.command_error', { agentId: agentIdStr, jobId: String(job.id), error: e?.message });
+        audit.log('agent.command_error', {
+          agentId: agentIdStr,
+          jobId: String(job.id),
+          error: e?.message,
+        });
       } catch {
         // Ignore audit logging failure here; rethrow original error.
       }
@@ -234,8 +246,7 @@ export function startWorkers(log = console): WorkerHandles | null {
     log.info?.(`[worker] github-sync processing ${job.id} ${job.name}`, { data: job.data });
     const villageId = String((job.data as any)?.villageId ?? '');
     const org = String((job.data as any)?.org || '');
-    if (!villageId || !org)
-      throw new Error('invalid job payload');
+    if (!villageId || !org) throw new Error('invalid job payload');
     const result = await syncVillageNow(villageId, org);
     try {
       await setVillageLastSynced(villageId, new Date());
@@ -246,12 +257,27 @@ export function startWorkers(log = console): WorkerHandles | null {
     return { ...result, jobId: job.id };
   };
 
+  const repoAnalysisProc: Processor = async (job) => {
+    log.info?.(`[worker] repo-analysis processing ${job.id} ${job.name}`, { data: job.data });
+    const houseId = String((job.data as any)?.houseId ?? '');
+    if (!houseId) throw new Error('invalid job payload');
+    const { analyzeHouseRepository } = await import('../houses/repoAnalysis');
+    const result = await analyzeHouseRepository(houseId);
+    log.info?.('[worker] repo-analysis completed', { jobId: job.id, ...result });
+    return { ...result, jobId: job.id };
+  };
+
   const agentCommands = new Worker('agent-commands', agentProc, baseOpts);
   // Dead-letter queue for exhausted jobs
   // We create the DLQ lazily here to avoid forcing it elsewhere
   const { Queue } = require('bullmq');
   const dlq = new Queue('agent-commands-dlq', { connection });
   const githubSync = new Worker('github-sync', syncProc, baseOpts);
+  const repoAnalysis = new Worker('repo-analysis', repoAnalysisProc, {
+    ...baseOpts,
+    concurrency: 2,
+  });
+  const repoDlq = new Queue('repo-analysis-dlq', { connection });
 
   agentCommands.on('failed', async (job, err) => {
     log.error?.('[worker] agent-commands failed', { jobId: job?.id, err: err?.message });
@@ -273,7 +299,12 @@ export function startWorkers(log = console): WorkerHandles | null {
           ts: Date.now(),
         });
         try {
-          audit.log('agent.command_dlq', { agentId, jobId: String(job?.id), name: job?.name, error: err?.message });
+          audit.log('agent.command_dlq', {
+            agentId,
+            jobId: String(job?.id),
+            name: job?.name,
+            error: err?.message,
+          });
         } catch {
           // Ignore audit logging failure; DLQ entry already recorded.
         }
@@ -286,10 +317,31 @@ export function startWorkers(log = console): WorkerHandles | null {
     log.error?.('[worker] github-sync failed', { jobId: job?.id, err: err?.message }),
   );
 
-  return { agentCommands, githubSync };
+  repoAnalysis.on('failed', async (job, err) => {
+    log.error?.('[worker] repo-analysis failed', { jobId: job?.id, err: err?.message });
+    try {
+      const attempts = job?.opts?.attempts ?? 1;
+      const made = job?.attemptsMade ?? 0;
+      if (made >= attempts) {
+        await repoDlq.add(
+          'failed',
+          { name: job?.name, data: job?.data, failedReason: err?.message },
+          { removeOnComplete: 1000, removeOnFail: 1000 },
+        );
+      }
+    } catch {
+      // Swallow DLQ handling errors to avoid crashing worker listener.
+    }
+  });
+
+  return { agentCommands, githubSync, repoAnalysis };
 }
 
 export async function stopWorkers(handles?: WorkerHandles) {
   if (!handles) return;
-  await Promise.allSettled([handles.agentCommands?.close(), handles.githubSync?.close()]);
+  await Promise.allSettled([
+    handles.agentCommands?.close(),
+    handles.githubSync?.close(),
+    handles.repoAnalysis?.close(),
+  ]);
 }

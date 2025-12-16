@@ -42,6 +42,7 @@ async function gracefulShutdown() {
     workers ? stopWorkers(workers) : Promise.resolve(),
     queues?.events.agentCommands.close(),
     queues?.events.githubSync.close(),
+    queues?.events.repoAnalysis.close(),
     defaultAgentManager.shutdown(),
     runnerSessionService.shutdown(),
   ]);
