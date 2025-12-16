@@ -7460,7 +7460,7 @@
   "execution-plane": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Runner sessions API hardening",
         "description": "Harden /api/runner/sessions endpoints for real use.",
         "status": "done",
@@ -7527,7 +7527,7 @@
         "updatedAt": "2025-12-15T19:11:36.944Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Frontend: start/stop runner session UX",
         "description": "Add a simple UI flow to start a runner session without curl. This task has been dispatched to Omnara COO lead session 10534d0b-520d-4f5d-8d06-3aa09aba25dd for implementation.",
         "status": "review",
@@ -7539,7 +7539,7 @@
         "updatedAt": "2025-12-16T01:51:45.990Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Control-plane integration plan + adapter",
         "description": "Integrate packages/control-plane with packages/server realtime layer.",
         "details": "Acceptance:\\n- Decide: keep Socket.IO as transport or bridge to control-plane WebSocketServer\\n- Implement a minimal adapter (one direction is fine)\\n- Document event contract alignment and gaps\\n\\nNotes:\\n- Goal is coherent runtime story, not a full rewrite",
@@ -7551,7 +7551,7 @@
         "updatedAt": "2025-12-16T01:51:47.656Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Update-pipeline integration plan",
         "description": "Define how update-pipeline will run in this repo and wire a minimal path.",
         "details": "Acceptance:\\n- Decide where VersionWatcher/RolloutController run (server worker vs separate process)\\n- Implement a small integration point (e.g., expose current channel build via API)\\n- Document rollout safety + canary metrics storage",
@@ -7562,7 +7562,7 @@
         "subtasks": []
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Spec trace matrix (execution plane)",
         "description": "Produce a doc mapping spec sections to code + tests + runtime behavior.",
         "status": "review",
@@ -7581,7 +7581,10 @@
       "completedCount": 1,
       "tags": [
         "execution-plane"
-      ]
+      ],
+      "created": "2025-12-16T03:36:58.494Z",
+      "description": "Tasks for execution-plane context",
+      "updated": "2025-12-16T03:36:58.494Z"
     }
   },
   "prd-gpt52": {
@@ -9947,7 +9950,337 @@
         "prd-gpt52-research"
       ],
       "created": "2025-12-15T23:10:14.008Z",
-      "description": "Tasks for prd-gpt52-research context"
+      "description": "Tasks for prd-gpt52-research context",
+      "updated": "2025-12-15T23:10:14.008Z"
+    }
+  },
+  "prd-gpt52-eval-20251216": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Migrate database to Prisma with comprehensive schema",
+        "description": "Create Prisma schema for Village, House, Room, Agent, and WorldMap models with all specified relations",
+        "details": "Use Prisma v5.17.0. Define models: Village (id, seed, name, worldMapId), House (id, villageId, githubRepoId, position, footprint), Room (id, houseId, moduleType, modulePath, position, size, connections), Agent (id, houseId, name, spriteKey, personality, position, state, energy), WorldMap (id, villageId, mapData). Generate Prisma client with `npx prisma generate`. Run migrations with `npx prisma migrate dev`. Add indexes on foreign keys and frequent query fields.\n<info added on 2025-12-16T22:02:31.325Z>\nPR opened: #44 (branch prd-eval/task-1-prisma-foundation). This update adds a comprehensive Prisma schema, including indexes and database relation tests. Key files modified include: packages/server/prisma/schema.prisma, packages/server/src/__tests__/db-relations.test.ts, and docs/DB_SCHEMA.md.\n</info added on 2025-12-16T22:02:31.325Z>",
+        "testStrategy": "Test schema generation, relation integrity, and migration with `prisma db push` in test env. Verify all relations with integration tests using test database.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "review",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define initial Prisma data model schema for core entities",
+            "description": "Create the initial Prisma schema with Village, House, Room, Agent, and WorldMap models and all fields described in the parent task.",
+            "dependencies": [],
+            "details": "In packages/server/prisma/schema.prisma, define models Village, House, Room, Agent, and WorldMap with the specified scalar fields: Village (id, seed, name, worldMapId), House (id, villageId, githubRepoId, position, footprint), Room (id, houseId, moduleType, modulePath, position, size, connections), Agent (id, houseId, name, spriteKey, personality, position, state, energy), WorldMap (id, villageId, mapData). Choose appropriate Prisma types (e.g., Int, String, Json) and ID strategies, and ensure naming conventions match existing code where applicable.",
+            "status": "pending",
+            "testStrategy": null,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Model relations and referential actions between entities",
+            "description": "Add all required relations and referential actions among Village, House, Room, Agent, and WorldMap models in the Prisma schema.",
+            "dependencies": [
+              1
+            ],
+            "details": "In packages/server/prisma/schema.prisma, define relation fields and foreign keys: Village has many House and one WorldMap; House belongs to Village and has many Room and Agent; Room belongs to House; Agent belongs to House; WorldMap belongs to Village. Configure relation attributes (fields, references) and appropriate onDelete/onUpdate behaviors (e.g., cascading deletes for child records where desired). Ensure worldMapId and villageId are properly wired to their respective relations without circular optionality issues.",
+            "status": "pending",
+            "testStrategy": null,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Add indexes and unique constraints for foreign keys and query hotspots",
+            "description": "Optimize the Prisma schema with indexes and uniques on foreign keys and frequently queried fields.",
+            "dependencies": [
+              2
+            ],
+            "details": "In packages/server/prisma/schema.prisma, add @@index or @index on foreign key fields such as villageId, houseId, worldMapId, githubRepoId, and any other fields known to be frequent query filters (e.g., name on Village, moduleType on Room if used in lookups). Add @@unique constraints where domain rules require uniqueness (e.g., one WorldMap per Village if applicable). Ensure index names are explicit to ease future migrations.",
+            "status": "pending",
+            "testStrategy": null,
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Generate initial Prisma migration and client",
+            "description": "Create the initial database migration from the schema and generate the Prisma client.",
+            "dependencies": [
+              3
+            ],
+            "details": "From packages/server, run Prisma CLI commands using the repo’s pinned Prisma 6.x version (via existing scripts or npx): generate an initial migration with `npx prisma migrate dev --name init_core_models --schema=./prisma/schema.prisma` targeting the development database, and ensure SQL files are created under packages/server/prisma/migrations. Then run `npx prisma generate --schema=./prisma/schema.prisma` to regenerate the Prisma client. Verify that the generated client is in the expected output directory and that TypeScript compiles.",
+            "status": "pending",
+            "testStrategy": "Run `npx prisma validate` and `npx prisma migrate dev` against a local dev database to confirm the schema is valid and migrations apply cleanly.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Implement seed script for core world data using Prisma client",
+            "description": "Create a seed script that populates example Village, House, Room, Agent, and WorldMap records using the new schema.",
+            "dependencies": [
+              4
+            ],
+            "details": "In packages/server/src, add a seed script file (e.g., src/prisma/seed.ts) that imports the generated PrismaClient from the correct path and inserts a coherent data set: at least one Village with seed and name, associated WorldMap with mapData JSON, multiple Houses with githubRepoId, position, footprint, Rooms with moduleType/modulePath/position/size/connections, and Agents tied to Houses with personality, state, and energy fields. Ensure relations are created in the correct order and handle upserts or idempotence if the script may be rerun.",
+            "status": "pending",
+            "testStrategy": "Run the seed script against a fresh dev database (e.g., via `npx prisma db seed` or a package script) and manually inspect the tables with Prisma Studio or SQL queries to verify relational integrity and expected sample data.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "Wire Prisma client and schema into server application layer",
+            "description": "Integrate the generated Prisma client into the server codebase so that existing or new services use the new models.",
+            "dependencies": [
+              4
+            ],
+            "details": "In packages/server/src, create or update a Prisma client singleton (e.g., src/prisma/client.ts) that exports a configured PrismaClient instance. Update or add repository/service modules that will access Village, House, Room, Agent, and WorldMap records to use this client and new model names. Ensure the DATABASE_URL and environment configuration align with the Prisma schema and existing app config, and avoid introducing new dependencies beyond Prisma and Vitest already in the repo.",
+            "status": "pending",
+            "testStrategy": "Add or update a minimal integration path (e.g., a service function) that queries the new models and run it in a local dev environment to confirm the client can connect and query without runtime errors.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 7,
+            "title": "Create Vitest integration tests for schema relations and constraints",
+            "description": "Add tests to verify that Prisma enforces the intended relations, cascades, and constraints using a test database.",
+            "dependencies": [
+              5,
+              6
+            ],
+            "details": "Under packages/server/src (e.g., src/prisma/__tests__/schema.integration.test.ts), write Vitest tests that spin up PrismaClient pointing at a dedicated test database. Ensure tests run migrations for the test DB (using `npx prisma migrate dev` or `prisma db push` in a test-specific setup) before executing. Test that creating a Village allows Houses, Rooms, Agents, and WorldMap to be created correctly; verify referential integrity errors when foreign keys are invalid; and confirm cascade or restricted deletes behave as configured. Use transactions and cleanup logic to keep tests isolated.",
+            "status": "pending",
+            "testStrategy": "Run Vitest against the test suite, ensuring that all relation creation, invalid foreign key attempts, and delete behaviors pass and that the test database schema matches expectations.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 8,
+            "title": "Document Prisma migration, seeding, and testing workflows",
+            "description": "Add concise documentation describing how to work with the new Prisma schema, migrations, seeds, and tests.",
+            "dependencies": [
+              4,
+              5,
+              7
+            ],
+            "details": "In packages/server (e.g., in README.md or docs/prisma.md), document how to: modify packages/server/prisma/schema.prisma, create new migrations with `npx prisma migrate dev`, generate the client with `npx prisma generate`, run seeds (command and entrypoint file path), and execute Vitest integration tests for the database layer. Include notes about using the existing Prisma 6.x version, where the schema and migrations live, and any environment variables required for dev vs test databases. Keep instructions specific and aligned with current repo scripts.",
+            "status": "pending",
+            "testStrategy": null,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-16T22:02:16.538Z"
+      },
+      {
+        "id": 2,
+        "title": "Create Village CRUD endpoints",
+        "description": "Implement full REST API for villages with nested house loading",
+        "details": "Use Fastify v5.3.0 with TypeScript. Endpoints: GET /api/villages (pagination, filtering), POST /api/villages (validation with Zod v3.23.8), GET /api/villages/:id (include houses with Prisma populate), PUT/DELETE. Add input validation, error handling, and Prisma transactions for atomic operations.",
+        "testStrategy": "Jest integration tests covering all endpoints with 80% coverage. Mock Prisma with @prisma/client mock library. Test edge cases, validation errors, and relations.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.140Z"
+      },
+      {
+        "id": 3,
+        "title": "Create House CRUD endpoints with repo analysis trigger",
+        "description": "Implement house management API that triggers repository analysis on creation",
+        "details": "Fastify routes: GET /api/houses?villageId=..., POST /api/houses (queue repo analysis with BullMQ v5.3.0), GET /api/houses/:id (populate rooms/agents). Use async queue for repo analysis to prevent blocking. Implement repo analysis service stub.\n<info added on 2025-12-16T22:02:58.459Z>\nPR opened: #47 (branch task-3-repo-analysis-trigger). Adds House CRUD repo-analysis trigger via BullMQ worker and generates building interior/rooms from GitHub repo tree. Key files: packages/server/src/houses/router.ts, packages/server/src/houses/repoAnalysis*.ts, packages/server/src/queue/queues.ts, packages/server/src/queue/workers.ts.\n</info added on 2025-12-16T22:02:58.459Z>",
+        "testStrategy": "Test queue integration, repo analysis triggering, and populated responses. Mock BullMQ and GitHub client.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2"
+        ],
+        "status": "review",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:02:16.549Z"
+      },
+      {
+        "id": 4,
+        "title": "Create Room and Agent CRUD endpoints",
+        "description": "Complete model CRUD operations for rooms and agents",
+        "details": "Batch implement Room endpoints (GET/POST/PUT/DELETE with house filtering) and Agent endpoints (with state updates). Use consistent patterns from previous CRUD. Add agent state transition validation.",
+        "testStrategy": "Integration tests for both resource types. Verify foreign key constraints and state validation.",
+        "priority": "medium",
+        "dependencies": [
+          "1",
+          "2",
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.151Z"
+      },
+      {
+        "id": 5,
+        "title": "Set up comprehensive Jest test suite for backend",
+        "description": "Configure production-grade testing infrastructure",
+        "details": "Jest v29.7.0 + ts-jest v29.2.0. Config: TypeScript support, coverage thresholds (80%), database mocking with prisma-mock-dbclient, supertest for API testing. Add test containers with Testcontainers for PostgreSQL.",
+        "testStrategy": "Verify test setup works by running existing CRUD tests. Achieve 80% coverage baseline.",
+        "priority": "high",
+        "dependencies": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.162Z"
+      },
+      {
+        "id": 6,
+        "title": "Create GitHub GraphQL client wrapper",
+        "description": "Build typed GraphQL client with rate limiting and caching",
+        "details": "Use graphql-request v7.1.0 with typed schemas from GitHub GraphQL API v4. Implement rate limiting (5000 points/hour) using bottleneck v2.19.5. Add Redis caching (ioredis v5.4.1) with 1h TTL. Batch requests where possible.",
+        "testStrategy": "Mock GitHub responses with MSW. Test rate limiting, caching, and error recovery.",
+        "priority": "high",
+        "dependencies": [
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.173Z"
+      },
+      {
+        "id": 7,
+        "title": "Implement repository tree fetcher and module classifier",
+        "description": "Fetch complete repo structure and classify modules by type",
+        "details": "Recursive GraphQL tree query for files up to 100 levels. Integrate @github-linguist v9.3.1 for language detection. Module classification logic: parse file paths/extensions, detect patterns (*/components/*, */services/*, etc.). Support JS/TS/Python/Go/Rust/Java.",
+        "testStrategy": "Test with real GitHub mock repos. Verify tree completeness and classification accuracy against known repos.",
+        "priority": "high",
+        "dependencies": [
+          "6"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.183Z"
+      },
+      {
+        "id": 8,
+        "title": "Set up webhook endpoint and event processing",
+        "description": "Create secure GitHub webhook handler with async processing",
+        "details": "POST /api/webhooks/github with HMAC signature verification (github-webhook-middleware v2.1.1). Route events: push->activity, pr->state, check_run->build. Use BullMQ queue for async processing. Add retry logic and dead letter queue.\n<info added on 2025-12-16T22:03:14.803Z>\nPR opened: #48 (branch task-8-webhook-async-pipeline). Adds BullMQ-backed async GitHub webhook processing with retries and a dead letter queue. Key files include: packages/server/src/github/webhooks.ts, packages/server/src/github/webhookQueue.ts, packages/server/src/queue/queues.ts, and packages/server/src/queue/workers.ts. Note: This PR is stacked on task-3-repo-analysis-trigger; merge #47 first, then retarget/merge.\n</info added on 2025-12-16T22:03:14.803Z>",
+        "testStrategy": "Test signature verification, event routing, and queue integration with real webhook payloads.",
+        "priority": "high",
+        "dependencies": [
+          "3",
+          "6"
+        ],
+        "status": "review",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:02:16.560Z"
+      },
+      {
+        "id": 9,
+        "title": "Refactor Phaser scene structure and camera system",
+        "description": "Create core Phaser scenes with smooth camera controls",
+        "details": "Phaser v3.80.1. Scenes: BootScene, PreloadScene, VillageScene, HouseScene. Camera: zoom 0.5x-2x (lerp 0.1), pan (drag/edge), bounds checking, follow mode. Use Phaser's built-in camera smoothing.\n<info added on 2025-12-16T22:08:58.282Z>\nAlready present in baseline code: Scenes Boot/Preload/Village/House in packages/frontend/src/game/scenes/*. Wired in packages/frontend/src/game/config.example.ts. Camera controls: packages/frontend/src/game/systems/CameraController.ts (zoom 0.5–2, drag pan, edge scroll, bounds, follow lerp). Tests: packages/frontend/src/game/__tests__/CameraController.test.ts + scene tests.\n</info added on 2025-12-16T22:08:58.282Z>",
+        "testStrategy": "Vitest unit tests for camera math. Playwright E2E tests for scene transitions and camera controls.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:09:00.258Z"
+      },
+      {
+        "id": 10,
+        "title": "Implement input handler and asset manifest system",
+        "description": "Unified input system and dynamic asset loading",
+        "details": "Input: WASD/Arrows, mouse/touch/gamepad using Phaser input plugins. Asset manifest: JSON-based dynamic loading by scene with progress bar. Fallback textures for missing assets.\n<info added on 2025-12-16T22:03:26.493Z>\nPR #49 has been opened, which adds gamepad support to the InputHandler and implements asset manifest queueing with fallback textures via the AssetLoader. This update integrates with the PreloadScene and includes a Vitest-safe guard. Key files affected are packages/frontend/src/game/systems/InputHandler.ts, packages/frontend/src/game/assets/AssetLoader.ts, and packages/frontend/src/game/scenes/PreloadScene.ts.\n</info added on 2025-12-16T22:03:26.493Z>",
+        "testStrategy": "Test all input methods across devices. Verify asset loading sequences and fallbacks.",
+        "priority": "medium",
+        "dependencies": [
+          "9"
+        ],
+        "status": "review",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:02:16.569Z"
+      },
+      {
+        "id": 11,
+        "title": "Create Prando seeded RNG and BSP tree generator",
+        "description": "Implement deterministic BSP layout generation",
+        "details": "Prando v3.1.0 seeded from repo+commit SHA256 hash. BSP: split ratios 0.45-0.55, max depth=log(roomCount), min room 4x4 tiles. Verify reproducibility with seed replay.",
+        "testStrategy": "Test determinism (same seed=same layout), connectivity, no overlaps. 100+ random seeds.",
+        "priority": "high",
+        "dependencies": [
+          "7"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.194Z"
+      },
+      {
+        "id": 12,
+        "title": "Implement room placement, Delaunay triangulation, and corridor generation",
+        "description": "Complete building layout algorithm",
+        "details": "Room placement: shrink BSP leaf by 10% margin, size by module complexity. Delaunay triangulation (d3-delaunay v7.0.2) for room connections. Kruskal's MST with Union-Find + 30% extra edges. L-shaped corridor carving with door placement.",
+        "testStrategy": "Verify all rooms connected, no overlaps, reasonable corridor lengths. Test with 10-100 rooms.",
+        "priority": "high",
+        "dependencies": [
+          "11"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.203Z"
+      },
+      {
+        "id": 13,
+        "title": "Create tilemap generation with auto-tiling and decorations",
+        "description": "Generate complete tilemap JSON from BSP layout",
+        "details": "Multi-layer tilemap: floor/wall/decorations. 4-bit auto-tiling (16 wall variants). Room-type floors, decoration catalogs by module type. Export Tiled JSON format for Phaser.",
+        "testStrategy": "Visual diff testing of generated tilemaps. Verify auto-tile correctness and decoration rules.",
+        "priority": "high",
+        "dependencies": [
+          "12"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.213Z"
+      },
+      {
+        "id": 14,
+        "title": "Implement Phaser tilemap rendering and collision",
+        "description": "Render generated tilemaps with proper layering and physics",
+        "details": "Phaser.Tilemaps parser for multi-layer JSON. Layers: ground/wall/decor/above. Arcade physics collision on walls/doors. Room labels with text scaling by zoom level.",
+        "testStrategy": "Test rendering matches generated JSON. Verify collision detection and room transitions.",
+        "priority": "high",
+        "dependencies": [
+          "9",
+          "10",
+          "13"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.223Z"
+      },
+      {
+        "id": 15,
+        "title": "Set up XState v5 agent state machines",
+        "description": "Create type-safe state machines for agent behaviors",
+        "details": "XState v5.9.0 with TypeScript. States: idle/working/thinking/frustrated/celebrating/resting/socializing/traveling. Guards: energy/frustration thresholds, proximity checks. Actions: position updates, emote triggers, energy decay.",
+        "testStrategy": "Test all state transitions, guard conditions, and action side effects with XState test utilities.",
+        "priority": "high",
+        "dependencies": [
+          "4"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.232Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2025-12-16T22:13:44.235Z",
+      "taskCount": 15,
+      "completedCount": 11,
+      "tags": [
+        "prd-gpt52-eval-20251216"
+      ],
+      "created": "2025-12-16T22:14:03.456Z",
+      "description": "Tasks for prd-gpt52-eval-20251216 context",
+      "updated": "2025-12-16T22:14:03.456Z"
     }
   }
 }
