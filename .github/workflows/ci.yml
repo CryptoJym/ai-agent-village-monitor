@@ -104,6 +104,9 @@ jobs:
             pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Build runner package (server only)
+        if: matrix.pkg == 'server'
+        run: pnpm -C packages/runner build
       - name: Generate Prisma Client (server only)
         if: matrix.pkg == 'server'
         run: pnpm -C packages/server prisma:generate
