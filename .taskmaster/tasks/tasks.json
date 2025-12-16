@@ -9957,14 +9957,14 @@
   "prd-gpt52-eval-20251216": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Migrate database to Prisma with comprehensive schema",
         "description": "Create Prisma schema for Village, House, Room, Agent, and WorldMap models with all specified relations",
         "details": "Use Prisma v5.17.0. Define models: Village (id, seed, name, worldMapId), House (id, villageId, githubRepoId, position, footprint), Room (id, houseId, moduleType, modulePath, position, size, connections), Agent (id, houseId, name, spriteKey, personality, position, state, energy), WorldMap (id, villageId, mapData). Generate Prisma client with `npx prisma generate`. Run migrations with `npx prisma migrate dev`. Add indexes on foreign keys and frequent query fields.\n<info added on 2025-12-16T22:02:31.325Z>\nPR opened: #44 (branch prd-eval/task-1-prisma-foundation). This update adds a comprehensive Prisma schema, including indexes and database relation tests. Key files modified include: packages/server/prisma/schema.prisma, packages/server/src/__tests__/db-relations.test.ts, and docs/DB_SCHEMA.md.\n</info added on 2025-12-16T22:02:31.325Z>",
         "testStrategy": "Test schema generation, relation integrity, and migration with `prisma db push` in test env. Verify all relations with integration tests using test database.",
         "priority": "high",
         "dependencies": [],
-        "status": "review",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -10064,10 +10064,10 @@
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-16T22:02:16.538Z"
+        "updatedAt": "2025-12-16T22:38:39.600Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Create Village CRUD endpoints",
         "description": "Implement full REST API for villages with nested house loading",
         "details": "Use Fastify v5.3.0 with TypeScript. Endpoints: GET /api/villages (pagination, filtering), POST /api/villages (validation with Zod v3.23.8), GET /api/villages/:id (include houses with Prisma populate), PUT/DELETE. Add input validation, error handling, and Prisma transactions for atomic operations.",
@@ -10081,7 +10081,7 @@
         "updatedAt": "2025-12-16T22:13:44.140Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Create House CRUD endpoints with repo analysis trigger",
         "description": "Implement house management API that triggers repository analysis on creation",
         "details": "Fastify routes: GET /api/houses?villageId=..., POST /api/houses (queue repo analysis with BullMQ v5.3.0), GET /api/houses/:id (populate rooms/agents). Use async queue for repo analysis to prevent blocking. Implement repo analysis service stub.\n<info added on 2025-12-16T22:02:58.459Z>\nPR opened: #47 (branch task-3-repo-analysis-trigger). Adds House CRUD repo-analysis trigger via BullMQ worker and generates building interior/rooms from GitHub repo tree. Key files: packages/server/src/houses/router.ts, packages/server/src/houses/repoAnalysis*.ts, packages/server/src/queue/queues.ts, packages/server/src/queue/workers.ts.\n</info added on 2025-12-16T22:02:58.459Z>",
@@ -10091,12 +10091,12 @@
           "1",
           "2"
         ],
-        "status": "review",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2025-12-16T22:02:16.549Z"
+        "updatedAt": "2025-12-16T22:38:39.610Z"
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Create Room and Agent CRUD endpoints",
         "description": "Complete model CRUD operations for rooms and agents",
         "details": "Batch implement Room endpoints (GET/POST/PUT/DELETE with house filtering) and Agent endpoints (with state updates). Use consistent patterns from previous CRUD. Add agent state transition validation.",
@@ -10112,7 +10112,7 @@
         "updatedAt": "2025-12-16T22:13:44.151Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Set up comprehensive Jest test suite for backend",
         "description": "Configure production-grade testing infrastructure",
         "details": "Jest v29.7.0 + ts-jest v29.2.0. Config: TypeScript support, coverage thresholds (80%), database mocking with prisma-mock-dbclient, supertest for API testing. Add test containers with Testcontainers for PostgreSQL.",
@@ -10129,7 +10129,7 @@
         "updatedAt": "2025-12-16T22:13:44.162Z"
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Create GitHub GraphQL client wrapper",
         "description": "Build typed GraphQL client with rate limiting and caching",
         "details": "Use graphql-request v7.1.0 with typed schemas from GitHub GraphQL API v4. Implement rate limiting (5000 points/hour) using bottleneck v2.19.5. Add Redis caching (ioredis v5.4.1) with 1h TTL. Batch requests where possible.",
@@ -10143,7 +10143,7 @@
         "updatedAt": "2025-12-16T22:13:44.173Z"
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Implement repository tree fetcher and module classifier",
         "description": "Fetch complete repo structure and classify modules by type",
         "details": "Recursive GraphQL tree query for files up to 100 levels. Integrate @github-linguist v9.3.1 for language detection. Module classification logic: parse file paths/extensions, detect patterns (*/components/*, */services/*, etc.). Support JS/TS/Python/Go/Rust/Java.",
@@ -10157,7 +10157,7 @@
         "updatedAt": "2025-12-16T22:13:44.183Z"
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Set up webhook endpoint and event processing",
         "description": "Create secure GitHub webhook handler with async processing",
         "details": "POST /api/webhooks/github with HMAC signature verification (github-webhook-middleware v2.1.1). Route events: push->activity, pr->state, check_run->build. Use BullMQ queue for async processing. Add retry logic and dead letter queue.\n<info added on 2025-12-16T22:03:14.803Z>\nPR opened: #48 (branch task-8-webhook-async-pipeline). Adds BullMQ-backed async GitHub webhook processing with retries and a dead letter queue. Key files include: packages/server/src/github/webhooks.ts, packages/server/src/github/webhookQueue.ts, packages/server/src/queue/queues.ts, and packages/server/src/queue/workers.ts. Note: This PR is stacked on task-3-repo-analysis-trigger; merge #47 first, then retarget/merge.\n</info added on 2025-12-16T22:03:14.803Z>",
@@ -10167,12 +10167,12 @@
           "3",
           "6"
         ],
-        "status": "review",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2025-12-16T22:02:16.560Z"
+        "updatedAt": "2025-12-16T22:38:39.620Z"
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Refactor Phaser scene structure and camera system",
         "description": "Create core Phaser scenes with smooth camera controls",
         "details": "Phaser v3.80.1. Scenes: BootScene, PreloadScene, VillageScene, HouseScene. Camera: zoom 0.5x-2x (lerp 0.1), pan (drag/edge), bounds checking, follow mode. Use Phaser's built-in camera smoothing.\n<info added on 2025-12-16T22:08:58.282Z>\nAlready present in baseline code: Scenes Boot/Preload/Village/House in packages/frontend/src/game/scenes/*. Wired in packages/frontend/src/game/config.example.ts. Camera controls: packages/frontend/src/game/systems/CameraController.ts (zoom 0.5–2, drag pan, edge scroll, bounds, follow lerp). Tests: packages/frontend/src/game/__tests__/CameraController.test.ts + scene tests.\n</info added on 2025-12-16T22:08:58.282Z>",
@@ -10184,7 +10184,7 @@
         "updatedAt": "2025-12-16T22:09:00.258Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Implement input handler and asset manifest system",
         "description": "Unified input system and dynamic asset loading",
         "details": "Input: WASD/Arrows, mouse/touch/gamepad using Phaser input plugins. Asset manifest: JSON-based dynamic loading by scene with progress bar. Fallback textures for missing assets.\n<info added on 2025-12-16T22:03:26.493Z>\nPR #49 has been opened, which adds gamepad support to the InputHandler and implements asset manifest queueing with fallback textures via the AssetLoader. This update integrates with the PreloadScene and includes a Vitest-safe guard. Key files affected are packages/frontend/src/game/systems/InputHandler.ts, packages/frontend/src/game/assets/AssetLoader.ts, and packages/frontend/src/game/scenes/PreloadScene.ts.\n</info added on 2025-12-16T22:03:26.493Z>",
@@ -10193,12 +10193,12 @@
         "dependencies": [
           "9"
         ],
-        "status": "review",
+        "status": "done",
         "subtasks": [],
-        "updatedAt": "2025-12-16T22:02:16.569Z"
+        "updatedAt": "2025-12-16T22:38:39.630Z"
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Create Prando seeded RNG and BSP tree generator",
         "description": "Implement deterministic BSP layout generation",
         "details": "Prando v3.1.0 seeded from repo+commit SHA256 hash. BSP: split ratios 0.45-0.55, max depth=log(roomCount), min room 4x4 tiles. Verify reproducibility with seed replay.",
@@ -10212,7 +10212,7 @@
         "updatedAt": "2025-12-16T22:13:44.194Z"
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "Implement room placement, Delaunay triangulation, and corridor generation",
         "description": "Complete building layout algorithm",
         "details": "Room placement: shrink BSP leaf by 10% margin, size by module complexity. Delaunay triangulation (d3-delaunay v7.0.2) for room connections. Kruskal's MST with Union-Find + 30% extra edges. L-shaped corridor carving with door placement.",
@@ -10226,7 +10226,7 @@
         "updatedAt": "2025-12-16T22:13:44.203Z"
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "Create tilemap generation with auto-tiling and decorations",
         "description": "Generate complete tilemap JSON from BSP layout",
         "details": "Multi-layer tilemap: floor/wall/decorations. 4-bit auto-tiling (16 wall variants). Room-type floors, decoration catalogs by module type. Export Tiled JSON format for Phaser.",
@@ -10240,7 +10240,7 @@
         "updatedAt": "2025-12-16T22:13:44.213Z"
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "Implement Phaser tilemap rendering and collision",
         "description": "Render generated tilemaps with proper layering and physics",
         "details": "Phaser.Tilemaps parser for multi-layer JSON. Layers: ground/wall/decor/above. Arcade physics collision on walls/doors. Room labels with text scaling by zoom level.",
@@ -10256,7 +10256,7 @@
         "updatedAt": "2025-12-16T22:13:44.223Z"
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "Set up XState v5 agent state machines",
         "description": "Create type-safe state machines for agent behaviors",
         "details": "XState v5.9.0 with TypeScript. States: idle/working/thinking/frustrated/celebrating/resting/socializing/traveling. Guards: energy/frustration thresholds, proximity checks. Actions: position updates, emote triggers, energy decay.",
@@ -10272,15 +10272,12 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-16T22:13:44.235Z",
+      "lastModified": "2025-12-16T22:38:39.633Z",
       "taskCount": 15,
-      "completedCount": 11,
+      "completedCount": 15,
       "tags": [
         "prd-gpt52-eval-20251216"
-      ],
-      "created": "2025-12-16T22:14:03.456Z",
-      "description": "Tasks for prd-gpt52-eval-20251216 context",
-      "updated": "2025-12-16T22:14:03.456Z"
+      ]
     }
   }
 }
