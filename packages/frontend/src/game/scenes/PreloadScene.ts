@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { AssetManager } from '../../assets/AssetManager';
 import { ATLAS_MANIFEST, PRELOAD_AUDIO } from '../../assets/atlases';
+import { AssetLoader } from '../assets/AssetLoader';
 
 /**
  * PreloadScene - Asset Loading with progress display
@@ -16,6 +17,7 @@ export class PreloadScene extends Phaser.Scene {
   private progressBarBg!: Phaser.GameObjects.Rectangle;
   private loadingText!: Phaser.GameObjects.Text;
   private percentText!: Phaser.GameObjects.Text;
+  private assetLoader?: AssetLoader;
 
   constructor() {
     super({ key: 'PreloadScene' });
@@ -51,13 +53,7 @@ export class PreloadScene extends Phaser.Scene {
 
     // Progress bar fill
     this.progressBar = this.add
-      .rectangle(
-        centerX - barWidth / 2,
-        centerY,
-        4,
-        barHeight - 4,
-        0x60a5fa
-      )
+      .rectangle(centerX - barWidth / 2, centerY, 4, barHeight - 4, 0x60a5fa)
       .setOrigin(0, 0.5);
 
     // Percentage text
@@ -91,6 +87,13 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   private loadAssets() {
+    // Manifest-driven assets (skip in Vitest/headless to avoid real IO)
+    const isTest = typeof process !== 'undefined' && !!(process as any).env?.VITEST;
+    this.assetLoader = new AssetLoader(this);
+    if (!isTest) {
+      this.assetLoader.queueAll();
+    }
+
     // Load atlas manifest assets
     for (const asset of ATLAS_MANIFEST) {
       if (asset.type === 'spritesheet' && asset.frameConfig) {
@@ -113,6 +116,13 @@ export class PreloadScene extends Phaser.Scene {
 
   create() {
     console.log('[PreloadScene] Creating animations and registering assets...');
+
+    // Create placeholder textures for any missing images/tilesets/spritesheets.
+    try {
+      this.assetLoader?.registerFallbackTextures();
+    } catch (e) {
+      void e;
+    }
 
     // Register animations and tiles
     AssetManager.registerPixellabAnimations(this);

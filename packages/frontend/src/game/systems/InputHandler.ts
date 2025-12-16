@@ -5,7 +5,10 @@ export interface InputConfig {
   keyboardEnabled?: boolean;
   mouseEnabled?: boolean;
   touchEnabled?: boolean;
+  gamepadEnabled?: boolean;
   keyboardPanSpeed?: number;
+  gamepadPanSpeed?: number;
+  gamepadDeadzone?: number;
 }
 
 /**
@@ -35,6 +38,11 @@ export class InputHandler extends Phaser.Events.EventEmitter {
   private initialPinchDistance = 0;
   private initialZoom = 1;
 
+  // Gamepad
+  private activeGamepad?: Phaser.Input.Gamepad.Gamepad;
+  private onGamepadConnected?: (pad: Phaser.Input.Gamepad.Gamepad) => void;
+  private onGamepadDisconnected?: (pad: Phaser.Input.Gamepad.Gamepad) => void;
+
   constructor(scene: Phaser.Scene, cameraController: CameraController, config: InputConfig = {}) {
     super();
 
@@ -45,7 +53,10 @@ export class InputHandler extends Phaser.Events.EventEmitter {
       keyboardEnabled: config.keyboardEnabled ?? true,
       mouseEnabled: config.mouseEnabled ?? true,
       touchEnabled: config.touchEnabled ?? true,
+      gamepadEnabled: config.gamepadEnabled ?? true,
       keyboardPanSpeed: config.keyboardPanSpeed ?? 5,
+      gamepadPanSpeed: config.gamepadPanSpeed ?? 8,
+      gamepadDeadzone: config.gamepadDeadzone ?? 0.15,
     };
 
     this.initialize();
@@ -62,6 +73,10 @@ export class InputHandler extends Phaser.Events.EventEmitter {
 
     if (this.config.touchEnabled) {
       this.setupTouch();
+    }
+
+    if (this.config.gamepadEnabled) {
+      this.setupGamepad();
     }
   }
 
@@ -115,7 +130,7 @@ export class InputHandler extends Phaser.Events.EventEmitter {
         pointer.downX || pointer.x,
         pointer.downY || pointer.y,
         pointer.x,
-        pointer.y
+        pointer.y,
       );
 
       if (dragDistance < 10) {
@@ -155,12 +170,7 @@ export class InputHandler extends Phaser.Events.EventEmitter {
 
     if (!pointer1.isDown || !pointer2.isDown) return;
 
-    const distance = Phaser.Math.Distance.Between(
-      pointer1.x,
-      pointer1.y,
-      pointer2.x,
-      pointer2.y
-    );
+    const distance = Phaser.Math.Distance.Between(pointer1.x, pointer1.y, pointer2.x, pointer2.y);
 
     if (this.initialPinchDistance === 0) {
       this.initialPinchDistance = distance;
@@ -175,6 +185,34 @@ export class InputHandler extends Phaser.Events.EventEmitter {
     this.emit('zoom', newZoom);
   }
 
+  private setupGamepad() {
+    const gamepad = (this.scene.input as any).gamepad as
+      | Phaser.Input.Gamepad.GamepadPlugin
+      | undefined;
+    if (!gamepad) return;
+
+    this.onGamepadConnected = (pad) => {
+      this.activeGamepad = pad;
+      this.emit('gamepadConnected', { id: (pad as any).id ?? 'unknown' });
+    };
+
+    this.onGamepadDisconnected = (pad) => {
+      if (this.activeGamepad === pad) this.activeGamepad = undefined;
+      this.emit('gamepadDisconnected', { id: (pad as any).id ?? 'unknown' });
+    };
+
+    gamepad.on('connected', this.onGamepadConnected);
+    gamepad.on('disconnected', this.onGamepadDisconnected);
+
+    // If a pad is already connected, use it immediately.
+    try {
+      const existing = (gamepad as any).pads?.find((p: any) => p?.connected);
+      if (existing) this.activeGamepad = existing;
+    } catch {
+      // Ignore inspection failures; the connected event will set active pad.
+    }
+  }
+
   /**
    * Update method to be called in scene's update loop
    */
@@ -182,12 +220,16 @@ export class InputHandler extends Phaser.Events.EventEmitter {
     if (this.config.keyboardEnabled) {
       this.updateKeyboard(delta);
     }
+
+    if (this.config.gamepadEnabled) {
+      this.updateGamepad(delta);
+    }
   }
 
   private updateKeyboard(delta: number): void {
     if (!this.cursors || !this.wasdKeys) return;
 
-    const speed = this.config.keyboardPanSpeed * delta / 16; // Normalize to 60fps
+    const speed = (this.config.keyboardPanSpeed * delta) / 16; // Normalize to 60fps
     const camera = this.scene.cameras.main;
 
     let moveX = 0;
@@ -219,6 +261,39 @@ export class InputHandler extends Phaser.Events.EventEmitter {
     }
   }
 
+  private updateGamepad(delta: number): void {
+    const plugin = (this.scene.input as any).gamepad as any;
+    if (!plugin) return;
+
+    const pad: any =
+      this.activeGamepad ||
+      plugin.pad1 ||
+      (Array.isArray(plugin.pads) ? plugin.pads.find((p: any) => p?.connected) : undefined);
+    if (!pad) return;
+
+    const axis0 = pad.axes?.[0];
+    const axis1 = pad.axes?.[1];
+    const rawX = typeof axis0?.getValue === 'function' ? axis0.getValue() : (pad.leftStick?.x ?? 0);
+    const rawY = typeof axis1?.getValue === 'function' ? axis1.getValue() : (pad.leftStick?.y ?? 0);
+
+    const deadzone = this.config.gamepadDeadzone;
+    const x = Math.abs(rawX) >= deadzone ? rawX : 0;
+    const y = Math.abs(rawY) >= deadzone ? rawY : 0;
+    if (!x && !y) return;
+
+    const speed = (this.config.gamepadPanSpeed * delta) / 16;
+    const camera = this.scene.cameras.main;
+
+    // Stop camera follow when using gamepad
+    if (this.cameraController.isFollowingTarget()) {
+      this.cameraController.stopFollow();
+    }
+
+    camera.scrollX += x * speed;
+    camera.scrollY += y * speed;
+    this.emit('move', { x: x * speed, y: y * speed, source: 'gamepad' });
+  }
+
   /**
    * Enable or disable keyboard input
    */
@@ -241,6 +316,14 @@ export class InputHandler extends Phaser.Events.EventEmitter {
   }
 
   /**
+   * Enable or disable gamepad input
+   */
+  setGamepadEnabled(enabled: boolean): void {
+    this.config.gamepadEnabled = enabled;
+    if (enabled) this.setupGamepad();
+  }
+
+  /**
    * Cleanup
    */
   destroy(): void {
@@ -252,6 +335,15 @@ export class InputHandler extends Phaser.Events.EventEmitter {
 
     if (this.wasdKeys) {
       this.wasdKeys = undefined;
+    }
+
+    try {
+      const gamepad = (this.scene.input as any).gamepad as any;
+      if (gamepad && this.onGamepadConnected) gamepad.off('connected', this.onGamepadConnected);
+      if (gamepad && this.onGamepadDisconnected)
+        gamepad.off('disconnected', this.onGamepadDisconnected);
+    } catch {
+      // Ignore teardown issues.
     }
   }
 }

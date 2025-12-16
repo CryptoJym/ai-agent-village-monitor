@@ -717,6 +717,64 @@ describe('InputHandler - Playable Environment Tests', () => {
     });
   });
 
+  describe('Gamepad', () => {
+    it('should pan camera based on left stick axes', () => {
+      const pad = {
+        connected: true,
+        axes: [{ getValue: () => 0.5 }, { getValue: () => -0.25 }],
+      };
+      const gamepadPlugin = { pads: [pad], on: vi.fn(), off: vi.fn() };
+      const sceneWithPad = {
+        cameras: { main: mockCamera },
+        input: { ...mockInput, gamepad: gamepadPlugin },
+      } as unknown as Phaser.Scene;
+
+      const handler = new InputHandler(sceneWithPad, mockCameraController, {
+        keyboardEnabled: false,
+        mouseEnabled: false,
+        touchEnabled: false,
+        gamepadEnabled: true,
+        gamepadPanSpeed: 10,
+        gamepadDeadzone: 0.1,
+      });
+
+      const x0 = mockCamera.scrollX;
+      const y0 = mockCamera.scrollY;
+      handler.update(16.67);
+      expect(mockCamera.scrollX).toBeGreaterThan(x0);
+      expect(mockCamera.scrollY).toBeLessThan(y0);
+      handler.destroy();
+    });
+
+    it('should respect deadzone and not move for small input', () => {
+      const pad = {
+        connected: true,
+        axes: [{ getValue: () => 0.05 }, { getValue: () => 0.05 }],
+      };
+      const gamepadPlugin = { pads: [pad], on: vi.fn(), off: vi.fn() };
+      const sceneWithPad = {
+        cameras: { main: mockCamera },
+        input: { ...mockInput, gamepad: gamepadPlugin },
+      } as unknown as Phaser.Scene;
+
+      const handler = new InputHandler(sceneWithPad, mockCameraController, {
+        keyboardEnabled: false,
+        mouseEnabled: false,
+        touchEnabled: false,
+        gamepadEnabled: true,
+        gamepadPanSpeed: 10,
+        gamepadDeadzone: 0.1,
+      });
+
+      const x0 = mockCamera.scrollX;
+      const y0 = mockCamera.scrollY;
+      handler.update(16.67);
+      expect(mockCamera.scrollX).toBe(x0);
+      expect(mockCamera.scrollY).toBe(y0);
+      handler.destroy();
+    });
+  });
+
   describe('Cleanup', () => {
     it('should clean up event listeners on destroy', () => {
       inputHandler.destroy();
