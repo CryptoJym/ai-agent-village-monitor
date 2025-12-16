@@ -7583,7 +7583,8 @@
         "execution-plane"
       ],
       "created": "2025-12-16T03:36:58.494Z",
-      "description": "Tasks for execution-plane context"
+      "description": "Tasks for execution-plane context",
+      "updated": "2025-12-16T03:36:58.494Z"
     }
   },
   "prd-gpt52": {
@@ -9949,7 +9950,8 @@
         "prd-gpt52-research"
       ],
       "created": "2025-12-15T23:10:14.008Z",
-      "description": "Tasks for prd-gpt52-research context"
+      "description": "Tasks for prd-gpt52-research context",
+      "updated": "2025-12-15T23:10:14.008Z"
     }
   },
   "prd-gpt52-eval-20251216": {
@@ -9958,11 +9960,11 @@
         "id": 1,
         "title": "Migrate database to Prisma with comprehensive schema",
         "description": "Create Prisma schema for Village, House, Room, Agent, and WorldMap models with all specified relations",
-        "details": "Use Prisma v5.17.0. Define models: Village (id, seed, name, worldMapId), House (id, villageId, githubRepoId, position, footprint), Room (id, houseId, moduleType, modulePath, position, size, connections), Agent (id, houseId, name, spriteKey, personality, position, state, energy), WorldMap (id, villageId, mapData). Generate Prisma client with `npx prisma generate`. Run migrations with `npx prisma migrate dev`. Add indexes on foreign keys and frequent query fields.",
+        "details": "Use Prisma v5.17.0. Define models: Village (id, seed, name, worldMapId), House (id, villageId, githubRepoId, position, footprint), Room (id, houseId, moduleType, modulePath, position, size, connections), Agent (id, houseId, name, spriteKey, personality, position, state, energy), WorldMap (id, villageId, mapData). Generate Prisma client with `npx prisma generate`. Run migrations with `npx prisma migrate dev`. Add indexes on foreign keys and frequent query fields.\n<info added on 2025-12-16T22:02:31.325Z>\nPR opened: #44 (branch prd-eval/task-1-prisma-foundation). This update adds a comprehensive Prisma schema, including indexes and database relation tests. Key files modified include: packages/server/prisma/schema.prisma, packages/server/src/__tests__/db-relations.test.ts, and docs/DB_SCHEMA.md.\n</info added on 2025-12-16T22:02:31.325Z>",
         "testStrategy": "Test schema generation, relation integrity, and migration with `prisma db push` in test env. Verify all relations with integration tests using test database.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "review",
         "subtasks": [
           {
             "id": 1,
@@ -9971,7 +9973,8 @@
             "dependencies": [],
             "details": "In packages/server/prisma/schema.prisma, define models Village, House, Room, Agent, and WorldMap with the specified scalar fields: Village (id, seed, name, worldMapId), House (id, villageId, githubRepoId, position, footprint), Room (id, houseId, moduleType, modulePath, position, size, connections), Agent (id, houseId, name, spriteKey, personality, position, state, energy), WorldMap (id, villageId, mapData). Choose appropriate Prisma types (e.g., Int, String, Json) and ID strategies, and ensure naming conventions match existing code where applicable.",
             "status": "pending",
-            "testStrategy": null
+            "testStrategy": null,
+            "parentId": "undefined"
           },
           {
             "id": 2,
@@ -9982,7 +9985,8 @@
             ],
             "details": "In packages/server/prisma/schema.prisma, define relation fields and foreign keys: Village has many House and one WorldMap; House belongs to Village and has many Room and Agent; Room belongs to House; Agent belongs to House; WorldMap belongs to Village. Configure relation attributes (fields, references) and appropriate onDelete/onUpdate behaviors (e.g., cascading deletes for child records where desired). Ensure worldMapId and villageId are properly wired to their respective relations without circular optionality issues.",
             "status": "pending",
-            "testStrategy": null
+            "testStrategy": null,
+            "parentId": "undefined"
           },
           {
             "id": 3,
@@ -9993,7 +9997,8 @@
             ],
             "details": "In packages/server/prisma/schema.prisma, add @@index or @index on foreign key fields such as villageId, houseId, worldMapId, githubRepoId, and any other fields known to be frequent query filters (e.g., name on Village, moduleType on Room if used in lookups). Add @@unique constraints where domain rules require uniqueness (e.g., one WorldMap per Village if applicable). Ensure index names are explicit to ease future migrations.",
             "status": "pending",
-            "testStrategy": null
+            "testStrategy": null,
+            "parentId": "undefined"
           },
           {
             "id": 4,
@@ -10004,7 +10009,8 @@
             ],
             "details": "From packages/server, run Prisma CLI commands using the repo’s pinned Prisma 6.x version (via existing scripts or npx): generate an initial migration with `npx prisma migrate dev --name init_core_models --schema=./prisma/schema.prisma` targeting the development database, and ensure SQL files are created under packages/server/prisma/migrations. Then run `npx prisma generate --schema=./prisma/schema.prisma` to regenerate the Prisma client. Verify that the generated client is in the expected output directory and that TypeScript compiles.",
             "status": "pending",
-            "testStrategy": "Run `npx prisma validate` and `npx prisma migrate dev` against a local dev database to confirm the schema is valid and migrations apply cleanly."
+            "testStrategy": "Run `npx prisma validate` and `npx prisma migrate dev` against a local dev database to confirm the schema is valid and migrations apply cleanly.",
+            "parentId": "undefined"
           },
           {
             "id": 5,
@@ -10015,7 +10021,8 @@
             ],
             "details": "In packages/server/src, add a seed script file (e.g., src/prisma/seed.ts) that imports the generated PrismaClient from the correct path and inserts a coherent data set: at least one Village with seed and name, associated WorldMap with mapData JSON, multiple Houses with githubRepoId, position, footprint, Rooms with moduleType/modulePath/position/size/connections, and Agents tied to Houses with personality, state, and energy fields. Ensure relations are created in the correct order and handle upserts or idempotence if the script may be rerun.",
             "status": "pending",
-            "testStrategy": "Run the seed script against a fresh dev database (e.g., via `npx prisma db seed` or a package script) and manually inspect the tables with Prisma Studio or SQL queries to verify relational integrity and expected sample data."
+            "testStrategy": "Run the seed script against a fresh dev database (e.g., via `npx prisma db seed` or a package script) and manually inspect the tables with Prisma Studio or SQL queries to verify relational integrity and expected sample data.",
+            "parentId": "undefined"
           },
           {
             "id": 6,
@@ -10026,7 +10033,8 @@
             ],
             "details": "In packages/server/src, create or update a Prisma client singleton (e.g., src/prisma/client.ts) that exports a configured PrismaClient instance. Update or add repository/service modules that will access Village, House, Room, Agent, and WorldMap records to use this client and new model names. Ensure the DATABASE_URL and environment configuration align with the Prisma schema and existing app config, and avoid introducing new dependencies beyond Prisma and Vitest already in the repo.",
             "status": "pending",
-            "testStrategy": "Add or update a minimal integration path (e.g., a service function) that queries the new models and run it in a local dev environment to confirm the client can connect and query without runtime errors."
+            "testStrategy": "Add or update a minimal integration path (e.g., a service function) that queries the new models and run it in a local dev environment to confirm the client can connect and query without runtime errors.",
+            "parentId": "undefined"
           },
           {
             "id": 7,
@@ -10038,7 +10046,8 @@
             ],
             "details": "Under packages/server/src (e.g., src/prisma/__tests__/schema.integration.test.ts), write Vitest tests that spin up PrismaClient pointing at a dedicated test database. Ensure tests run migrations for the test DB (using `npx prisma migrate dev` or `prisma db push` in a test-specific setup) before executing. Test that creating a Village allows Houses, Rooms, Agents, and WorldMap to be created correctly; verify referential integrity errors when foreign keys are invalid; and confirm cascade or restricted deletes behave as configured. Use transactions and cleanup logic to keep tests isolated.",
             "status": "pending",
-            "testStrategy": "Run Vitest against the test suite, ensuring that all relation creation, invalid foreign key attempts, and delete behaviors pass and that the test database schema matches expectations."
+            "testStrategy": "Run Vitest against the test suite, ensuring that all relation creation, invalid foreign key attempts, and delete behaviors pass and that the test database schema matches expectations.",
+            "parentId": "undefined"
           },
           {
             "id": 8,
@@ -10051,9 +10060,11 @@
             ],
             "details": "In packages/server (e.g., in README.md or docs/prisma.md), document how to: modify packages/server/prisma/schema.prisma, create new migrations with `npx prisma migrate dev`, generate the client with `npx prisma generate`, run seeds (command and entrypoint file path), and execute Vitest integration tests for the database layer. Include notes about using the existing Prisma 6.x version, where the schema and migrations live, and any environment variables required for dev vs test databases. Keep instructions specific and aligned with current repo scripts.",
             "status": "pending",
-            "testStrategy": null
+            "testStrategy": null,
+            "parentId": "undefined"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-16T22:02:16.538Z"
       },
       {
         "id": 2,
@@ -10063,24 +10074,26 @@
         "testStrategy": "Jest integration tests covering all endpoints with 80% coverage. Mock Prisma with @prisma/client mock library. Test edge cases, validation errors, and relations.",
         "priority": "high",
         "dependencies": [
-          1
+          "1"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.140Z"
       },
       {
         "id": 3,
         "title": "Create House CRUD endpoints with repo analysis trigger",
         "description": "Implement house management API that triggers repository analysis on creation",
-        "details": "Fastify routes: GET /api/houses?villageId=..., POST /api/houses (queue repo analysis with BullMQ v5.3.0), GET /api/houses/:id (populate rooms/agents). Use async queue for repo analysis to prevent blocking. Implement repo analysis service stub.",
+        "details": "Fastify routes: GET /api/houses?villageId=..., POST /api/houses (queue repo analysis with BullMQ v5.3.0), GET /api/houses/:id (populate rooms/agents). Use async queue for repo analysis to prevent blocking. Implement repo analysis service stub.\n<info added on 2025-12-16T22:02:58.459Z>\nPR opened: #47 (branch task-3-repo-analysis-trigger). Adds House CRUD repo-analysis trigger via BullMQ worker and generates building interior/rooms from GitHub repo tree. Key files: packages/server/src/houses/router.ts, packages/server/src/houses/repoAnalysis*.ts, packages/server/src/queue/queues.ts, packages/server/src/queue/workers.ts.\n</info added on 2025-12-16T22:02:58.459Z>",
         "testStrategy": "Test queue integration, repo analysis triggering, and populated responses. Mock BullMQ and GitHub client.",
         "priority": "high",
         "dependencies": [
-          1,
-          2
+          "1",
+          "2"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "review",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:02:16.549Z"
       },
       {
         "id": 4,
@@ -10090,12 +10103,13 @@
         "testStrategy": "Integration tests for both resource types. Verify foreign key constraints and state validation.",
         "priority": "medium",
         "dependencies": [
-          1,
-          2,
-          3
+          "1",
+          "2",
+          "3"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.151Z"
       },
       {
         "id": 5,
@@ -10105,13 +10119,14 @@
         "testStrategy": "Verify test setup works by running existing CRUD tests. Achieve 80% coverage baseline.",
         "priority": "high",
         "dependencies": [
-          1,
-          2,
-          3,
-          4
+          "1",
+          "2",
+          "3",
+          "4"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.162Z"
       },
       {
         "id": 6,
@@ -10121,10 +10136,11 @@
         "testStrategy": "Mock GitHub responses with MSW. Test rate limiting, caching, and error recovery.",
         "priority": "high",
         "dependencies": [
-          5
+          "5"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.173Z"
       },
       {
         "id": 7,
@@ -10134,48 +10150,52 @@
         "testStrategy": "Test with real GitHub mock repos. Verify tree completeness and classification accuracy against known repos.",
         "priority": "high",
         "dependencies": [
-          6
+          "6"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.183Z"
       },
       {
         "id": 8,
         "title": "Set up webhook endpoint and event processing",
         "description": "Create secure GitHub webhook handler with async processing",
-        "details": "POST /api/webhooks/github with HMAC signature verification (github-webhook-middleware v2.1.1). Route events: push->activity, pr->state, check_run->build. Use BullMQ queue for async processing. Add retry logic and dead letter queue.",
+        "details": "POST /api/webhooks/github with HMAC signature verification (github-webhook-middleware v2.1.1). Route events: push->activity, pr->state, check_run->build. Use BullMQ queue for async processing. Add retry logic and dead letter queue.\n<info added on 2025-12-16T22:03:14.803Z>\nPR opened: #48 (branch task-8-webhook-async-pipeline). Adds BullMQ-backed async GitHub webhook processing with retries and a dead letter queue. Key files include: packages/server/src/github/webhooks.ts, packages/server/src/github/webhookQueue.ts, packages/server/src/queue/queues.ts, and packages/server/src/queue/workers.ts. Note: This PR is stacked on task-3-repo-analysis-trigger; merge #47 first, then retarget/merge.\n</info added on 2025-12-16T22:03:14.803Z>",
         "testStrategy": "Test signature verification, event routing, and queue integration with real webhook payloads.",
         "priority": "high",
         "dependencies": [
-          3,
-          6
+          "3",
+          "6"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "review",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:02:16.560Z"
       },
       {
         "id": 9,
         "title": "Refactor Phaser scene structure and camera system",
         "description": "Create core Phaser scenes with smooth camera controls",
-        "details": "Phaser v3.80.1. Scenes: BootScene, PreloadScene, VillageScene, HouseScene. Camera: zoom 0.5x-2x (lerp 0.1), pan (drag/edge), bounds checking, follow mode. Use Phaser's built-in camera smoothing.",
+        "details": "Phaser v3.80.1. Scenes: BootScene, PreloadScene, VillageScene, HouseScene. Camera: zoom 0.5x-2x (lerp 0.1), pan (drag/edge), bounds checking, follow mode. Use Phaser's built-in camera smoothing.\n<info added on 2025-12-16T22:08:58.282Z>\nAlready present in baseline code: Scenes Boot/Preload/Village/House in packages/frontend/src/game/scenes/*. Wired in packages/frontend/src/game/config.example.ts. Camera controls: packages/frontend/src/game/systems/CameraController.ts (zoom 0.5–2, drag pan, edge scroll, bounds, follow lerp). Tests: packages/frontend/src/game/__tests__/CameraController.test.ts + scene tests.\n</info added on 2025-12-16T22:08:58.282Z>",
         "testStrategy": "Vitest unit tests for camera math. Playwright E2E tests for scene transitions and camera controls.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:09:00.258Z"
       },
       {
         "id": 10,
         "title": "Implement input handler and asset manifest system",
         "description": "Unified input system and dynamic asset loading",
-        "details": "Input: WASD/Arrows, mouse/touch/gamepad using Phaser input plugins. Asset manifest: JSON-based dynamic loading by scene with progress bar. Fallback textures for missing assets.",
+        "details": "Input: WASD/Arrows, mouse/touch/gamepad using Phaser input plugins. Asset manifest: JSON-based dynamic loading by scene with progress bar. Fallback textures for missing assets.\n<info added on 2025-12-16T22:03:26.493Z>\nPR #49 has been opened, which adds gamepad support to the InputHandler and implements asset manifest queueing with fallback textures via the AssetLoader. This update integrates with the PreloadScene and includes a Vitest-safe guard. Key files affected are packages/frontend/src/game/systems/InputHandler.ts, packages/frontend/src/game/assets/AssetLoader.ts, and packages/frontend/src/game/scenes/PreloadScene.ts.\n</info added on 2025-12-16T22:03:26.493Z>",
         "testStrategy": "Test all input methods across devices. Verify asset loading sequences and fallbacks.",
         "priority": "medium",
         "dependencies": [
-          9
+          "9"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "review",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:02:16.569Z"
       },
       {
         "id": 11,
@@ -10185,10 +10205,11 @@
         "testStrategy": "Test determinism (same seed=same layout), connectivity, no overlaps. 100+ random seeds.",
         "priority": "high",
         "dependencies": [
-          7
+          "7"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.194Z"
       },
       {
         "id": 12,
@@ -10198,10 +10219,11 @@
         "testStrategy": "Verify all rooms connected, no overlaps, reasonable corridor lengths. Test with 10-100 rooms.",
         "priority": "high",
         "dependencies": [
-          11
+          "11"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.203Z"
       },
       {
         "id": 13,
@@ -10211,10 +10233,11 @@
         "testStrategy": "Visual diff testing of generated tilemaps. Verify auto-tile correctness and decoration rules.",
         "priority": "high",
         "dependencies": [
-          12
+          "12"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.213Z"
       },
       {
         "id": 14,
@@ -10224,12 +10247,13 @@
         "testStrategy": "Test rendering matches generated JSON. Verify collision detection and room transitions.",
         "priority": "high",
         "dependencies": [
-          9,
-          10,
-          13
+          "9",
+          "10",
+          "13"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.223Z"
       },
       {
         "id": 15,
@@ -10239,16 +10263,24 @@
         "testStrategy": "Test all state transitions, guard conditions, and action side effects with XState test utilities.",
         "priority": "high",
         "dependencies": [
-          4
+          "4"
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-12-16T22:13:44.232Z"
       }
     ],
     "metadata": {
-      "created": "2025-12-16T03:36:58.497Z",
-      "updated": "2025-12-16T03:37:51.810Z",
-      "description": "Tasks for prd-gpt52-eval-20251216 context"
+      "version": "1.0.0",
+      "lastModified": "2025-12-16T22:13:44.235Z",
+      "taskCount": 15,
+      "completedCount": 11,
+      "tags": [
+        "prd-gpt52-eval-20251216"
+      ],
+      "created": "2025-12-16T22:14:03.456Z",
+      "description": "Tasks for prd-gpt52-eval-20251216 context",
+      "updated": "2025-12-16T22:14:03.456Z"
     }
   }
 }
