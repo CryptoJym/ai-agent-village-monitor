@@ -338,6 +338,12 @@ model Agent {
   sessions AgentSession[]
   events   WorkStreamEvent[]
   houses   HouseAgent[]
+
+  // Indexes for query performance
+  @@index([currentHouseId])
+  @@index([currentRoomId])
+  @@index([currentState])
+  @@index([userId])
 }
 
 // Junction table for agents assigned to houses
