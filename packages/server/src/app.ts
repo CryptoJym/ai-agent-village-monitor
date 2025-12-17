@@ -142,6 +142,55 @@ export function createApp(): Express {
   );
   // Sign cookies if JWT secret is available
   app.use(cookieParser(config.JWT_SECRET) as any);
+
+  // CSRF protection for cookie-authenticated state-changing requests.
+  // If a request relies on auth cookies (access_token/refresh_token) and does not provide an
+  // Authorization: Bearer token, require Origin/Referer to match an allowed origin (or same-origin).
+  app.use((req, res, next) => {
+    const method = String(req.method || '').toUpperCase();
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next();
+
+    const authHeader = String(req.header('authorization') || req.header('Authorization') || '');
+    if (authHeader.toLowerCase().startsWith('bearer ')) return next();
+
+    const hasAuthCookie =
+      typeof (req as any).signedCookies?.access_token === 'string' ||
+      typeof (req as any).signedCookies?.refresh_token === 'string' ||
+      typeof (req as any).cookies?.access_token === 'string' ||
+      typeof (req as any).cookies?.refresh_token === 'string';
+    if (!hasAuthCookie) return next();
+
+    const origin = String(req.headers.origin || '');
+    const referer = String(req.headers.referer || '');
+    let sourceOrigin = origin;
+    if (!sourceOrigin && referer) {
+      try {
+        sourceOrigin = new URL(referer).origin;
+      } catch {
+        // ignore
+      }
+    }
+
+    const host = String(req.headers.host || '');
+    const sameOrigin = host ? `${req.protocol}://${host}` : '';
+
+    if (!sourceOrigin) {
+      const requestId = (req as any).id;
+      return res.status(403).json({
+        error: { code: 'FORBIDDEN', message: 'CSRF protection: missing Origin/Referer' },
+        requestId,
+      });
+    }
+    if (sourceOrigin !== sameOrigin && !allowedOrigins.includes(sourceOrigin)) {
+      const requestId = (req as any).id;
+      return res.status(403).json({
+        error: { code: 'FORBIDDEN', message: 'CSRF protection: invalid Origin/Referer' },
+        requestId,
+      });
+    }
+    return next();
+  });
+
   if (config.NODE_ENV !== 'test') {
     app.use(morgan('dev'));
   }

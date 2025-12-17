@@ -155,7 +155,7 @@ describe('GitHub OAuth flow (E2E mock)', () => {
     expect(me.status).toBe(200);
     expect(me.body).toMatchObject({ username: 'alice' });
 
-    const lo = await agent.post('/auth/logout');
+    const lo = await agent.post('/auth/logout').set('Origin', 'http://localhost:5173');
     expect(lo.status).toBe(204);
   });
 });

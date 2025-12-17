@@ -42,6 +42,7 @@ describe('auth (cookies + protected routes)', () => {
     const token = signAccessToken(9, 'agent-user');
     const resAuthed = await request(app)
       .post('/api/agents/alpha/command')
+      .set('Origin', 'http://localhost:5173')
       .set('Cookie', [`access_token=${token}`])
       .send({ command: 'commit', message: 'message from test' });
     expect([200, 202]).toContain(resAuthed.status);
@@ -51,6 +52,7 @@ describe('auth (cookies + protected routes)', () => {
     const token = signAccessToken(11, 'logout-user');
     const res = await request(app)
       .post('/auth/logout')
+      .set('Origin', 'http://localhost:5173')
       .set('Cookie', [`access_token=${token}`]);
     expect(res.status).toBe(204);
     const setCookie = res.header['set-cookie'] || [];

@@ -66,10 +66,17 @@ describe('auth refresh and 401 headers', () => {
         });
       }
       if (url.includes('api.github.com/user')) {
-        return new Response(JSON.stringify({ id: 123, login: 'alice', avatar_url: 'https://avatars.example/alice.png' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            id: 123,
+            login: 'alice',
+            avatar_url: 'https://avatars.example/alice.png',
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        );
       }
       return new Response('not found', { status: 404 });
     });
@@ -82,7 +89,7 @@ describe('auth refresh and 401 headers', () => {
     expect(refreshCookie1).toBeTruthy();
 
     // 4) Call /auth/refresh (rotation)
-    const resRef1 = await agent.post('/auth/refresh');
+    const resRef1 = await agent.post('/auth/refresh').set('Origin', 'http://localhost:5173');
     expect(resRef1.status).toBe(200);
     const setCookies2 = (resRef1.headers['set-cookie'] || []) as string[];
     const refreshCookie2 = setCookies2?.find((c) => c.startsWith('refresh_token='));
@@ -93,6 +100,7 @@ describe('auth refresh and 401 headers', () => {
     const app = await appPromise;
     const resReuse = await request(app)
       .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
       .set('Cookie', refreshCookie1 as string);
     expect(resReuse.status).toBe(401);
   });
@@ -104,4 +112,3 @@ describe('auth refresh and 401 headers', () => {
     expect(String(res.headers['www-authenticate'] || '')).toMatch(/Bearer/);
   });
 });
-
