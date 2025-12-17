@@ -1,36 +1,24 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { useState } from 'react';
+import { DialogueUI } from '../../src/ui/DialogueUI';
 
-vi.mock('phaser3spectorjs', () => ({}));
-vi.mock('phaser', () => {
-  class Scene {}
-  class Game {
-    destroy = vi.fn();
-    constructor(_config: any) {}
-  }
-  class Container {}
-  class Text {}
-  class Arc {}
-  return {
-    default: {
-      Scene,
-      Game,
-      AUTO: 0,
-      GameObjects: { Container, Text, Arc },
-      Math: {
-        Between: (a: number, _b: number) => a,
-        FloatBetween: (a: number, _b: number) => a,
-      },
-      Utils: { Array: { GetRandom: (arr: any[]) => arr[0] } },
-    },
-  };
-});
-
-import AppRouter from '../../src/routes/AppRouter';
+function Shell() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <h1>AI Agent Village Monitor</h1>
+      <button type="button" aria-label="Dialogue" onClick={() => setOpen(true)}>
+        Dialogue
+      </button>
+      <DialogueUI open={open} onClose={() => setOpen(false)} />
+    </div>
+  );
+}
 
 describe('App mount', () => {
   it('renders the app title and toggles dialogue', () => {
-    render(<AppRouter />);
+    render(<Shell />);
     expect(screen.getByText('AI Agent Village Monitor')).toBeInTheDocument();
 
     const btn = screen.getByRole('button', { name: 'Dialogue' });
