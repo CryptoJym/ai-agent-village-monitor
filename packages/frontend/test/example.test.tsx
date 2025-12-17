@@ -152,7 +152,8 @@ describe('Frontend Test Utilities Example', () => {
         const [text, setText] = React.useState('Loading...');
 
         React.useEffect(() => {
-          setTimeout(() => setText('Loaded!'), 10);
+          const id = setTimeout(() => setText('Loaded!'), 10);
+          return () => clearTimeout(id);
         }, []);
 
         return <div>{text}</div>;
