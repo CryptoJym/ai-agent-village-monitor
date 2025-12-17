@@ -289,6 +289,9 @@ importers:
       '@ai-agent-village-monitor/runner':
         specifier: workspace:*
         version: link:../runner
+      '@ai-agent-village-monitor/update-pipeline':
+        specifier: workspace:*
+        version: link:../update-pipeline
       '@octokit/graphql':
         specifier: ^8.2.0
         version: 8.2.2

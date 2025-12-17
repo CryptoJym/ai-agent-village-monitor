@@ -1,15 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 
-// Prepare environment before importing app/config
-beforeAll(() => {
-  process.env.NODE_ENV = process.env.NODE_ENV || 'test';
-  process.env.JWT_SECRET = 'testsecret';
-  process.env.GITHUB_OAUTH_CLIENT_ID = 'client_id';
-  process.env.GITHUB_OAUTH_CLIENT_SECRET = 'client_secret';
-  process.env.PUBLIC_SERVER_URL = 'http://localhost:3000';
-  process.env.PUBLIC_APP_URL = 'http://localhost:5173';
-});
+const envOverrides = {
+  NODE_ENV: 'test',
+  JWT_SECRET: 'testsecret',
+  GITHUB_OAUTH_CLIENT_ID: 'client_id',
+  GITHUB_OAUTH_CLIENT_SECRET: 'client_secret',
+  PUBLIC_SERVER_URL: 'http://localhost:3000',
+  PUBLIC_APP_URL: 'http://localhost:5173',
+} as const;
 
 // Mock Prisma client used by the server
 vi.mock('../db/client', () => {
@@ -29,20 +28,33 @@ vi.mock('../db/client', () => {
   };
 });
 
-// Dynamically import after env + mocks
-const appPromise = import('../app').then((m) => m.createApp());
-
 describe('GitHub OAuth flow (E2E mock)', () => {
   let agent: request.SuperAgentTest;
+  let app: any;
   let restoreFetch: (() => void) | undefined;
+  let restoreEnv: (() => void) | undefined;
 
   beforeAll(async () => {
-    const app = await appPromise;
+    const previous: Record<string, string | undefined> = {};
+    for (const [key, value] of Object.entries(envOverrides)) {
+      previous[key] = process.env[key];
+      process.env[key] = value;
+    }
+    restoreEnv = () => {
+      for (const [key, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    };
+
+    const { createApp } = await import('../app');
+    app = createApp();
     agent = request.agent(app);
   });
 
   afterAll(() => {
     if (restoreFetch) restoreFetch();
+    if (restoreEnv) restoreEnv();
   });
 
   it('GET /auth/login issues state+pkce and redirects to GitHub', async () => {

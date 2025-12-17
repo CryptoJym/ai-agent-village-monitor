@@ -382,6 +382,7 @@ export function createApp(): Express {
   app.use('/api', runnerSessionsRouter);
 
   // API rate limiting: protect command endpoint; use Redis store when available
+  let apiRateLimiter: any = (_req: any, _res: any, next: any) => next();
   try {
     const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000);
     const maxReq = Number(process.env.RATE_LIMIT_MAX || 30);
@@ -406,7 +407,8 @@ export function createApp(): Express {
       validate: { xForwardedForHeader: true },
       ...(store ? { store } : {}),
     });
-    app.use('/api/agents/:id/command', limiter);
+    apiRateLimiter = limiter;
+    app.use('/api/agents/:id/command', apiRateLimiter);
   } catch {
     // Rate limiting misconfiguration should not break startup.
   }
@@ -462,6 +464,14 @@ export function createApp(): Express {
   } catch {
     const express = require('express');
     app.use('/api/admin', requireAuth, express.Router());
+  }
+
+  // Update pipeline endpoints (admin only, feature-flagged)
+  try {
+    const { updatePipelineRouter } = require('./update-pipeline');
+    app.use('/api/update-pipeline', requireAuth, apiRateLimiter, updatePipelineRouter);
+  } catch {
+    // Update pipeline router optional; skip if not available
   }
 
   // Villages endpoints (protected)

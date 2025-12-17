@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 
-beforeAll(() => {
-  process.env.NODE_ENV = 'test';
-  process.env.JWT_SECRET = 'testsecret';
-  process.env.GITHUB_OAUTH_CLIENT_ID = 'client_id';
-  process.env.GITHUB_OAUTH_CLIENT_SECRET = 'client_secret';
-  process.env.PUBLIC_SERVER_URL = 'http://localhost:3000';
-  process.env.PUBLIC_APP_URL = 'http://localhost:5173';
-});
+const envOverrides = {
+  NODE_ENV: 'test',
+  JWT_SECRET: 'testsecret',
+  GITHUB_OAUTH_CLIENT_ID: 'client_id',
+  GITHUB_OAUTH_CLIENT_SECRET: 'client_secret',
+  PUBLIC_SERVER_URL: 'http://localhost:3000',
+  PUBLIC_APP_URL: 'http://localhost:5173',
+} as const;
 
 // Mock Prisma client used by the server
 vi.mock('../db/client', () => {
@@ -28,19 +28,33 @@ vi.mock('../db/client', () => {
   };
 });
 
-const appPromise = import('../app').then((m) => m.createApp());
-
 describe('auth refresh and 401 headers', () => {
+  let app: any;
   let agent: request.SuperAgentTest;
   let restoreFetch: (() => void) | undefined;
+  let restoreEnv: (() => void) | undefined;
 
   beforeAll(async () => {
-    const app = await appPromise;
+    const previous: Record<string, string | undefined> = {};
+    for (const [key, value] of Object.entries(envOverrides)) {
+      previous[key] = process.env[key];
+      process.env[key] = value;
+    }
+    restoreEnv = () => {
+      for (const [key, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    };
+
+    const { createApp } = await import('../app');
+    app = createApp();
     agent = request.agent(app);
   });
 
   afterAll(() => {
     if (restoreFetch) restoreFetch();
+    if (restoreEnv) restoreEnv();
   });
 
   it('rotates refresh token and rejects reuse of prior token', async () => {
@@ -66,10 +80,17 @@ describe('auth refresh and 401 headers', () => {
         });
       }
       if (url.includes('api.github.com/user')) {
-        return new Response(JSON.stringify({ id: 123, login: 'alice', avatar_url: 'https://avatars.example/alice.png' }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({
+            id: 123,
+            login: 'alice',
+            avatar_url: 'https://avatars.example/alice.png',
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          },
+        );
       }
       return new Response('not found', { status: 404 });
     });
@@ -90,7 +111,6 @@ describe('auth refresh and 401 headers', () => {
     expect(refreshCookie2).not.toBe(refreshCookie1);
 
     // 5) Attempt reuse of the old refresh token → 401
-    const app = await appPromise;
     const resReuse = await request(app)
       .post('/auth/refresh')
       .set('Cookie', refreshCookie1 as string);
@@ -98,10 +118,8 @@ describe('auth refresh and 401 headers', () => {
   });
 
   it('sets WWW-Authenticate header on 401 from /api/* when missing token', async () => {
-    const app = await appPromise;
     const res = await request(app).get('/api/villages');
     expect(res.status).toBe(401);
     expect(String(res.headers['www-authenticate'] || '')).toMatch(/Bearer/);
   });
 });
-
