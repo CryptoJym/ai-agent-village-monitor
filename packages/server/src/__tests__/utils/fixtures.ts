@@ -1,320 +1,133 @@
 /**
  * Test Data Fixtures
- * Provides factories for creating consistent test data
+ * Lightweight helpers for API + DB integration tests.
  */
 
-import type {
-  Village,
-  House,
-  Agent,
-  Room,
-  User,
-  Decoration,
-  VillageAccess,
-} from '@prisma/client';
+export type VillageCreateBody = {
+  name: string;
+  githubOrgId: string;
+};
 
-/**
- * Village Fixtures
- */
-export interface VillageFixtureOptions {
-  id?: number;
-  name?: string;
-  githubOrgId?: string;
-  ownerId?: string;
-  visibility?: 'PUBLIC' | 'PRIVATE';
-  layout?: any;
-}
-
-export function createVillageFixture(options: VillageFixtureOptions = {}): Partial<Village> {
-  return {
-    id: options.id || 1,
-    name: options.name || `Test Village ${Date.now()}`,
-    githubOrgId: options.githubOrgId || String(Math.floor(Math.random() * 1000000)),
-    ownerId: options.ownerId || 'user-1',
-    visibility: options.visibility || 'PUBLIC',
-    layout: options.layout || null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-}
-
-export function createVillageCreateData(options: VillageFixtureOptions = {}) {
-  return {
-    name: options.name || `Test Village ${Date.now()}`,
-    githubOrgId: options.githubOrgId || String(Math.floor(Math.random() * 1000000)),
-    // API infers owner from token, but we might send it in some tests?
-    // API ignores visibility
-  };
-}
-
-export function createVillageDbData(options: VillageFixtureOptions = {}) {
-  return {
-    orgName: options.name || `Test Village ${Date.now()}`,
-    githubOrgId: options.githubOrgId || String(Math.floor(Math.random() * 1000000)),
-  };
-}
-
-/**
- * House Fixtures
- */
-export interface HouseFixtureOptions {
-  id?: number;
-  villageId?: number;
-  repoId?: bigint;
-  name?: string;
-  x?: number;
-  y?: number;
-  size?: 'tiny' | 'small' | 'medium' | 'large' | 'huge';
-}
-
-export function createHouseFixture(options: HouseFixtureOptions = {}): Partial<House> {
-  return {
-    id: options.id || 1,
-    villageId: options.villageId || 1,
-    repoId: options.repoId || BigInt(Math.floor(Math.random() * 1000000)),
-    name: options.name || `Test House ${Date.now()}`,
-    x: options.x ?? Math.floor(Math.random() * 100),
-    y: options.y ?? Math.floor(Math.random() * 100),
-    size: options.size || 'medium',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-}
-
-export function createHouseCreateData(options: HouseFixtureOptions = {}) {
-  return {
-    villageId: options.villageId || 1,
-    repoId: options.repoId || BigInt(Math.floor(Math.random() * 1000000)),
-    name: options.name || `Test House ${Date.now()}`,
-    x: options.x ?? Math.floor(Math.random() * 100),
-    y: options.y ?? Math.floor(Math.random() * 100),
-    size: options.size || 'medium',
-  };
-}
-
-/**
- * Agent Fixtures
- */
-export interface AgentFixtureOptions {
-  id?: number;
+export type HouseCreateBody = {
+  villageId: string;
+  repoName: string;
   githubRepoId?: string;
-  repoId?: bigint;
-  name?: string;
-  villageId?: number;
-  houseId?: number | null;
-  ownerId?: string;
-  state?: 'idle' | 'working' | 'thinking' | 'frustrated' | 'celebrating' | 'resting' | 'socializing' | 'traveling' | 'observing';
-  x?: number;
-  y?: number;
-}
-
-export function createAgentFixture(options: AgentFixtureOptions = {}): Partial<Agent> {
-  return {
-    id: options.id || 1,
-    githubRepoId: options.githubRepoId || String(Math.floor(Math.random() * 1000000)),
-    repoId: options.repoId || BigInt(Math.floor(Math.random() * 1000000)),
-    name: options.name || `Test Agent ${Date.now()}`,
-    villageId: options.villageId || 1,
-    houseId: options.houseId ?? null,
-    ownerId: options.ownerId || 'user-1',
-    state: options.state || 'idle',
-    x: options.x ?? 0,
-    y: options.y ?? 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-}
-
-export function createAgentCreateData(options: AgentFixtureOptions = {}) {
-  return {
-    githubRepoId: options.githubRepoId || String(Math.floor(Math.random() * 1000000)),
-    repoId: options.repoId || BigInt(Math.floor(Math.random() * 1000000)),
-    name: options.name || `Test Agent ${Date.now()}`,
-    villageId: options.villageId || 1,
-    houseId: options.houseId ?? null,
-    ownerId: options.ownerId || 'user-1',
-    state: options.state || 'idle',
-    x: options.x ?? 0,
-    y: options.y ?? 0,
-  };
-}
-
-/**
- * Room Fixtures
- */
-export interface RoomFixtureOptions {
-  id?: number;
-  houseId?: number;
-  path?: string;
-  name?: string;
-  roomType?: 'entrance' | 'hallway' | 'workspace' | 'library' | 'vault' | 'laboratory' | 'archive';
-  moduleType?: 'component' | 'service' | 'repository' | 'controller' | 'utility' | 'config' | 'type_def' | 'test' | 'asset' | 'root';
+  primaryLanguage?: string;
+  stars?: number;
+  openIssues?: number;
+  commitSha?: string;
+  buildingSize?: 'tiny' | 'small' | 'medium' | 'large' | 'huge';
   complexity?: number;
-  x?: number;
-  y?: number;
-}
+};
 
-export function createRoomFixture(options: RoomFixtureOptions = {}): Partial<Room> {
-  return {
-    id: options.id || 1,
-    houseId: options.houseId || 1,
-    path: options.path || `/src/test-${Date.now()}.ts`,
-    name: options.name || `test-${Date.now()}.ts`,
-    roomType: options.roomType || 'workspace',
-    moduleType: options.moduleType || 'component',
-    complexity: options.complexity ?? 5,
-    x: options.x ?? 0,
-    y: options.y ?? 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+export type RoomCreateBody = {
+  houseId: string;
+  name: string;
+  roomType?: 'entrance' | 'hallway' | 'workspace' | 'library' | 'vault' | 'laboratory' | 'archive';
+  moduleType?:
+    | 'component'
+    | 'service'
+    | 'repository'
+    | 'controller'
+    | 'utility'
+    | 'config'
+    | 'type_def'
+    | 'test'
+    | 'asset'
+    | 'root';
+  modulePath?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type AgentCreateBody = {
+  name: string;
+  positionX?: number;
+  positionY?: number;
+  currentStatus?: string;
+  personality?: {
+    introversion?: number;
+    diligence?: number;
+    creativity?: number;
+    patience?: number;
   };
-}
+};
 
-export function createRoomCreateData(options: RoomFixtureOptions = {}) {
-  return {
-    houseId: options.houseId || 1,
-    path: options.path || `/src/test-${Date.now()}.ts`,
-    name: options.name || `test-${Date.now()}.ts`,
-    roomType: options.roomType || 'workspace',
-    moduleType: options.moduleType || 'component',
-    complexity: options.complexity ?? 5,
-    x: options.x ?? 0,
-    y: options.y ?? 0,
-  };
-}
-
-/**
- * User Fixtures
- */
-export interface UserFixtureOptions {
+export type UserCreateData = {
   id?: string;
   githubId?: bigint;
   username?: string;
   email?: string;
   name?: string;
   avatarUrl?: string;
+};
+
+function uniqueSuffix() {
+  return `${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
 }
 
-export function createUserFixture(options: UserFixtureOptions = {}): Partial<User> {
-  const timestamp = Date.now();
+export function createVillageCreateData(
+  options: Partial<VillageCreateBody> = {},
+): VillageCreateBody {
+  const suffix = uniqueSuffix();
   return {
-    id: options.id || `user-${timestamp}`,
-    githubId: options.githubId || BigInt(Math.floor(Math.random() * 1000000)),
-    username: options.username || `testuser-${timestamp}`,
-    email: options.email || `test-${timestamp}@example.com`,
-    name: options.name || `Test User ${timestamp}`,
-    avatarUrl: options.avatarUrl || 'https://example.com/avatar.png',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    name: options.name || `Test Village ${suffix}`,
+    // Router accepts either a numeric id string or an org login; both become a BigInt.
+    githubOrgId: options.githubOrgId || `org-${suffix}`,
   };
 }
 
-export function createUserCreateData(options: UserFixtureOptions = {}) {
-  const timestamp = Date.now();
+export function createHouseCreateData(options: Partial<HouseCreateBody> = {}): HouseCreateBody {
+  const suffix = uniqueSuffix();
   return {
-    githubId: options.githubId || BigInt(Math.floor(Math.random() * 1000000)),
-    username: options.username || `testuser-${timestamp}`,
-    email: options.email || `test-${timestamp}@example.com`,
-    name: options.name || `Test User ${timestamp}`,
-    avatarUrl: options.avatarUrl || 'https://example.com/avatar.png',
+    villageId: options.villageId || 'missing-village-id',
+    repoName: options.repoName || `repo-${suffix}`,
+    githubRepoId: options.githubRepoId,
+    primaryLanguage: options.primaryLanguage,
+    stars: options.stars,
+    openIssues: options.openIssues,
+    commitSha: options.commitSha,
+    buildingSize: options.buildingSize,
+    complexity: options.complexity,
   };
 }
 
-/**
- * Decoration Fixtures
- */
-export interface DecorationFixtureOptions {
-  id?: number;
-  roomId?: number;
-  decorationType?: string;
-  x?: number;
-  y?: number;
-}
-
-export function createDecorationFixture(options: DecorationFixtureOptions = {}): Partial<Decoration> {
+export function createRoomCreateData(options: Partial<RoomCreateBody> = {}): RoomCreateBody {
+  const suffix = uniqueSuffix();
   return {
-    id: options.id || 1,
-    roomId: options.roomId || 1,
-    decorationType: options.decorationType || 'plant',
+    houseId: options.houseId || 'missing-house-id',
+    name: options.name || `room-${suffix}`,
+    roomType: options.roomType,
+    moduleType: options.moduleType,
+    modulePath: options.modulePath,
     x: options.x ?? 0,
     y: options.y ?? 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    width: options.width ?? 10,
+    height: options.height ?? 10,
   };
 }
 
-export function createDecorationCreateData(options: DecorationFixtureOptions = {}) {
+export function createAgentCreateData(options: Partial<AgentCreateBody> = {}): AgentCreateBody {
+  const suffix = uniqueSuffix();
   return {
-    roomId: options.roomId || 1,
-    decorationType: options.decorationType || 'plant',
-    x: options.x ?? 0,
-    y: options.y ?? 0,
+    name: options.name || `Test Agent ${suffix}`,
+    positionX: options.positionX,
+    positionY: options.positionY,
+    currentStatus: options.currentStatus,
+    personality: options.personality,
   };
 }
 
-/**
- * Village Access Fixtures
- */
-export interface VillageAccessFixtureOptions {
-  id?: number;
-  villageId?: number;
-  userId?: string;
-  role?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-}
-
-export function createVillageAccessFixture(
-  options: VillageAccessFixtureOptions = {}
-): Partial<VillageAccess> {
+export function createUserCreateData(options: UserCreateData = {}) {
+  const suffix = uniqueSuffix();
   return {
-    id: options.id || 1,
-    villageId: options.villageId || 1,
-    userId: options.userId || 'user-1',
-    role: options.role || 'MEMBER',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    id: options.id,
+    githubId: options.githubId || BigInt(Math.floor(Math.random() * 1_000_000_000)),
+    username: options.username || `testuser-${suffix}`,
+    email: options.email || `test-${suffix}@example.com`,
+    name: options.name || `Test User ${suffix}`,
+    avatarUrl: options.avatarUrl || 'https://example.com/avatar.png',
   };
-}
-
-export function createVillageAccessCreateData(options: VillageAccessFixtureOptions = {}) {
-  return {
-    villageId: options.villageId || 1,
-    userId: options.userId || 'user-1',
-    role: options.role || 'MEMBER',
-  };
-}
-
-/**
- * Batch fixture creators
- */
-export function createMultipleVillageFixtures(count: number): Partial<Village>[] {
-  return Array.from({ length: count }, (_, i) =>
-    createVillageFixture({ id: i + 1, name: `Village ${i + 1}` })
-  );
-}
-
-export function createMultipleAgentFixtures(
-  count: number,
-  villageId: number = 1
-): Partial<Agent>[] {
-  return Array.from({ length: count }, (_, i) =>
-    createAgentFixture({ id: i + 1, villageId, name: `Agent ${i + 1}` })
-  );
-}
-
-export function createMultipleHouseFixtures(
-  count: number,
-  villageId: number = 1
-): Partial<House>[] {
-  return Array.from({ length: count }, (_, i) =>
-    createHouseFixture({ id: i + 1, villageId, name: `House ${i + 1}` })
-  );
-}
-
-export function createMultipleRoomFixtures(
-  count: number,
-  houseId: number = 1
-): Partial<Room>[] {
-  return Array.from({ length: count }, (_, i) =>
-    createRoomFixture({ id: i + 1, houseId, name: `room-${i + 1}.ts` })
-  );
 }

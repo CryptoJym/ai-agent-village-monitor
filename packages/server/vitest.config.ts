@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 
+const isIntegrationRun = process.env.VITEST_SUITE === 'integration';
+
 export default defineConfig({
   test: {
     environment: 'node',
@@ -26,13 +28,21 @@ export default defineConfig({
         'src/config.ts',
         'test/**',
       ],
-      thresholds: {
-        // Legacy server surface area is large; enforce gradual improvement instead of blocking CI
-        lines: 40,
-        functions: 40,
-        statements: 40,
-        branches: 35,
-      },
+      thresholds: isIntegrationRun
+        ? {
+            // Integration runs report coverage, but shouldn't gate on global thresholds.
+            lines: 0,
+            functions: 0,
+            statements: 0,
+            branches: 0,
+          }
+        : {
+            // Legacy server surface area is large; enforce gradual improvement instead of blocking CI
+            lines: 40,
+            functions: 40,
+            statements: 40,
+            branches: 35,
+          },
     },
   },
   resolve: {

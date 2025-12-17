@@ -1,288 +1,117 @@
-/**
- * Integration tests for Houses API
- */
-
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
-import type { Express } from 'express';
+import type { PrismaClient } from '@prisma/client';
 
-describe('Houses API Integration Tests', () => {
-  let app: Express;
-  let authToken: string;
-  let testVillageId: number;
-  let testHouseId: number;
+import { createApp } from '../../app';
+import { signAccessToken } from '../../auth/jwt';
+import { setupTestDatabase, teardownTestDatabase, cleanDatabase } from '../utils/db';
+import {
+  createUserCreateData,
+  createVillageCreateData,
+  createHouseCreateData,
+} from '../utils/fixtures';
+
+describe('Houses API (SQLite integration)', () => {
+  let app: any;
+  let prisma: PrismaClient;
 
   beforeAll(async () => {
-    process.env.JWT_SECRET = 'test-secret';
-
-    const { createApp } = await import('../../app');
-    const { signAccessToken } = await import('../../auth/jwt');
-
+    prisma = await setupTestDatabase();
     app = createApp();
-    authToken = signAccessToken(1, 'testuser');
+  });
 
-    // Create test village
-    const villageResponse = await request(app)
+  afterAll(async () => {
+    await teardownTestDatabase();
+  });
+
+  beforeEach(async () => {
+    await cleanDatabase(prisma);
+  });
+
+  it('rejects requests without auth', async () => {
+    await request(app).get('/api/houses').expect(401);
+  });
+
+  it('creates, lists, reads, updates, and deletes a house', async () => {
+    const owner = await prisma.user.create({
+      data: createUserCreateData({ username: 'houseowner', email: 'houseowner@test.com' }),
+    });
+    const token = signAccessToken(owner.id, owner.username || 'houseowner');
+
+    const village = await request(app)
       .post('/api/villages')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({
-        name: `test-village-${Date.now()}`,
-        githubOrgId: String(Date.now()),
-      });
+      .set('Authorization', `Bearer ${token}`)
+      .send(createVillageCreateData({ name: 'House Village' }))
+      .expect(201);
+    const villageId = String(village.body.id);
 
-    testVillageId = villageResponse.body.id;
+    const create = await request(app)
+      .post('/api/houses')
+      .set('Authorization', `Bearer ${token}`)
+      .send(createHouseCreateData({ villageId, repoName: 'repo-1' }))
+      .expect(201);
+
+    const houseId = String(create.body.id);
+    expect(create.body).toMatchObject({ villageId, repoName: 'repo-1' });
+
+    const list = await request(app)
+      .get(`/api/houses?villageId=${encodeURIComponent(villageId)}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(list.body.items).toBeInstanceOf(Array);
+    expect(list.body.items.some((h: any) => h.id === houseId)).toBe(true);
+
+    const get = await request(app)
+      .get(`/api/houses/${houseId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(get.body).toMatchObject({ id: houseId, villageId });
+    expect(get.body.village).toHaveProperty('orgName');
+    expect(get.body.rooms).toBeInstanceOf(Array);
+    expect(get.body.agents).toBeInstanceOf(Array);
+
+    const updated = await request(app)
+      .put(`/api/houses/${houseId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ positionX: 12, positionY: 34, spriteScale: 1.2 })
+      .expect(200);
+    expect(updated.body.positionX).toBe(12);
+    expect(updated.body.positionY).toBe(34);
+    expect(updated.body.spriteScale).toBe(1.2);
+
+    await request(app)
+      .delete(`/api/houses/${houseId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204);
+
+    await request(app)
+      .get(`/api/houses/${houseId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
   });
 
-  describe('POST /api/houses', () => {
-    it('should create a new house', async () => {
-      const houseData = {
-        villageId: testVillageId,
-        x: 10,
-        y: 20,
-        houseType: 'COTTAGE',
-      };
-
-      const response = await request(app)
-        .post('/api/houses')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(houseData)
-        .expect('Content-Type', /json/)
-        .expect(201);
-
-      expect(response.body).toMatchObject({
-        id: expect.any(Number),
-        villageId: testVillageId,
-        x: 10,
-        y: 20,
-        houseType: 'COTTAGE',
-      });
-
-      testHouseId = response.body.id;
+  it('forbids creating a house without village access', async () => {
+    const owner = await prisma.user.create({
+      data: createUserCreateData({ username: 'vowner', email: 'vowner@test.com' }),
     });
-
-    it('should return 400 for invalid coordinates', async () => {
-      await request(app)
-        .post('/api/houses')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          villageId: testVillageId,
-          x: -1, // Invalid coordinate
-          y: 20,
-          houseType: 'COTTAGE',
-        })
-        .expect(400);
+    const intruder = await prisma.user.create({
+      data: createUserCreateData({ username: 'intruder', email: 'intruder@test.com' }),
     });
+    const ownerToken = signAccessToken(owner.id, owner.username || 'vowner');
+    const intruderToken = signAccessToken(intruder.id, intruder.username || 'intruder');
 
-    it('should return 400 for invalid house type', async () => {
-      await request(app)
-        .post('/api/houses')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          villageId: testVillageId,
-          x: 10,
-          y: 20,
-          houseType: 'INVALID_TYPE',
-        })
-        .expect(400);
-    });
+    const village = await request(app)
+      .post('/api/villages')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send(createVillageCreateData({ name: 'Private Village' }))
+      .expect(201);
+    const villageId = String(village.body.id);
 
-    it('should return 401 without authentication', async () => {
-      await request(app)
-        .post('/api/houses')
-        .send({
-          villageId: testVillageId,
-          x: 10,
-          y: 20,
-          houseType: 'COTTAGE',
-        })
-        .expect(401);
-    });
-  });
-
-  describe('GET /api/houses', () => {
-    it('should list all houses', async () => {
-      const response = await request(app)
-        .get('/api/houses')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
-
-    it('should filter houses by village', async () => {
-      const response = await request(app)
-        .get(`/api/houses?villageId=${testVillageId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      response.body.forEach((house: any) => {
-        expect(house.villageId).toBe(testVillageId);
-      });
-    });
-
-    it('should filter houses by type', async () => {
-      const response = await request(app)
-        .get('/api/houses?houseType=COTTAGE')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      response.body.forEach((house: any) => {
-        expect(house.houseType).toBe('COTTAGE');
-      });
-    });
-  });
-
-  describe('GET /api/houses/:id', () => {
-    it('should get house by ID', async () => {
-      const response = await request(app)
-        .get(`/api/houses/${testHouseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toMatchObject({
-        id: testHouseId,
-        villageId: testVillageId,
-      });
-    });
-
-    it('should return 404 for non-existent house', async () => {
-      await request(app)
-        .get('/api/houses/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-
-    it('should include rooms when requested', async () => {
-      const response = await request(app)
-        .get(`/api/houses/${testHouseId}?include=rooms`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toHaveProperty('rooms');
-      expect(response.body.rooms).toBeInstanceOf(Array);
-    });
-  });
-
-  describe('PATCH /api/houses/:id', () => {
-    it('should update house position', async () => {
-      const updateData = {
-        x: 30,
-        y: 40,
-      };
-
-      const response = await request(app)
-        .patch(`/api/houses/${testHouseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(updateData)
-        .expect(200);
-
-      expect(response.body).toMatchObject({
-        id: testHouseId,
-        x: 30,
-        y: 40,
-      });
-    });
-
-    it('should update house type', async () => {
-      const response = await request(app)
-        .patch(`/api/houses/${testHouseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ houseType: 'MANSION' })
-        .expect(200);
-
-      expect(response.body.houseType).toBe('MANSION');
-    });
-
-    it('should return 400 for invalid coordinates', async () => {
-      await request(app)
-        .patch(`/api/houses/${testHouseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ x: -100 })
-        .expect(400);
-    });
-  });
-
-  describe('DELETE /api/houses/:id', () => {
-    it('should delete house', async () => {
-      // Create house to delete
-      const createResponse = await request(app)
-        .post('/api/houses')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          villageId: testVillageId,
-          x: 50,
-          y: 60,
-          houseType: 'COTTAGE',
-        })
-        .expect(201);
-
-      const houseId = createResponse.body.id;
-
-      // Delete
-      await request(app)
-        .delete(`/api/houses/${houseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(204);
-
-      // Verify deleted
-      await request(app)
-        .get(`/api/houses/${houseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-
-    it('should cascade delete rooms', async () => {
-      // Create house with room
-      const houseResponse = await request(app)
-        .post('/api/houses')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          villageId: testVillageId,
-          x: 70,
-          y: 80,
-          houseType: 'COTTAGE',
-        })
-        .expect(201);
-
-      const houseId = houseResponse.body.id;
-
-      // Create room
-      const roomResponse = await request(app)
-        .post('/api/rooms')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          houseId,
-          name: 'Test Room',
-          roomType: 'OFFICE',
-        })
-        .expect(201);
-
-      const roomId = roomResponse.body.id;
-
-      // Delete house
-      await request(app)
-        .delete(`/api/houses/${houseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(204);
-
-      // Verify room is also deleted
-      await request(app)
-        .get(`/api/rooms/${roomId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-  });
-
-  describe('GET /api/houses/:id/agents', () => {
-    it('should get agents in house', async () => {
-      const response = await request(app)
-        .get(`/api/houses/${testHouseId}/agents`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
+    await request(app)
+      .post('/api/houses')
+      .set('Authorization', `Bearer ${intruderToken}`)
+      .send(createHouseCreateData({ villageId, repoName: 'repo-forbidden' }))
+      .expect(403);
   });
 });

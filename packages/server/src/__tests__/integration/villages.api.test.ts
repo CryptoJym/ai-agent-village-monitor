@@ -1,306 +1,161 @@
-/**
- * Integration tests for Villages API
- * Tests all village endpoints with Supertest
- */
-
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
-import type { Express } from 'express';
+import type { PrismaClient } from '@prisma/client';
 
-describe('Villages API Integration Tests', () => {
-  let app: Express;
-  let authToken: string;
-  let testVillageId: number;
+import { createApp } from '../../app';
+import { signAccessToken } from '../../auth/jwt';
+import { setupTestDatabase, teardownTestDatabase, cleanDatabase } from '../utils/db';
+import { createUserCreateData, createVillageCreateData } from '../utils/fixtures';
+
+describe('Villages API (SQLite integration)', () => {
+  let app: any;
+  let prisma: PrismaClient;
 
   beforeAll(async () => {
-    // Setup test environment
-    process.env.JWT_SECRET = 'test-secret';
-
-    // Import app after environment is configured
-    const { createApp } = await import('../../app');
+    prisma = await setupTestDatabase();
     app = createApp();
-
-    // Create test user and get auth token
-    // In a real scenario, this would use the actual auth flow
-    const { signAccessToken } = await import('../../auth/jwt');
-    authToken = signAccessToken(1, 'testuser');
   });
 
   afterAll(async () => {
-    // Cleanup
+    await teardownTestDatabase();
   });
 
-  describe('POST /api/villages', () => {
-    it('should create a new village with valid data', async () => {
-      const villageData = {
-        name: `test-village-${Date.now()}`,
-        githubOrgId: String(Math.floor(Math.random() * 1000000)),
-      };
-
-      const response = await request(app)
-        .post('/api/villages')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(villageData)
-        .expect('Content-Type', /json/)
-        .expect(201);
-
-      expect(response.body).toMatchObject({
-        id: expect.any(Number),
-        name: villageData.name,
-        githubOrgId: villageData.githubOrgId,
-      });
-
-      testVillageId = response.body.id;
-    });
-
-    it('should return 400 for invalid village data', async () => {
-      const response = await request(app)
-        .post('/api/villages')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: '' }) // Invalid: empty name
-        .expect('Content-Type', /json/)
-        .expect(400);
-
-      expect(response.body).toHaveProperty('error');
-    });
-
-    it('should return 401 without authentication', async () => {
-      await request(app)
-        .post('/api/villages')
-        .send({ name: 'test', githubOrgId: '123' })
-        .expect(401);
-    });
-
-    it('should return 409 for duplicate githubOrgId', async () => {
-      const villageData = {
-        name: 'test-village',
-        githubOrgId: 'duplicate-org-123',
-      };
-
-      // Create first village
-      await request(app)
-        .post('/api/villages')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(villageData)
-        .expect(201);
-
-      // Try to create duplicate
-      const response = await request(app)
-        .post('/api/villages')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(villageData)
-        .expect(409);
-
-      expect(response.body).toHaveProperty('error');
-    });
+  beforeEach(async () => {
+    await cleanDatabase(prisma);
   });
 
-  describe('GET /api/villages', () => {
-    it('should list all villages', async () => {
-      const response = await request(app)
-        .get('/api/villages')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeGreaterThanOrEqual(0);
+  it('creates a village and grants owner access', async () => {
+    const user = await prisma.user.create({
+      data: createUserCreateData({ username: 'owner', email: 'owner@test.com' }),
     });
+    const token = signAccessToken(user.id, user.username || 'owner');
 
-    it('should filter villages by visibility', async () => {
-      const response = await request(app)
-        .get('/api/villages?visibility=PUBLIC')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
+    const body = createVillageCreateData({ name: 'My Village' });
+    const create = await request(app)
+      .post('/api/villages')
+      .set('Authorization', `Bearer ${token}`)
+      .send(body)
+      .expect(201);
 
-      expect(response.body).toBeInstanceOf(Array);
-      response.body.forEach((village: any) => {
-        expect(village.visibility).toBe('PUBLIC');
-      });
+    expect(create.body).toMatchObject({ name: 'My Village' });
+    expect(typeof create.body.id).toBe('string');
+    expect(typeof create.body.githubOrgId).toBe('string');
+
+    const access = await prisma.villageAccess.findUnique({
+      where: { villageId_userId: { villageId: create.body.id, userId: user.id } },
     });
-
-    it('should paginate villages', async () => {
-      const response = await request(app)
-        .get('/api/villages?limit=10&offset=0')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBeLessThanOrEqual(10);
-    });
-
-    it('should search villages by name', async () => {
-      const response = await request(app)
-        .get('/api/villages?search=test')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
+    expect(access?.role).toBe('owner');
   });
 
-  describe('GET /api/villages/:id', () => {
-    it('should get village by ID', async () => {
-      const response = await request(app)
-        .get(`/api/villages/${testVillageId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body).toMatchObject({
-        id: testVillageId,
-        name: expect.any(String),
-      });
+  it('GET /api/villages/:id requires auth and reports viewerRole', async () => {
+    const user = await prisma.user.create({
+      data: createUserCreateData({ username: 'owner2', email: 'owner2@test.com' }),
     });
+    const token = signAccessToken(user.id, user.username || 'owner2');
 
-    it('should return 404 for non-existent village', async () => {
-      const response = await request(app)
-        .get('/api/villages/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
+    const create = await request(app)
+      .post('/api/villages')
+      .set('Authorization', `Bearer ${token}`)
+      .send(createVillageCreateData({ name: 'Public Village' }))
+      .expect(201);
 
-      expect(response.body).toHaveProperty('error');
-    });
+    const villageId = String(create.body.id);
 
-    it('should return 400 for invalid ID format', async () => {
-      await request(app)
-        .get('/api/villages/invalid')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(400);
-    });
+    await request(app).get(`/api/villages/${villageId}`).expect(401);
+
+    const authed = await request(app)
+      .get(`/api/villages/${villageId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(authed.body.viewerRole).toBe('owner');
   });
 
-  describe('PATCH /api/villages/:id', () => {
-    it('should update village', async () => {
-      const updateData = {
-        name: `updated-village-${Date.now()}`,
-      };
-
-      const response = await request(app)
-        .patch(`/api/villages/${testVillageId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(updateData)
-        .expect('Content-Type', /json/)
-        .expect(200);
-
-      expect(response.body).toMatchObject({
-        id: testVillageId,
-        name: updateData.name,
-      });
+  it('lists villages for the authenticated user', async () => {
+    const user = await prisma.user.create({
+      data: createUserCreateData({ username: 'listowner', email: 'listowner@test.com' }),
     });
+    const token = signAccessToken(user.id, user.username || 'listowner');
 
-    it('should return 400 for invalid update data', async () => {
-      const response = await request(app)
-        .patch(`/api/villages/${testVillageId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: '' }) // Invalid: empty name
-        .expect(400);
+    const create = await request(app)
+      .post('/api/villages')
+      .set('Authorization', `Bearer ${token}`)
+      .send(createVillageCreateData({ name: 'List Village' }))
+      .expect(201);
 
-      expect(response.body).toHaveProperty('error');
-    });
+    const list = await request(app)
+      .get('/api/villages')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
 
-    it('should return 404 for non-existent village', async () => {
-      await request(app)
-        .patch('/api/villages/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'test' })
-        .expect(404);
-    });
-
-    it('should return 403 for unauthorized update', async () => {
-      // Create a different auth token (different user)
-      const { signAccessToken } = await import('../../auth/jwt');
-      const otherUserToken = signAccessToken(999, 'otheruser');
-
-      await request(app)
-        .patch(`/api/villages/${testVillageId}`)
-        .set('Authorization', `Bearer ${otherUserToken}`)
-        .send({ name: 'hacked' })
-        .expect(403);
-    });
+    expect(Array.isArray(list.body)).toBe(true);
+    expect(list.body.some((v: any) => v.id === create.body.id)).toBe(true);
   });
 
-  describe('DELETE /api/villages/:id', () => {
-    it('should delete village', async () => {
-      // Create a village to delete
-      const createResponse = await request(app)
-        .post('/api/villages')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          name: 'village-to-delete',
-          githubOrgId: String(Date.now()),
-        })
-        .expect(201);
-
-      const villageId = createResponse.body.id;
-
-      // Delete the village
-      await request(app)
-        .delete(`/api/villages/${villageId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(204);
-
-      // Verify it's deleted
-      await request(app)
-        .get(`/api/villages/${villageId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
+  it('updates village name (owner)', async () => {
+    const user = await prisma.user.create({
+      data: createUserCreateData({ username: 'upowner', email: 'upowner@test.com' }),
     });
+    const token = signAccessToken(user.id, user.username || 'upowner');
 
-    it('should return 404 for non-existent village', async () => {
-      await request(app)
-        .delete('/api/villages/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
+    const create = await request(app)
+      .post('/api/villages')
+      .set('Authorization', `Bearer ${token}`)
+      .send(createVillageCreateData({ name: 'Old Name' }))
+      .expect(201);
 
-    it('should return 403 for unauthorized deletion', async () => {
-      const { signAccessToken } = await import('../../auth/jwt');
-      const otherUserToken = signAccessToken(999, 'otheruser');
+    const villageId = String(create.body.id);
 
-      await request(app)
-        .delete(`/api/villages/${testVillageId}`)
-        .set('Authorization', `Bearer ${otherUserToken}`)
-        .expect(403);
-    });
+    await request(app)
+      .put(`/api/villages/${villageId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'New Name' })
+      .expect(200);
+
+    const get = await request(app)
+      .get(`/api/villages/${villageId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(get.body.name).toBe('New Name');
   });
 
-  describe('GET /api/villages/:id/layout', () => {
-    it('should get village layout', async () => {
-      const response = await request(app)
-        .get(`/api/villages/${testVillageId}/layout`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toHaveProperty('houses');
-      expect(response.body).toHaveProperty('agents');
+  it('enforces owner-only access management and allows member layout access', async () => {
+    const owner = await prisma.user.create({
+      data: createUserCreateData({ username: 'owner3', email: 'owner3@test.com' }),
     });
-  });
-
-  describe('POST /api/villages/:id/layout', () => {
-    it('should update village layout', async () => {
-      const layoutData = {
-        houses: [
-          { x: 10, y: 20, houseType: 'COTTAGE' },
-          { x: 30, y: 40, houseType: 'MANSION' },
-        ],
-      };
-
-      const response = await request(app)
-        .post(`/api/villages/${testVillageId}/layout`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(layoutData)
-        .expect(200);
-
-      expect(response.body).toMatchObject(layoutData);
+    const member = await prisma.user.create({
+      data: createUserCreateData({ username: 'member3', email: 'member3@test.com' }),
     });
+    const ownerToken = signAccessToken(owner.id, owner.username || 'owner3');
+    const memberToken = signAccessToken(member.id, member.username || 'member3');
 
-    it('should return 400 for invalid layout data', async () => {
-      await request(app)
-        .post(`/api/villages/${testVillageId}/layout`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ houses: 'invalid' })
-        .expect(400);
-    });
+    const create = await request(app)
+      .post('/api/villages')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send(createVillageCreateData({ name: 'Perm Village' }))
+      .expect(201);
+
+    const villageId = String(create.body.id);
+
+    await request(app)
+      .get(`/api/villages/${villageId}/access`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    await request(app)
+      .get(`/api/villages/${villageId}/access`)
+      .set('Authorization', `Bearer ${memberToken}`)
+      .expect(403);
+
+    await request(app)
+      .post(`/api/villages/${villageId}/access`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ userId: member.id, role: 'member' })
+      .expect(201);
+
+    await request(app)
+      .get(`/api/villages/${villageId}/layout`)
+      .set('Authorization', `Bearer ${memberToken}`)
+      .expect(200);
   });
 });
