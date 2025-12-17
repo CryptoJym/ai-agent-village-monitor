@@ -1,4 +1,5 @@
 import { Preferences, PreferencesSchema } from './schemas';
+import { csrfFetch } from './csrf';
 
 const DEFAULT_PREFS: Preferences = PreferencesSchema.parse({});
 const LOCAL_KEY = 'aavm_user_preferences_v1';
@@ -52,9 +53,8 @@ export async function updatePreferences(prefs: Partial<Preferences>): Promise<vo
   const merged = PreferencesSchema.parse({ ...current, ...prefs });
   saveLocal(merged);
   try {
-    const res = await fetch('/api/users/me/preferences', {
+    const res = await csrfFetch('/api/users/me/preferences', {
       method: 'PUT',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(prefs),
     });

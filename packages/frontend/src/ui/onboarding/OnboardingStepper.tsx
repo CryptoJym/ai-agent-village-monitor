@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { csrfFetch } from '../../api/csrf';
 
 type StepKey = 'login' | 'org' | 'install' | 'create' | 'sync' | 'enter' | 'demo';
 
@@ -184,7 +185,9 @@ export function OnboardingStepper({
         return;
       }
       if (!w || w.closed) {
-        setError('GitHub login window closed. You can reopen it or continue with the fallback option.');
+        setError(
+          'GitHub login window closed. You can reopen it or continue with the fallback option.',
+        );
         announce('GitHub login window closed. Use fallback button to proceed.');
         return;
       }
@@ -275,10 +278,9 @@ export function OnboardingStepper({
     setBusy(true);
     setError('');
     try {
-      const res = await fetch('/api/villages', {
+      const res = await csrfFetch('/api/villages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           name: selectedOrg?.login || 'Demo Village',
           github_org_id: selectedOrg?.id || selectedOrg?.login || 'demo-org',
@@ -291,9 +293,8 @@ export function OnboardingStepper({
       setStep('sync');
       announce('Village created. Syncing repositories.');
       try {
-        await fetch(`/api/villages/${encodeURIComponent(vid)}/houses/sync`, {
+        await csrfFetch(`/api/villages/${encodeURIComponent(vid)}/houses/sync`, {
           method: 'POST',
-          credentials: 'include',
         });
       } catch (e) {
         void e;
@@ -618,8 +619,8 @@ export function OnboardingStepper({
         {step === 'install' && (
           <section style={{ display: 'grid', gap: 12 }}>
             <p>
-              Install the GitHub App or grant the required scopes so we can read repos and orchestrate
-              workflows. You’ll only need to do this once per organization.
+              Install the GitHub App or grant the required scopes so we can read repos and
+              orchestrate workflows. You’ll only need to do this once per organization.
             </p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {['read:user', 'read:org', 'workflow'].map((s) => (
@@ -710,8 +711,8 @@ export function OnboardingStepper({
             {installMsg && <p style={{ color: '#94a3b8', margin: 0 }}>{installMsg}</p>}
             {!getAppInstallUrl() && (
               <p style={{ color: '#64748b', fontSize: 12 }}>
-                Tip: set <code>VITE_GITHUB_APP_INSTALL_URL</code> or <code>VITE_GITHUB_APP_SLUG</code>{' '}
-                to show a direct install button.
+                Tip: set <code>VITE_GITHUB_APP_INSTALL_URL</code> or{' '}
+                <code>VITE_GITHUB_APP_SLUG</code> to show a direct install button.
               </p>
             )}
             <p style={{ color: '#64748b', fontSize: 12, margin: 0 }}>
@@ -724,8 +725,8 @@ export function OnboardingStepper({
         {step === 'create' && (
           <section style={{ display: 'grid', gap: 12 }}>
             <p>
-              Create a village for <strong>{selectedOrg?.login || 'your organization'}</strong>. This
-              sets up houses for each repo found during sync.
+              Create a village for <strong>{selectedOrg?.login || 'your organization'}</strong>.
+              This sets up houses for each repo found during sync.
             </p>
             <button
               onClick={doCreateVillage}
@@ -747,8 +748,13 @@ export function OnboardingStepper({
 
         {step === 'sync' && (
           <section style={{ display: 'grid', gap: 12 }}>
-            <p>Syncing repositories and building your village layout. This usually takes under a minute.</p>
-            <p style={{ color: '#94a3b8', margin: 0 }}>{syncMsg || 'Fetching repository metadata…'}</p>
+            <p>
+              Syncing repositories and building your village layout. This usually takes under a
+              minute.
+            </p>
+            <p style={{ color: '#94a3b8', margin: 0 }}>
+              {syncMsg || 'Fetching repository metadata…'}
+            </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <button
                 onClick={() => setStep('demo')}

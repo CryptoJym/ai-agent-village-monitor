@@ -1,4 +1,5 @@
 import type { AnalyticsEvent, AnalyticsBatch } from '@shared';
+import { csrfFetch } from '../api/csrf';
 
 const CONSENT_KEY = 'aavm_analytics_consent_v1';
 const CLIENT_ID_KEY = 'aavm_client_id_v1';
@@ -85,10 +86,9 @@ export async function flush() {
   };
   if (batch.events.length === 0) return;
   try {
-    await fetch('/api/analytics/collect', {
+    await csrfFetch('/api/analytics/collect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(batch),
     });
   } catch {
@@ -112,9 +112,14 @@ export function flushBeacon() {
       consent: true,
     };
     if (batch.events.length === 0) return;
-    const blob = new Blob([JSON.stringify(batch)], { type: 'application/json' });
-    // navigator is safe-checked; sendBeacon returns boolean
-    (navigator as any)?.sendBeacon?.('/api/analytics/collect', blob);
+    void csrfFetch('/api/analytics/collect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(batch),
+      keepalive: true,
+    }).catch(() => {
+      // swallow
+    });
   } catch {
     // swallow
   } finally {

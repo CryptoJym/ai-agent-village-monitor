@@ -7,6 +7,7 @@ import {
   VillageAccessListSchema,
   type VillageAccessRow,
 } from './schemas';
+import { csrfFetch } from './csrf';
 
 const ENV_API_BASE = (import.meta as any)?.env?.VITE_API_BASE_URL as string | undefined;
 const ENV_BACKEND_URL = (import.meta as any)?.env?.VITE_BACKEND_URL as string | undefined;
@@ -64,7 +65,7 @@ async function apiFetch<T>(path: string, schema: ZodSchema<T>, init?: RequestIni
   let lastErr: any;
   for (let i = 0; i < attempts; i++) {
     try {
-      const res = await fetch(url, reqInit);
+      const res = await csrfFetch(url, reqInit);
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
       return schema.parse(data);
@@ -124,11 +125,10 @@ export const api = {
     );
   },
   async removeAccess(id: string | number, userId: number): Promise<void> {
-    const res = await fetch(
+    const res = await csrfFetch(
       `${getBaseUrl()}/villages/${encodeURIComponent(String(id))}/access/${userId}`,
       {
         method: 'DELETE',
-        credentials: 'include',
       },
     );
     if (!res.ok) throw new Error(`API error ${res.status}`);

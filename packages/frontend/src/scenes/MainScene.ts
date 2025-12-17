@@ -22,6 +22,7 @@ import type { HouseSnapshot } from '../npc/types';
 import { WorldGenerator } from '../world/WorldGenerator';
 import { WorldService } from '../services/WorldService';
 import type { WorldNode } from '../world/types';
+import { csrfFetch } from '../api/csrf';
 
 type HouseMeta = {
   name: string;
@@ -1212,7 +1213,7 @@ export class MainScene extends Phaser.Scene {
       return;
     }
     try {
-      const res = await fetch(`/api/bugs/${encodeURIComponent(id)}/assign`, {
+      const res = await csrfFetch(`/api/bugs/${encodeURIComponent(id)}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agentId: this.agent?.id ?? 'agent-placeholder' }),
@@ -1351,10 +1352,9 @@ export class MainScene extends Phaser.Scene {
           },
         ];
       }
-      const res = await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout`, {
+      const res = await csrfFetch(`/api/villages/${encodeURIComponent(villageId)}/layout`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(payload),
       });
       if (res.ok) this.layoutVersion += 1;

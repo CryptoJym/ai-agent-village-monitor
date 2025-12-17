@@ -36,6 +36,7 @@ import { HelpHint } from './ui/HelpHint';
 import { CommandPalette } from './ui/CommandPalette';
 import { UserMenu } from './components/auth/UserMenu';
 import { RunnerSessionPanel } from './components/dev/RunnerSessionPanel';
+import { csrfFetch } from './api/csrf';
 
 export default function App() {
   try {
@@ -288,9 +289,8 @@ export default function App() {
   const performLayoutReset = async () => {
     if (!villageId) return;
     try {
-      await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout/reset`, {
+      await csrfFetch(`/api/villages/${encodeURIComponent(villageId)}/layout/reset`, {
         method: 'POST',
-        credentials: 'include',
       });
       eventBus.emit('toast', {
         type: 'success',

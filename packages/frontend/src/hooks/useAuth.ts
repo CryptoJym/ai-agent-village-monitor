@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext } from 'react';
+import { csrfFetch } from '../api/csrf';
 
 export interface User {
   id: number;
@@ -76,9 +77,8 @@ export function useAuthState(): AuthState & {
 
   const refresh = async () => {
     try {
-      const response = await fetch('/auth/refresh', {
+      const response = await csrfFetch('/auth/refresh', {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -105,9 +105,8 @@ export function useAuthState(): AuthState & {
   const logout = async () => {
     try {
       setLoading(true);
-      await fetch('/auth/logout', {
+      await csrfFetch('/auth/logout', {
         method: 'POST',
-        credentials: 'include',
       });
       setUser(null);
       setError(null);

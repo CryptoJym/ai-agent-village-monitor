@@ -1,3 +1,5 @@
+import { csrfFetch } from '../api/csrf';
+
 type QueuedCommand = {
   url: string;
   body: any;
@@ -34,9 +36,8 @@ export async function flushQueuedCommands() {
   const remaining: QueuedCommand[] = [];
   for (const item of list) {
     try {
-      const res = await fetch(item.url, {
+      const res = await csrfFetch(item.url, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...(item.headers || {}) },
         body: JSON.stringify(item.body),
       });

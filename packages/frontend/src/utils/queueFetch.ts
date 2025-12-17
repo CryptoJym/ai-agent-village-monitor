@@ -1,4 +1,5 @@
 import { enqueueCommand, startAutoFlush } from '../offline/CommandQueue';
+import { csrfFetch } from '../api/csrf';
 
 let initialized = false;
 function ensureInit() {
@@ -19,9 +20,8 @@ export async function queueAwarePost(
       enqueueCommand(url, body, headers);
       return { queued: true } as const;
     }
-    const res = await fetch(url, {
+    const res = await csrfFetch(url, {
       method: 'POST',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json', ...(headers || {}) },
       body: JSON.stringify(body),
     });

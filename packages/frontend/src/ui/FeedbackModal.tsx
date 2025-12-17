@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
+import { csrfFetch } from '../api/csrf';
 
 type Category = 'bug' | 'feature' | 'question' | 'other';
 
@@ -66,10 +67,9 @@ export function FeedbackModal({ open, onClose }: { open: boolean; onClose: () =>
     }
     setBusy(true);
     try {
-      const res = await fetch('/api/feedback', {
+      const res = await csrfFetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({
           category,
           description: desc,

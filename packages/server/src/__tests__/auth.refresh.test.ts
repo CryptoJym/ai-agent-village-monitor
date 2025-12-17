@@ -88,8 +88,16 @@ describe('auth refresh and 401 headers', () => {
     const refreshCookie1 = setCookies1.find((c) => c.startsWith('refresh_token='));
     expect(refreshCookie1).toBeTruthy();
 
+    // 3.5) Obtain CSRF token + secret cookie for subsequent state-changing cookie requests
+    const csrf = await agent.get('/auth/csrf');
+    const csrfToken = csrf.body?.csrfToken;
+    expect(typeof csrfToken).toBe('string');
+
     // 4) Call /auth/refresh (rotation)
-    const resRef1 = await agent.post('/auth/refresh').set('Origin', 'http://localhost:5173');
+    const resRef1 = await agent
+      .post('/auth/refresh')
+      .set('Origin', 'http://localhost:5173')
+      .set('X-CSRF-Token', csrfToken as string);
     expect(resRef1.status).toBe(200);
     const setCookies2 = (resRef1.headers['set-cookie'] || []) as string[];
     const refreshCookie2 = setCookies2?.find((c) => c.startsWith('refresh_token='));
@@ -98,10 +106,19 @@ describe('auth refresh and 401 headers', () => {
 
     // 5) Attempt reuse of the old refresh token → 401
     const app = await appPromise;
+    const csrfReuseRes = await request(app).get('/auth/csrf');
+    const csrfReuseToken = csrfReuseRes.body?.csrfToken;
+    const csrfReuseCookie = ((csrfReuseRes.headers['set-cookie'] || []) as string[]).find((c) =>
+      c.startsWith('csrf_secret='),
+    );
+    expect(typeof csrfReuseToken).toBe('string');
+    expect(csrfReuseCookie).toBeTruthy();
+
     const resReuse = await request(app)
       .post('/auth/refresh')
       .set('Origin', 'http://localhost:5173')
-      .set('Cookie', refreshCookie1 as string);
+      .set('X-CSRF-Token', csrfReuseToken as string)
+      .set('Cookie', [String(refreshCookie1).split(';')[0], String(csrfReuseCookie).split(';')[0]]);
     expect(resReuse.status).toBe(401);
   });
 

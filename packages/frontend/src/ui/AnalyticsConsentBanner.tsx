@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { hasStoredConsent, setConsent } from '../analytics/client';
+import { csrfFetch } from '../api/csrf';
 
 export function AnalyticsConsentBanner() {
   const [visible, setVisible] = useState(false);
@@ -25,10 +26,9 @@ export function AnalyticsConsentBanner() {
     setVisible(false);
     try {
       // Persist on server if logged in
-      await fetch('/api/users/me/preferences', {
+      await csrfFetch('/api/users/me/preferences', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ analytics: { enabled: allow } }),
       });
     } catch (e) {
@@ -59,8 +59,8 @@ export function AnalyticsConsentBanner() {
       aria-label="Analytics consent"
     >
       <div style={{ maxWidth: '60%' }}>
-        Help us improve with optional usage analytics (dialogue opens, session duration, etc.). We only
-        start collecting after you opt in. See our{' '}
+        Help us improve with optional usage analytics (dialogue opens, session duration, etc.). We
+        only start collecting after you opt in. See our{' '}
         <a href="/docs/privacy" style={{ color: '#93c5fd' }}>
           privacy policy
         </a>{' '}

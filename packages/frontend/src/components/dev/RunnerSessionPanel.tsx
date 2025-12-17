@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { eventBus } from '../../realtime/EventBus';
+import { csrfFetch } from '../../api/csrf';
 
 interface RunnerSession {
   sessionId: string;
@@ -85,12 +86,11 @@ export function RunnerSessionPanel() {
         throw new Error('Task goal is required.');
       }
 
-      const response = await fetch('/api/runner/sessions', {
+      const response = await csrfFetch('/api/runner/sessions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           villageId: trimmedVillageId,
           agentName: trimmedAgentName || undefined,
@@ -143,12 +143,11 @@ export function RunnerSessionPanel() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/runner/sessions/${session.sessionId}/stop`, {
+      const response = await csrfFetch(`/api/runner/sessions/${session.sessionId}/stop`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ graceful: true }),
       });
 
@@ -175,12 +174,11 @@ export function RunnerSessionPanel() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/runner/sessions/${session.sessionId}/input`, {
+      const response = await csrfFetch(`/api/runner/sessions/${session.sessionId}/input`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({ data: inputText }),
       });
 
