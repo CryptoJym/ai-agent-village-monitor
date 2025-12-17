@@ -192,7 +192,7 @@ export class AssetLoader {
   }
 
   private loadSpritesheets() {
-    Object.entries(this.manifest.spritesheets).forEach(([key, asset]) => {
+    Object.entries(this.manifest.spritesheets).forEach(([key]) => {
       this.loadSpritesheet(key);
     });
   }
@@ -213,7 +213,7 @@ export class AssetLoader {
   }
 
   private loadTilemaps() {
-    Object.entries(this.manifest.tilemaps).forEach(([key, asset]) => {
+    Object.entries(this.manifest.tilemaps).forEach(([key]) => {
       this.loadTilemap(key);
     });
   }
@@ -238,7 +238,7 @@ export class AssetLoader {
   }
 
   private loadTilesets() {
-    Object.entries(this.manifest.tilesets).forEach(([key, asset]) => {
+    Object.entries(this.manifest.tilesets).forEach(([key]) => {
       this.loadTileset(key);
     });
   }
@@ -256,7 +256,7 @@ export class AssetLoader {
   }
 
   private loadImages() {
-    Object.entries(this.manifest.images).forEach(([key, asset]) => {
+    Object.entries(this.manifest.images).forEach(([key]) => {
       this.loadImage(key);
     });
   }
@@ -273,7 +273,7 @@ export class AssetLoader {
   }
 
   private loadAudio() {
-    Object.entries(this.manifest.audio).forEach(([key, asset]) => {
+    Object.entries(this.manifest.audio).forEach(([key]) => {
       this.loadAudioAsset(key);
     });
   }

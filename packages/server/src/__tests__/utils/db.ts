@@ -126,8 +126,8 @@ export async function cleanDatabase(prismaClient: PrismaClient = prisma) {
   for (const tablename of tablenames) {
     try {
       await prismaClient.$executeRawUnsafe(`DELETE FROM "${tablename}"`);
-    } catch (error) {
-      // Table might not exist or already empty, ignore silently
+    } catch {
+      /* ignore */
     }
   }
 
@@ -200,37 +200,34 @@ export async function seedTestData(prismaClient: PrismaClient = prisma) {
   // Create test village
   const village = await prismaClient.village.create({
     data: {
-      name: 'Test Village',
-      githubOrgId: '987654321',
-      ownerId: user.id,
-      visibility: 'PUBLIC',
+      orgName: 'Test Village',
+      githubOrgId: BigInt(987654321),
+      config: { org: 'Test Village' },
     },
+  });
+
+  await prismaClient.villageAccess.create({
+    data: { villageId: village.id, userId: user.id, role: 'owner' },
   });
 
   // Create test house
   const house = await prismaClient.house.create({
     data: {
       villageId: village.id,
-      repoId: BigInt(111222333),
-      name: 'Test House',
-      x: 0,
-      y: 0,
-      size: 'medium',
+      repoName: 'test-repo',
+      githubRepoId: BigInt(111222333),
+      seed: 'repo-111222333',
     },
   });
 
   // Create test agent
   const agent = await prismaClient.agent.create({
     data: {
-      githubRepoId: '444555666',
-      repoId: BigInt(444555666),
       name: 'Test Agent',
-      villageId: village.id,
-      houseId: house.id,
-      ownerId: user.id,
-      state: 'idle',
-      x: 0,
-      y: 0,
+      userId: user.id,
+      status: 'idle',
+      positionX: 0,
+      positionY: 0,
     },
   });
 
@@ -238,13 +235,12 @@ export async function seedTestData(prismaClient: PrismaClient = prisma) {
   const room = await prismaClient.room.create({
     data: {
       houseId: house.id,
-      path: '/src/index.ts',
-      name: 'index.ts',
+      name: 'entrance',
       roomType: 'entrance',
-      moduleType: 'root',
-      complexity: 5,
       x: 0,
       y: 0,
+      width: 10,
+      height: 10,
     },
   });
 

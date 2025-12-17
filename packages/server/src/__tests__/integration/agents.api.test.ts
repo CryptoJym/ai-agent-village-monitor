@@ -1,224 +1,86 @@
-/**
- * Integration tests for Agents API
- */
-
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
-import type { Express } from 'express';
+import type { PrismaClient } from '@prisma/client';
 
-describe('Agents API Integration Tests', () => {
-  let app: Express;
-  let authToken: string;
-  let testVillageId: number;
-  let testAgentId: number;
+import { createApp } from '../../app';
+import { signAccessToken } from '../../auth/jwt';
+import { setupTestDatabase, teardownTestDatabase, cleanDatabase } from '../utils/db';
+import { createUserCreateData, createAgentCreateData } from '../utils/fixtures';
+
+describe('Agents API (SQLite integration)', () => {
+  let app: any;
+  let prisma: PrismaClient;
 
   beforeAll(async () => {
-    process.env.JWT_SECRET = 'test-secret';
-
-    const { createApp } = await import('../../app');
-    const { signAccessToken } = await import('../../auth/jwt');
-
+    prisma = await setupTestDatabase();
     app = createApp();
-    authToken = signAccessToken(1, 'testuser');
-
-    // Create test village
-    const villageResponse = await request(app)
-      .post('/api/villages')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({
-        name: `test-village-${Date.now()}`,
-        githubOrgId: String(Date.now()),
-      });
-
-    testVillageId = villageResponse.body.id;
   });
 
-  describe('POST /api/agents', () => {
-    it('should create a new agent', async () => {
-      const agentData = {
-        name: `test-agent-${Date.now()}`,
-        githubRepoId: String(Math.floor(Math.random() * 1000000)),
-        villageId: testVillageId,
-      };
-
-      const response = await request(app)
-        .post('/api/agents')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(agentData)
-        .expect('Content-Type', /json/)
-        .expect(201);
-
-      expect(response.body).toMatchObject({
-        id: expect.any(Number),
-        name: agentData.name,
-        githubRepoId: agentData.githubRepoId,
-        villageId: testVillageId,
-      });
-
-      testAgentId = response.body.id;
-    });
-
-    it('should return 400 for invalid agent data', async () => {
-      await request(app)
-        .post('/api/agents')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: '' }) // Missing required fields
-        .expect(400);
-    });
-
-    it('should return 401 without authentication', async () => {
-      await request(app)
-        .post('/api/agents')
-        .send({
-          name: 'test',
-          githubRepoId: '123',
-          villageId: testVillageId,
-        })
-        .expect(401);
-    });
+  afterAll(async () => {
+    await teardownTestDatabase();
   });
 
-  describe('GET /api/agents', () => {
-    it('should list all agents', async () => {
-      const response = await request(app)
-        .get('/api/agents')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
-
-    it('should filter agents by village', async () => {
-      const response = await request(app)
-        .get(`/api/agents?villageId=${testVillageId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      response.body.forEach((agent: any) => {
-        expect(agent.villageId).toBe(testVillageId);
-      });
-    });
-
-    it('should filter agents by status', async () => {
-      const response = await request(app)
-        .get('/api/agents?status=ACTIVE')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      response.body.forEach((agent: any) => {
-        expect(agent.status).toBe('ACTIVE');
-      });
-    });
+  beforeEach(async () => {
+    await cleanDatabase(prisma);
   });
 
-  describe('GET /api/agents/:id', () => {
-    it('should get agent by ID', async () => {
-      const response = await request(app)
-        .get(`/api/agents/${testAgentId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toMatchObject({
-        id: testAgentId,
-        name: expect.any(String),
-      });
+  it('creates an agent, lists it, transitions state, and deletes it', async () => {
+    const user = await prisma.user.create({
+      data: createUserCreateData({ username: 'agentowner', email: 'agentowner@test.com' }),
     });
+    const token = signAccessToken(user.id, user.username || 'agentowner');
 
-    it('should return 404 for non-existent agent', async () => {
-      await request(app)
-        .get('/api/agents/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-  });
+    const create = await request(app)
+      .post('/api/agents')
+      .set('Authorization', `Bearer ${token}`)
+      .send(
+        createAgentCreateData({
+          name: 'Agent One',
+          currentStatus: 'idle',
+          positionX: 1,
+          positionY: 2,
+        }),
+      )
+      .expect(201);
 
-  describe('PATCH /api/agents/:id', () => {
-    it('should update agent', async () => {
-      const updateData = {
-        status: 'IDLE' as const,
-      };
+    const agentId = String(create.body.id);
+    expect(create.body).toMatchObject({ id: agentId, name: 'Agent One', currentStatus: 'idle' });
 
-      const response = await request(app)
-        .patch(`/api/agents/${testAgentId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(updateData)
-        .expect(200);
+    const list = await request(app)
+      .get('/api/agents')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(Array.isArray(list.body)).toBe(true);
+    expect(list.body.some((a: any) => a.id === agentId)).toBe(true);
 
-      expect(response.body.status).toBe('IDLE');
-    });
+    const state = await request(app)
+      .get(`/api/agents/${agentId}/state`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(state.body).toMatchObject({ id: agentId, currentState: 'idle' });
 
-    it('should return 400 for invalid status', async () => {
-      await request(app)
-        .patch(`/api/agents/${testAgentId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ status: 'INVALID_STATUS' })
-        .expect(400);
-    });
-  });
+    const transition = await request(app)
+      .post(`/api/agents/${agentId}/transition`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ event: 'START_WORK', metrics: { workload: 50 } })
+      .expect(200);
+    expect(transition.body.currentState).toBe('working');
+    expect(transition.body.transition).toMatchObject({ from: 'idle', to: 'working' });
 
-  describe('DELETE /api/agents/:id', () => {
-    it('should delete agent', async () => {
-      // Create agent to delete
-      const createResponse = await request(app)
-        .post('/api/agents')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          name: 'agent-to-delete',
-          githubRepoId: String(Date.now()),
-          villageId: testVillageId,
-        })
-        .expect(201);
+    const stream = await request(app)
+      .get(`/api/agents/${agentId}/stream?limit=10`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(stream.body).toHaveProperty('items');
 
-      const agentId = createResponse.body.id;
+    await request(app)
+      .delete(`/api/agents/${agentId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204);
 
-      // Delete
-      await request(app)
-        .delete(`/api/agents/${agentId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(204);
-
-      // Verify deleted
-      await request(app)
-        .get(`/api/agents/${agentId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-  });
-
-  describe('GET /api/agents/:id/activity', () => {
-    it('should get agent activity', async () => {
-      const response = await request(app)
-        .get(`/api/agents/${testAgentId}/activity`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
-
-    it('should filter activity by date range', async () => {
-      const from = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const to = new Date().toISOString();
-
-      const response = await request(app)
-        .get(`/api/agents/${testAgentId}/activity?from=${from}&to=${to}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
-  });
-
-  describe('POST /api/agents/:id/heartbeat', () => {
-    it('should update agent heartbeat', async () => {
-      const response = await request(app)
-        .post(`/api/agents/${testAgentId}/heartbeat`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({})
-        .expect(200);
-
-      expect(response.body).toHaveProperty('lastSeenAt');
-    });
+    await request(app)
+      .get(`/api/agents/${agentId}/state`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
   });
 });

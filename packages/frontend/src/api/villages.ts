@@ -1,4 +1,5 @@
 import { Village, VillageSchema, VillageAccessListSchema, VillageAccessRow } from './schemas';
+import { csrfFetch } from './csrf';
 
 async function parseJson<T>(res: Response, schema: any): Promise<T> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -19,9 +20,8 @@ export async function getAccessList(id: string): Promise<VillageAccessRow[]> {
 }
 
 export async function updateVillagePublic(id: string, isPublic: boolean): Promise<void> {
-  const res = await fetch(`/api/villages/${encodeURIComponent(id)}`, {
+  const res = await csrfFetch(`/api/villages/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ isPublic }),
   });
@@ -33,9 +33,8 @@ export async function upsertAccess(
   userId: number,
   role: 'member' | 'visitor' | 'owner' = 'member',
 ): Promise<void> {
-  const res = await fetch(`/api/villages/${encodeURIComponent(id)}/access`, {
+  const res = await csrfFetch(`/api/villages/${encodeURIComponent(id)}/access`, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, role }),
   });
@@ -47,9 +46,8 @@ export async function updateAccess(
   userId: number,
   role: 'owner' | 'member' | 'visitor',
 ): Promise<void> {
-  const res = await fetch(`/api/villages/${encodeURIComponent(id)}/access/${userId}`, {
+  const res = await csrfFetch(`/api/villages/${encodeURIComponent(id)}/access/${userId}`, {
     method: 'PUT',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ role }),
   });
@@ -57,9 +55,8 @@ export async function updateAccess(
 }
 
 export async function removeAccess(id: string, userId: number): Promise<void> {
-  const res = await fetch(`/api/villages/${encodeURIComponent(id)}/access/${userId}`, {
+  const res = await csrfFetch(`/api/villages/${encodeURIComponent(id)}/access/${userId}`, {
     method: 'DELETE',
-    credentials: 'include',
   });
   if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}`);
 }
@@ -69,9 +66,8 @@ export async function inviteByUsername(
   username: string,
   role: 'member' | 'visitor' = 'member',
 ): Promise<void> {
-  const res = await fetch(`/api/villages/${encodeURIComponent(id)}/invite`, {
+  const res = await csrfFetch(`/api/villages/${encodeURIComponent(id)}/invite`, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, role }),
   });

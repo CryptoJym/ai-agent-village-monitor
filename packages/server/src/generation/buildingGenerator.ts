@@ -6,16 +6,14 @@
 
 import { PrismaClient, BuildingSize } from '@prisma/client';
 import { SeededRNG } from '../../../shared/src/generation/rng';
-import { generateBSPTree, getLeafNodes } from '../../../shared/src/generation/bsp';
+import { generateBSPTree } from '../../../shared/src/generation/bsp';
 import { placeRoomsInBSP } from '../../../shared/src/generation/rooms';
 import { generateCorridors, validateConnectivity } from '../../../shared/src/generation/corridors';
 import {
-  BSPOptions,
   ModuleInfo,
   BuildingGenerationInput,
   BuildingGenerationOutput,
   TilemapData,
-  TilemapLayer,
 } from '../../../shared/src/generation/types';
 
 const prisma = new PrismaClient();
@@ -47,9 +45,8 @@ export function determineBuildingSize(complexityScore: number): BuildingSize {
  */
 export function calculateComplexityScore(modules: ModuleInfo[]): number {
   const totalFiles = modules.reduce((sum, m) => sum + m.fileCount, 0);
-  const avgComplexity = modules.length > 0
-    ? modules.reduce((sum, m) => sum + m.complexity, 0) / modules.length
-    : 0;
+  const avgComplexity =
+    modules.length > 0 ? modules.reduce((sum, m) => sum + m.complexity, 0) / modules.length : 0;
 
   // Score = fileCount * 0.6 + avgComplexity * modules.length * 0.4
   return Math.round(totalFiles * 0.6 + avgComplexity * modules.length * 0.4);
@@ -59,7 +56,7 @@ export function calculateComplexityScore(modules: ModuleInfo[]): number {
  * Generate complete building interior
  */
 export async function generateBuilding(
-  input: BuildingGenerationInput
+  input: BuildingGenerationInput,
 ): Promise<BuildingGenerationOutput> {
   const { repoId, commitSha, modules, buildingWidth, buildingHeight, options } = input;
 
@@ -101,7 +98,7 @@ function generateTilemap(
   width: number,
   height: number,
   rooms: any[],
-  corridors: any[]
+  corridors: any[],
 ): TilemapData {
   // Initialize layers
   const groundData = new Array(width * height).fill(0); // 0 = empty/void
@@ -221,7 +218,7 @@ function generateTilemap(
 export async function saveBuildingToDatabase(
   houseId: string,
   output: BuildingGenerationOutput,
-  buildingSize: BuildingSize
+  buildingSize: BuildingSize,
 ): Promise<void> {
   const { seed, rooms, corridors, tilemap } = output;
 
@@ -258,7 +255,7 @@ export async function saveBuildingToDatabase(
         height: room.bounds.height,
         doors: room.doors as any, // JSON
         corridorData: corridors.filter(
-          (c) => c.fromRoomId === room.id || c.toRoomId === room.id
+          (c) => c.fromRoomId === room.id || c.toRoomId === room.id,
         ) as any, // JSON
         decorations: room.decorations as any, // JSON
         fileCount: room.fileCount,
@@ -278,7 +275,7 @@ export async function generateAndSaveBuilding(
   houseId: string,
   repoId: string,
   commitSha: string | null,
-  modules: ModuleInfo[]
+  modules: ModuleInfo[],
 ): Promise<BuildingGenerationOutput> {
   // Calculate complexity and determine size
   const complexityScore = calculateComplexityScore(modules);
@@ -342,7 +339,7 @@ export async function regenerateBuilding(houseId: string): Promise<BuildingGener
     houseId,
     String(house.githubRepoId || house.id),
     house.commitSha,
-    modules
+    modules,
   );
 }
 

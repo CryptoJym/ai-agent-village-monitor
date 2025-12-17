@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Phaser from 'phaser';
-import { LayerManager, RenderLayerConfig } from '../rendering/LayerManager';
+import { LayerManager } from '../rendering/LayerManager';
 
 describe('LayerManager - Visual Rendering Tests', () => {
   let scene: Phaser.Scene;
@@ -140,7 +140,7 @@ describe('LayerManager - Visual Rendering Tests', () => {
 
     it('should not create duplicate layers', () => {
       layerManager.addLayer('ground', 0);
-      const duplicate = layerManager.addLayer('ground', 5);
+      layerManager.addLayer('ground', 5);
 
       // Should return existing layer
       expect(layerManager.getLayerCount()).toBe(1);

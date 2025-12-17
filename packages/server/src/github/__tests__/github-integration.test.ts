@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { GitHubClient } from '../client';
 import { TreeFetcher } from '../tree-fetcher';
 import { GitHubLanguageDetector, GitHubTreeEntry } from '../language-detector';
-import { GitHubModuleClassifier, ModuleInfo } from '../module-classifier';
+import { GitHubModuleClassifier } from '../module-classifier';
 import { GitHubDependencyAnalyzer } from '../dependency-analyzer';
-import type { Repository, TreeEntry, CommitInfo } from '../types';
+import type { Repository, TreeEntry } from '../types';
 
 /**
  * GitHub Integration Tests
@@ -41,7 +41,11 @@ describe('GitHub Integration Tests', () => {
         expect(typeof client.lastRate).toBe('object');
 
         // Set some mock rate limit data to simulate API response
-        client.lastRate = { limit: 5000, remaining: 4999, reset: Math.floor(Date.now() / 1000) + 3600 };
+        client.lastRate = {
+          limit: 5000,
+          remaining: 4999,
+          reset: Math.floor(Date.now() / 1000) + 3600,
+        };
 
         expect(client.lastRate).toHaveProperty('limit');
         expect(client.lastRate).toHaveProperty('remaining');
@@ -127,7 +131,7 @@ describe('GitHub Integration Tests', () => {
             primaryLanguage: { name: mockRepo.primaryLanguage },
             languages: {
               totalSize: mockRepo.languages!.totalSize,
-              edges: mockRepo.languages!.languages.map(lang => ({
+              edges: mockRepo.languages!.languages.map((lang) => ({
                 size: lang.size,
                 node: { name: lang.name },
               })),
@@ -173,7 +177,7 @@ describe('GitHub Integration Tests', () => {
         await shortTTLClient.getRepository('test-owner', 'test-repo');
 
         // Wait for TTL to expire
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise((resolve) => setTimeout(resolve, 150));
 
         // Should fetch again (cache expired)
         await shortTTLClient.getRepository('test-owner', 'test-repo');
@@ -214,7 +218,8 @@ describe('GitHub Integration Tests', () => {
         const retryClient = new GitHubClient({ tokens: ['mock-token'] });
 
         // Test that withRetry method exists and handles retries
-        const mockFn = vi.fn()
+        const mockFn = vi
+          .fn()
           .mockRejectedValueOnce(Object.assign(new Error('Rate limit exceeded'), { status: 403 }))
           .mockResolvedValueOnce({ data: { success: true } });
 
@@ -228,7 +233,8 @@ describe('GitHub Integration Tests', () => {
         const retryClient = new GitHubClient({ tokens: ['mock-token'] });
 
         // Test that withRetry method handles server errors
-        const mockFn = vi.fn()
+        const mockFn = vi
+          .fn()
           .mockRejectedValueOnce(Object.assign(new Error('Bad Gateway'), { status: 502 }))
           .mockResolvedValueOnce({ data: { success: true } });
 
@@ -244,17 +250,19 @@ describe('GitHub Integration Tests', () => {
         const error: any = new Error('Not found');
         error.status = 404;
 
-        await expect((retryClient as any).withRetry(async () => {
-          throw error;
-        })).rejects.toThrow('Not found');
+        await expect(
+          (retryClient as any).withRetry(async () => {
+            throw error;
+          }),
+        ).rejects.toThrow('Not found');
       });
     });
 
     describe('Batch Queries', () => {
       it('should batch multiple queries efficiently', async () => {
-        const queries = Array(15).fill(null).map((_, i) =>
-          () => Promise.resolve({ id: i, data: `result-${i}` })
-        );
+        const queries = Array(15)
+          .fill(null)
+          .map((_, i) => () => Promise.resolve({ id: i, data: `result-${i}` }));
 
         const results = await client.batchQuery(queries);
 
@@ -276,9 +284,9 @@ describe('GitHub Integration Tests', () => {
           reset: Math.floor(Date.now() / 1000) + 3600,
         };
 
-        const queries = Array(20).fill(null).map((_, i) =>
-          () => Promise.resolve({ id: i })
-        );
+        const queries = Array(20)
+          .fill(null)
+          .map((_, i) => () => Promise.resolve({ id: i }));
 
         const results = await lowBudgetClient.batchQuery(queries);
 
@@ -331,7 +339,7 @@ describe('GitHub Integration Tests', () => {
         expect(result.files).toHaveLength(4);
 
         // Check all depths are included
-        const depths = result.files.map(f => f.path.split('/').length);
+        const depths = result.files.map((f) => f.path.split('/').length);
         expect(Math.max(...depths)).toBe(4); // a/b/c/deep.ts
         expect(Math.min(...depths)).toBe(1); // root.ts
       });
@@ -353,13 +361,15 @@ describe('GitHub Integration Tests', () => {
       });
 
       it('should respect maxFiles option', async () => {
-        const mockTreeEntries: TreeEntry[] = Array(100).fill(null).map((_, i) => ({
-          path: `file${i}.ts`,
-          mode: '100644',
-          type: 'blob' as const,
-          sha: `sha${i}`,
-          size: 100,
-        }));
+        const mockTreeEntries: TreeEntry[] = Array(100)
+          .fill(null)
+          .map((_, i) => ({
+            path: `file${i}.ts`,
+            mode: '100644',
+            type: 'blob' as const,
+            sha: `sha${i}`,
+            size: 100,
+          }));
 
         vi.spyOn(client, 'getRepositoryTree').mockResolvedValue(mockTreeEntries);
 
@@ -374,13 +384,15 @@ describe('GitHub Integration Tests', () => {
     describe('Large Repository Handling', () => {
       it('should handle large repositories efficiently', async () => {
         // Simulate a repository with 5000 files
-        const mockTreeEntries: TreeEntry[] = Array(5000).fill(null).map((_, i) => ({
-          path: `src/file${i}.ts`,
-          mode: '100644',
-          type: 'blob' as const,
-          sha: `sha${i}`,
-          size: Math.floor(Math.random() * 10000),
-        }));
+        const mockTreeEntries: TreeEntry[] = Array(5000)
+          .fill(null)
+          .map((_, i) => ({
+            path: `src/file${i}.ts`,
+            mode: '100644',
+            type: 'blob' as const,
+            sha: `sha${i}`,
+            size: Math.floor(Math.random() * 10000),
+          }));
 
         vi.spyOn(client, 'getRepositoryTree').mockResolvedValue(mockTreeEntries);
 
@@ -403,7 +415,7 @@ describe('GitHub Integration Tests', () => {
         const result = await treeFetcher.getFilesByExtension('test-owner', 'test-repo', ['ts']);
 
         expect(result).toHaveLength(2);
-        expect(result.every(f => f.path.endsWith('.ts'))).toBe(true);
+        expect(result.every((f) => f.path.endsWith('.ts'))).toBe(true);
       });
 
       it('should get directory contents', async () => {
@@ -418,7 +430,7 @@ describe('GitHub Integration Tests', () => {
         const result = await treeFetcher.getDirectoryContents('test-owner', 'test-repo', 'src');
 
         expect(result).toHaveLength(2);
-        expect(result.every(f => f.path.startsWith('src/'))).toBe(true);
+        expect(result.every((f) => f.path.startsWith('src/'))).toBe(true);
       });
     });
 
@@ -544,7 +556,7 @@ describe('GitHub Integration Tests', () => {
         const tsFiles = detector.filterFilesByLanguage(files, 'TypeScript');
 
         expect(tsFiles).toHaveLength(2);
-        expect(tsFiles.every(f => f.path.endsWith('.ts'))).toBe(true);
+        expect(tsFiles.every((f) => f.path.endsWith('.ts'))).toBe(true);
       });
 
       it('should group files by language', () => {
@@ -637,31 +649,49 @@ describe('GitHub Integration Tests', () => {
 
         const modules = classifier.classifyModules(files, languageStats);
 
-        const components = modules.filter(m => m.type === 'component');
+        const components = modules.filter((m) => m.type === 'component');
         expect(components.length).toBeGreaterThan(0);
       });
 
       it('should classify service files correctly', () => {
         const files: GitHubTreeEntry[] = [
-          { path: 'src/services/auth.service.ts', type: 'blob', sha: 'a', mode: '100644', size: 100 },
-          { path: 'src/services/api.service.ts', type: 'blob', sha: 'b', mode: '100644', size: 100 },
+          {
+            path: 'src/services/auth.service.ts',
+            type: 'blob',
+            sha: 'a',
+            mode: '100644',
+            size: 100,
+          },
+          {
+            path: 'src/services/api.service.ts',
+            type: 'blob',
+            sha: 'b',
+            mode: '100644',
+            size: 100,
+          },
         ];
 
         const modules = classifier.classifyModules(files, languageStats);
 
-        const services = modules.filter(m => m.type === 'service');
+        const services = modules.filter((m) => m.type === 'service');
         expect(services.length).toBeGreaterThan(0);
       });
 
       it('should classify controller/route files correctly', () => {
         const files: GitHubTreeEntry[] = [
-          { path: 'src/controllers/user.controller.ts', type: 'blob', sha: 'a', mode: '100644', size: 100 },
+          {
+            path: 'src/controllers/user.controller.ts',
+            type: 'blob',
+            sha: 'a',
+            mode: '100644',
+            size: 100,
+          },
           { path: 'src/routes/api.ts', type: 'blob', sha: 'b', mode: '100644', size: 100 },
         ];
 
         const modules = classifier.classifyModules(files, languageStats);
 
-        const controllers = modules.filter(m => m.type === 'controller');
+        const controllers = modules.filter((m) => m.type === 'controller');
         expect(controllers.length).toBeGreaterThan(0);
       });
 
@@ -673,19 +703,31 @@ describe('GitHub Integration Tests', () => {
 
         const modules = classifier.classifyModules(files, languageStats);
 
-        const utilities = modules.filter(m => m.type === 'utility');
+        const utilities = modules.filter((m) => m.type === 'utility');
         expect(utilities.length).toBeGreaterThan(0);
       });
 
       it('should classify test files correctly', () => {
         const files: GitHubTreeEntry[] = [
-          { path: 'src/components/Button.test.tsx', type: 'blob', sha: 'a', mode: '100644', size: 100 },
-          { path: 'tests/integration/api.spec.ts', type: 'blob', sha: 'b', mode: '100644', size: 100 },
+          {
+            path: 'src/components/Button.test.tsx',
+            type: 'blob',
+            sha: 'a',
+            mode: '100644',
+            size: 100,
+          },
+          {
+            path: 'tests/integration/api.spec.ts',
+            type: 'blob',
+            sha: 'b',
+            mode: '100644',
+            size: 100,
+          },
         ];
 
         const modules = classifier.classifyModules(files, languageStats);
 
-        const tests = modules.filter(m => m.type === 'test');
+        const tests = modules.filter((m) => m.type === 'test');
         expect(tests.length).toBeGreaterThan(0);
       });
 
@@ -697,7 +739,7 @@ describe('GitHub Integration Tests', () => {
 
         const modules = classifier.classifyModules(files, languageStats);
 
-        const configs = modules.filter(m => m.type === 'config');
+        const configs = modules.filter((m) => m.type === 'config');
         expect(configs.length).toBeGreaterThan(0);
       });
     });
@@ -709,7 +751,7 @@ describe('GitHub Integration Tests', () => {
         ];
 
         const modules = classifier.classifyModules(files, languageStats);
-        const serviceModule = modules.find(m => m.type === 'service');
+        const serviceModule = modules.find((m) => m.type === 'service');
 
         expect(serviceModule).toBeDefined();
         expect(serviceModule!.confidence).toBeGreaterThan(0.9);
@@ -741,7 +783,13 @@ describe('GitHub Integration Tests', () => {
 
       it('should handle deeply nested files', () => {
         const files: GitHubTreeEntry[] = [
-          { path: 'a/b/c/d/e/f/deep.service.ts', type: 'blob', sha: 'a', mode: '100644', size: 100 },
+          {
+            path: 'a/b/c/d/e/f/deep.service.ts',
+            type: 'blob',
+            sha: 'a',
+            mode: '100644',
+            size: 100,
+          },
         ];
 
         const modules = classifier.classifyModules(files, languageStats);
@@ -761,7 +809,13 @@ describe('GitHub Integration Tests', () => {
         const files: GitHubTreeEntry[] = [
           { path: 'src/components/A.tsx', type: 'blob', sha: 'a', mode: '100644', size: 100 },
           { path: 'src/components/B.tsx', type: 'blob', sha: 'b', mode: '100644', size: 100 },
-          { path: 'src/services/auth.service.ts', type: 'blob', sha: 'c', mode: '100644', size: 100 },
+          {
+            path: 'src/services/auth.service.ts',
+            type: 'blob',
+            sha: 'c',
+            mode: '100644',
+            size: 100,
+          },
           { path: 'src/utils/helper.ts', type: 'blob', sha: 'd', mode: '100644', size: 100 },
         ];
 
@@ -772,13 +826,15 @@ describe('GitHub Integration Tests', () => {
       });
 
       it('should calculate module complexity', () => {
-        const files: GitHubTreeEntry[] = Array(20).fill(null).map((_, i) => ({
-          path: `src/components/file${i}.tsx`,
-          type: 'blob' as const,
-          sha: `sha${i}`,
-          mode: '100644',
-          size: 1000,
-        }));
+        const files: GitHubTreeEntry[] = Array(20)
+          .fill(null)
+          .map((_, i) => ({
+            path: `src/components/file${i}.tsx`,
+            type: 'blob' as const,
+            sha: `sha${i}`,
+            mode: '100644',
+            size: 1000,
+          }));
 
         const modules = classifier.classifyModules(files, languageStats);
         const analysis = classifier.analyzeModules(modules);
@@ -789,13 +845,15 @@ describe('GitHub Integration Tests', () => {
 
       it('should identify high complexity modules', () => {
         const files: GitHubTreeEntry[] = [
-          ...Array(30).fill(null).map((_, i) => ({
-            path: `src/complex/file${i}.ts`,
-            type: 'blob' as const,
-            sha: `sha${i}`,
-            mode: '100644',
-            size: 5000,
-          })),
+          ...Array(30)
+            .fill(null)
+            .map((_, i) => ({
+              path: `src/complex/file${i}.ts`,
+              type: 'blob' as const,
+              sha: `sha${i}`,
+              mode: '100644',
+              size: 5000,
+            })),
           { path: 'src/simple/file.ts', type: 'blob', sha: 'simple', mode: '100644', size: 100 },
         ];
 
@@ -991,12 +1049,18 @@ describe('GitHub Integration Tests', () => {
       });
 
       it('should generate recommendations for high coupling', () => {
-        const depFiles: Array<[string, string]> = Array(20).fill(null).map((_, i) =>
-          [`dep${i}.ts`, 'export const x = 1;']
-        );
+        const depFiles: Array<[string, string]> = Array(20)
+          .fill(null)
+          .map((_, i) => [`dep${i}.ts`, 'export const x = 1;']);
 
         const files = new Map([
-          ['hub.ts', Array(20).fill(null).map((_, i) => `import "./dep${i}";`).join('\n')],
+          [
+            'hub.ts',
+            Array(20)
+              .fill(null)
+              .map((_, i) => `import "./dep${i}";`)
+              .join('\n'),
+          ],
           ...depFiles,
         ]);
 

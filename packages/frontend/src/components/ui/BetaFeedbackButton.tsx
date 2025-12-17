@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFeatureFlags } from '../../contexts/FeatureFlags';
+import { csrfFetch } from '../../api/csrf';
 
 interface BetaFeedbackButtonProps {
   variant?: 'floating' | 'inline' | 'menu-item';
@@ -115,10 +116,7 @@ export function BetaFeedbackButton({
     <>
       {renderButton()}
       {isModalOpen && (
-        <BetaFeedbackModal
-          onClose={closeFeedbackModal}
-          onSubmit={onFeedbackSubmit}
-        />
+        <BetaFeedbackModal onClose={closeFeedbackModal} onSubmit={onFeedbackSubmit} />
       )}
     </>
   );
@@ -175,7 +173,7 @@ function BetaFeedbackModal({ onClose, onSubmit }: BetaFeedbackModalProps) {
   };
 
   const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const modalStyles: React.CSSProperties = {
@@ -215,10 +213,15 @@ function BetaFeedbackModal({ onClose, onSubmit }: BetaFeedbackModalProps) {
   return (
     <div style={modalStyles} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={contentStyles}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h2 style={{ margin: 0, fontSize: 20, color: '#10b981' }}>
-            🧪 Beta Feedback
-          </h2>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 20,
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: 20, color: '#10b981' }}>🧪 Beta Feedback</h2>
           <button
             onClick={onClose}
             style={{
@@ -314,7 +317,9 @@ function BetaFeedbackModal({ onClose, onSubmit }: BetaFeedbackModalProps) {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 600 }}>
+                  <label
+                    style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 600 }}
+                  >
                     Expected Behavior
                   </label>
                   <textarea
@@ -326,7 +331,9 @@ function BetaFeedbackModal({ onClose, onSubmit }: BetaFeedbackModalProps) {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 600 }}>
+                  <label
+                    style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 600 }}
+                  >
                     Actual Behavior
                   </label>
                   <textarea
@@ -353,16 +360,18 @@ function BetaFeedbackModal({ onClose, onSubmit }: BetaFeedbackModalProps) {
             />
           </div>
 
-          <div style={{
-            padding: 12,
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            borderRadius: 8,
-            fontSize: 12,
-            color: '#a7f3d0',
-          }}>
-            💡 <strong>Tip:</strong> The more details you provide, the better we can address your feedback.
-            Include screenshots if helpful!
+          <div
+            style={{
+              padding: 12,
+              background: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+              borderRadius: 8,
+              fontSize: 12,
+              color: '#a7f3d0',
+            }}
+          >
+            💡 <strong>Tip:</strong> The more details you provide, the better we can address your
+            feedback. Include screenshots if helpful!
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
@@ -414,12 +423,11 @@ function getBrowserInfo(): string {
 
 async function submitFeedback(feedback: FeedbackData): Promise<void> {
   try {
-    const response = await fetch('/api/feedback', {
+    const response = await csrfFetch('/api/feedback', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
       body: JSON.stringify(feedback),
     });
 

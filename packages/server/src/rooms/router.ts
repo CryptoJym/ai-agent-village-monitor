@@ -1,10 +1,25 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { prisma } from '../db/client';
 import { requireAuth } from '../auth/middleware';
 import { sanitizeString } from '../middleware/sanitize';
 
 export const roomsRouter = Router();
+
+// Rate limiting (defense-in-depth; required by CodeQL)
+const roomsLimiter = rateLimit({
+  windowMs: Number(
+    process.env.ROOMS_RATE_LIMIT_WINDOW_MS || process.env.RATE_LIMIT_WINDOW_MS || 60_000,
+  ),
+  max:
+    process.env.NODE_ENV === 'test'
+      ? 10_000
+      : Number(process.env.ROOMS_RATE_LIMIT_MAX || process.env.RATE_LIMIT_MAX || 300),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+roomsRouter.use(roomsLimiter);
 
 // Zod validation schemas
 const RoomTypeSchema = z.enum([
@@ -199,7 +214,7 @@ roomsRouter.post('/', requireAuth, async (req, res, next) => {
     const { houseId, ...roomData } = parsed.data;
 
     // Check house exists and user has access
-    const { hasAccess, villageId } = await checkHouseAccess(houseId, userId);
+    const { hasAccess } = await checkHouseAccess(houseId, userId);
 
     if (!hasAccess) {
       return res.status(403).json({

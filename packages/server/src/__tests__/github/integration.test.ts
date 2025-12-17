@@ -4,7 +4,6 @@ import { GitHubModuleClassifier } from '../../github/module-classifier';
 import { GitHubDependencyAnalyzer } from '../../github/dependency-analyzer';
 import { GitHubClient } from '../../github/client';
 import { ModuleType } from '../../analysis/module-classifier';
-import { dependencyAnalyzer } from '../../analysis/dependency-analyzer';
 
 // Mock GitHubClient
 vi.mock('../../github/client');
@@ -92,16 +91,11 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       expect(summary.primaryLanguage).toBe('React');
 
       // Step 2: Module Classification
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
       expect(modules.length).toBeGreaterThan(0);
 
-      const components = modules.filter(
-        (m) => m.type === ModuleType.COMPONENT,
-      );
+      const components = modules.filter((m) => m.type === ModuleType.COMPONENT);
       const services = modules.filter((m) => m.type === ModuleType.SERVICE);
       const utilities = modules.filter((m) => m.type === ModuleType.UTILITY);
 
@@ -215,17 +209,10 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       expect(languageStats.languages.Python).toBe(14000);
       expect(languageStats.languages.HTML).toBe(1500);
 
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
-      const controllers = modules.filter(
-        (m) => m.type === ModuleType.CONTROLLER,
-      );
-      const repositories = modules.filter(
-        (m) => m.type === ModuleType.REPOSITORY,
-      );
+      const controllers = modules.filter((m) => m.type === ModuleType.CONTROLLER);
+      const repositories = modules.filter((m) => m.type === ModuleType.REPOSITORY);
 
       expect(controllers.length).toBeGreaterThan(0);
       expect(repositories.length).toBeGreaterThan(0);
@@ -330,10 +317,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       const summary = languageDetector.getLanguagesSummary(languageStats);
       expect(summary.diversityScore).toBeGreaterThan(0.5); // Good diversity
 
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
       const byLanguage = moduleClassifier.groupModulesByLanguage(modules);
       expect(byLanguage.size).toBeGreaterThanOrEqual(3);
@@ -367,10 +351,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       ];
 
       const languageStats = languageDetector.detectLanguages(treeEntries);
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
       const fileContents = new Map<string, string>([
         ['src/a.ts', `import { b } from './b';`],
@@ -385,9 +366,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
 
       expect(dependencyResult.circular.length).toBeGreaterThan(0);
       expect(
-        dependencyResult.recommendations.some((r) =>
-          r.toLowerCase().includes('circular'),
-        ),
+        dependencyResult.recommendations.some((r) => r.toLowerCase().includes('circular')),
       ).toBe(true);
     });
 
@@ -410,15 +389,14 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       });
 
       const languageStats = languageDetector.detectLanguages(treeEntries);
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
       const fileContents = new Map<string, string>();
       // Hub imports all modules
-      const hubImports = Array.from({ length: 11 }, (_, i) =>
-        `import { ${String.fromCharCode(97 + i)} } from './${String.fromCharCode(97 + i)}';`,
+      const hubImports = Array.from(
+        { length: 11 },
+        (_, i) =>
+          `import { ${String.fromCharCode(97 + i)} } from './${String.fromCharCode(97 + i)}';`,
       ).join('\n');
       fileContents.set('src/hub.ts', hubImports);
 
@@ -433,17 +411,11 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
         modules,
       );
 
-      expect(dependencyResult.metrics.highCouplingModules.length).toBeGreaterThan(
-        0,
-      );
-      expect(dependencyResult.metrics.highCouplingModules[0].file).toBe(
-        'src/hub.ts',
-      );
+      expect(dependencyResult.metrics.highCouplingModules.length).toBeGreaterThan(0);
+      expect(dependencyResult.metrics.highCouplingModules[0].file).toBe('src/hub.ts');
       expect(
         dependencyResult.recommendations.some(
-          (r) =>
-            r.toLowerCase().includes('coupling') ||
-            r.toLowerCase().includes('split'),
+          (r) => r.toLowerCase().includes('coupling') || r.toLowerCase().includes('split'),
         ),
       ).toBe(true);
     });
@@ -481,10 +453,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       ];
 
       const languageStats = languageDetector.detectLanguages(treeEntries);
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
       const fileContents = new Map<string, string>([
         ['src/active.ts', `import { connected } from './connected';`],
@@ -498,14 +467,10 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
         modules,
       );
 
-      expect(dependencyResult.metrics.isolatedModules.length).toBeGreaterThan(
-        0,
-      );
+      expect(dependencyResult.metrics.isolatedModules.length).toBeGreaterThan(0);
       expect(
         dependencyResult.recommendations.some(
-          (r) =>
-            r.toLowerCase().includes('isolated') ||
-            r.toLowerCase().includes('dead'),
+          (r) => r.toLowerCase().includes('isolated') || r.toLowerCase().includes('dead'),
         ),
       ).toBe(true);
     });
@@ -560,10 +525,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       expect(oldStats.primary).toBe('JavaScript');
       expect(newStats.primary).toBe('TypeScript');
 
-      const comparison = languageDetector.compareLanguageStats(
-        oldStats,
-        newStats,
-      );
+      const comparison = languageDetector.compareLanguageStats(oldStats, newStats);
 
       expect(comparison.added).toContain('TypeScript');
       expect(comparison.removed).toContain('JavaScript');
@@ -605,10 +567,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       ];
 
       const languageStats = languageDetector.detectLanguages(treeEntries);
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
       const fileContents = new Map<string, string>([
         ['/src/a.ts', `import { b } from './b';`],
@@ -617,10 +576,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
         ['/src/d.ts', `export const d = 1;`],
       ]);
 
-      const dependencyResult = dependencyAnalyzer.analyzeDependenciesFromContent(
-        fileContents,
-        modules,
-      );
+      dependencyAnalyzer.analyzeDependenciesFromContent(fileContents, modules);
 
       const coreGraph = dependencyAnalyzer.buildDependencyGraph(fileContents);
 
@@ -648,10 +604,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       const languageStats = languageDetector.detectLanguages(treeEntries);
       expect(languageStats.languages.TypeScript).toBe(100000);
 
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
       expect(modules.length).toBeGreaterThan(0);
 
       const endTime = Date.now();
@@ -682,10 +635,7 @@ describe.skip('GitHub Integration Pipeline - End-to-End', () => {
       ];
 
       const languageStats = languageDetector.detectLanguages(treeEntries);
-      const modules = moduleClassifier.classifyModules(
-        treeEntries,
-        languageStats,
-      );
+      const modules = moduleClassifier.classifyModules(treeEntries, languageStats);
 
       const fileContents = new Map<string, string>([
         ['/src/a.ts', `import { b } from './b';`], // Use absolute paths to match

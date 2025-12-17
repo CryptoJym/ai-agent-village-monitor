@@ -68,11 +68,27 @@ export class HouseScene extends Phaser.Scene {
   private createInteriorLayout() {
     // Create sample room layout
     const roomConfig = [
-      { id: 'living_room', x: 200, y: 200, width: 300, height: 250, label: 'Living Room', color: 0xa67c52 },
+      {
+        id: 'living_room',
+        x: 200,
+        y: 200,
+        width: 300,
+        height: 250,
+        label: 'Living Room',
+        color: 0xa67c52,
+      },
       { id: 'bedroom', x: 600, y: 200, width: 250, height: 250, label: 'Bedroom', color: 0x9d6b53 },
       { id: 'kitchen', x: 950, y: 200, width: 200, height: 250, label: 'Kitchen', color: 0xb88d67 },
       { id: 'office', x: 200, y: 550, width: 400, height: 200, label: 'Office', color: 0x8c6448 },
-      { id: 'workshop', x: 700, y: 550, width: 450, height: 200, label: 'Workshop', color: 0x7a5644 },
+      {
+        id: 'workshop',
+        x: 700,
+        y: 550,
+        width: 450,
+        height: 200,
+        label: 'Workshop',
+        color: 0x7a5644,
+      },
     ];
 
     roomConfig.forEach(({ id, x, y, width, height, label, color }) => {
@@ -125,12 +141,12 @@ export class HouseScene extends Phaser.Scene {
       padding + buttonHeight / 2,
       buttonWidth,
       buttonHeight,
-      0x4a5568
+      0x4a5568,
     );
     button.setScrollFactor(0);
     button.setInteractive({ useHandCursor: true });
 
-    const buttonText = this.add
+    this.add
       .text(padding + buttonWidth / 2, padding + buttonHeight / 2, 'Exit', {
         fontSize: '16px',
         color: '#ffffff',
@@ -154,11 +170,14 @@ export class HouseScene extends Phaser.Scene {
 
   private setupEventListeners() {
     // Listen for agents in this house
-    eventBus.on('agentInRoom', (data: { agentId: string; roomId: string; x: number; y: number }) => {
-      if (data.roomId.startsWith(this.houseId)) {
-        this.updateAgentPosition(data.agentId, data.x, data.y);
-      }
-    });
+    eventBus.on(
+      'agentInRoom',
+      (data: { agentId: string; roomId: string; x: number; y: number }) => {
+        if (data.roomId.startsWith(this.houseId)) {
+          this.updateAgentPosition(data.agentId, data.x, data.y);
+        }
+      },
+    );
 
     eventBus.on('agentLeftRoom', (data: { agentId: string }) => {
       this.removeAgent(data.agentId);

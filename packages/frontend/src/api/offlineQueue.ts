@@ -1,3 +1,5 @@
+import { csrfFetch } from './csrf';
+
 type QueuedRequest = {
   id: string;
   url: string;
@@ -36,7 +38,7 @@ export async function flush(): Promise<number> {
   const remain: QueuedRequest[] = [];
   for (const item of q) {
     try {
-      const res = await fetch(item.url, { ...item.init, credentials: 'include' });
+      const res = await csrfFetch(item.url, item.init);
       if (res.ok) success += 1;
       else remain.push(item);
     } catch {

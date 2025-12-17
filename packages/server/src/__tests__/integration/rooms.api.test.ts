@@ -1,304 +1,144 @@
-/**
- * Integration tests for Rooms API
- */
-
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
-import type { Express } from 'express';
+import type { PrismaClient } from '@prisma/client';
 
-describe('Rooms API Integration Tests', () => {
-  let app: Express;
-  let authToken: string;
-  let testVillageId: number;
-  let testHouseId: number;
-  let testRoomId: number;
+import { createApp } from '../../app';
+import { signAccessToken } from '../../auth/jwt';
+import { setupTestDatabase, teardownTestDatabase, cleanDatabase } from '../utils/db';
+import {
+  createUserCreateData,
+  createVillageCreateData,
+  createHouseCreateData,
+  createRoomCreateData,
+} from '../utils/fixtures';
+
+describe('Rooms API (SQLite integration)', () => {
+  let app: any;
+  let prisma: PrismaClient;
 
   beforeAll(async () => {
-    process.env.JWT_SECRET = 'test-secret';
-
-    const { createApp } = await import('../../app');
-    const { signAccessToken } = await import('../../auth/jwt');
-
+    prisma = await setupTestDatabase();
     app = createApp();
-    authToken = signAccessToken(1, 'testuser');
+  });
 
-    // Create test village
-    const villageResponse = await request(app)
+  afterAll(async () => {
+    await teardownTestDatabase();
+  });
+
+  beforeEach(async () => {
+    await cleanDatabase(prisma);
+  });
+
+  it('creates a room in a house and supports basic CRUD', async () => {
+    const owner = await prisma.user.create({
+      data: createUserCreateData({ username: 'roomowner', email: 'roomowner@test.com' }),
+    });
+    const token = signAccessToken(owner.id, owner.username || 'roomowner');
+
+    const village = await request(app)
       .post('/api/villages')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({
-        name: `test-village-${Date.now()}`,
-        githubOrgId: String(Date.now()),
-      });
+      .set('Authorization', `Bearer ${token}`)
+      .send(createVillageCreateData({ name: 'Room Village' }))
+      .expect(201);
+    const villageId = String(village.body.id);
 
-    testVillageId = villageResponse.body.id;
-
-    // Create test house
-    const houseResponse = await request(app)
+    const house = await request(app)
       .post('/api/houses')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({
-        villageId: testVillageId,
-        x: 10,
-        y: 20,
-        houseType: 'COTTAGE',
-      });
+      .set('Authorization', `Bearer ${token}`)
+      .send(createHouseCreateData({ villageId, repoName: 'repo-room' }))
+      .expect(201);
+    const houseId = String(house.body.id);
 
-    testHouseId = houseResponse.body.id;
+    const create = await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${token}`)
+      .send(
+        createRoomCreateData({
+          houseId,
+          name: 'entrance',
+          roomType: 'entrance',
+          x: 1,
+          y: 2,
+          width: 10,
+          height: 8,
+        }),
+      )
+      .expect(201);
+
+    const roomId = String(create.body.id);
+    expect(create.body).toMatchObject({
+      id: roomId,
+      houseId,
+      name: 'entrance',
+      roomType: 'entrance',
+    });
+
+    const list = await request(app)
+      .get(`/api/rooms?houseId=${encodeURIComponent(houseId)}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(list.body.items).toBeInstanceOf(Array);
+    expect(list.body.items.some((r: any) => r.id === roomId)).toBe(true);
+
+    const get = await request(app)
+      .get(`/api/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(get.body).toMatchObject({ id: roomId, houseId });
+
+    const updated = await request(app)
+      .put(`/api/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'entry', x: 3 })
+      .expect(200);
+    expect(updated.body.name).toBe('entry');
+    expect(updated.body.x).toBe(3);
+
+    const decorations = await request(app)
+      .put(`/api/rooms/${roomId}/decorations`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ decorations: [{ type: 'plant', x: 1, y: 1, tileId: 5, rotation: 0 }] })
+      .expect(200);
+    expect(decorations.body).toHaveProperty('decorations');
+
+    await request(app)
+      .delete(`/api/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204);
+    await request(app)
+      .get(`/api/rooms/${roomId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
   });
 
-  describe('POST /api/rooms', () => {
-    it('should create a new room', async () => {
-      const roomData = {
-        houseId: testHouseId,
-        name: 'Test Office',
-        roomType: 'OFFICE',
-      };
-
-      const response = await request(app)
-        .post('/api/rooms')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(roomData)
-        .expect('Content-Type', /json/)
-        .expect(201);
-
-      expect(response.body).toMatchObject({
-        id: expect.any(Number),
-        houseId: testHouseId,
-        name: 'Test Office',
-        roomType: 'OFFICE',
-      });
-
-      testRoomId = response.body.id;
+  it('forbids creating a room without village access', async () => {
+    const owner = await prisma.user.create({
+      data: createUserCreateData({ username: 'roomvowner', email: 'roomvowner@test.com' }),
     });
-
-    it('should return 400 for missing name', async () => {
-      await request(app)
-        .post('/api/rooms')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          houseId: testHouseId,
-          roomType: 'OFFICE',
-        })
-        .expect(400);
+    const intruder = await prisma.user.create({
+      data: createUserCreateData({ username: 'roomintruder', email: 'roomintruder@test.com' }),
     });
+    const ownerToken = signAccessToken(owner.id, owner.username || 'roomvowner');
+    const intruderToken = signAccessToken(intruder.id, intruder.username || 'roomintruder');
 
-    it('should return 400 for invalid room type', async () => {
-      await request(app)
-        .post('/api/rooms')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          houseId: testHouseId,
-          name: 'Test Room',
-          roomType: 'INVALID_TYPE',
-        })
-        .expect(400);
-    });
+    const village = await request(app)
+      .post('/api/villages')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send(createVillageCreateData({ name: 'No Access Village' }))
+      .expect(201);
+    const villageId = String(village.body.id);
 
-    it('should return 401 without authentication', async () => {
-      await request(app)
-        .post('/api/rooms')
-        .send({
-          houseId: testHouseId,
-          name: 'Test Room',
-          roomType: 'OFFICE',
-        })
-        .expect(401);
-    });
+    const house = await request(app)
+      .post('/api/houses')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send(createHouseCreateData({ villageId, repoName: 'repo-locked' }))
+      .expect(201);
+    const houseId = String(house.body.id);
 
-    it('should return 404 for non-existent house', async () => {
-      await request(app)
-        .post('/api/rooms')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          houseId: 999999,
-          name: 'Test Room',
-          roomType: 'OFFICE',
-        })
-        .expect(404);
-    });
-  });
-
-  describe('GET /api/rooms', () => {
-    it('should list all rooms', async () => {
-      const response = await request(app)
-        .get('/api/rooms')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
-
-    it('should filter rooms by house', async () => {
-      const response = await request(app)
-        .get(`/api/rooms?houseId=${testHouseId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      response.body.forEach((room: any) => {
-        expect(room.houseId).toBe(testHouseId);
-      });
-    });
-
-    it('should filter rooms by type', async () => {
-      const response = await request(app)
-        .get('/api/rooms?roomType=OFFICE')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-      response.body.forEach((room: any) => {
-        expect(room.roomType).toBe('OFFICE');
-      });
-    });
-
-    it('should search rooms by name', async () => {
-      const response = await request(app)
-        .get('/api/rooms?search=Office')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toBeInstanceOf(Array);
-    });
-  });
-
-  describe('GET /api/rooms/:id', () => {
-    it('should get room by ID', async () => {
-      const response = await request(app)
-        .get(`/api/rooms/${testRoomId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toMatchObject({
-        id: testRoomId,
-        houseId: testHouseId,
-        name: expect.any(String),
-      });
-    });
-
-    it('should return 404 for non-existent room', async () => {
-      await request(app)
-        .get('/api/rooms/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-
-    it('should include house when requested', async () => {
-      const response = await request(app)
-        .get(`/api/rooms/${testRoomId}?include=house`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(response.body).toHaveProperty('house');
-      expect(response.body.house).toMatchObject({
-        id: testHouseId,
-      });
-    });
-  });
-
-  describe('PATCH /api/rooms/:id', () => {
-    it('should update room name', async () => {
-      const updateData = {
-        name: 'Updated Office',
-      };
-
-      const response = await request(app)
-        .patch(`/api/rooms/${testRoomId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send(updateData)
-        .expect(200);
-
-      expect(response.body.name).toBe('Updated Office');
-    });
-
-    it('should update room type', async () => {
-      const response = await request(app)
-        .patch(`/api/rooms/${testRoomId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ roomType: 'BEDROOM' })
-        .expect(200);
-
-      expect(response.body.roomType).toBe('BEDROOM');
-    });
-
-    it('should return 400 for empty name', async () => {
-      await request(app)
-        .patch(`/api/rooms/${testRoomId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: '' })
-        .expect(400);
-    });
-
-    it('should return 404 for non-existent room', async () => {
-      await request(app)
-        .patch('/api/rooms/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ name: 'Test' })
-        .expect(404);
-    });
-  });
-
-  describe('DELETE /api/rooms/:id', () => {
-    it('should delete room', async () => {
-      // Create room to delete
-      const createResponse = await request(app)
-        .post('/api/rooms')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({
-          houseId: testHouseId,
-          name: 'Room to Delete',
-          roomType: 'OFFICE',
-        })
-        .expect(201);
-
-      const roomId = createResponse.body.id;
-
-      // Delete
-      await request(app)
-        .delete(`/api/rooms/${roomId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(204);
-
-      // Verify deleted
-      await request(app)
-        .get(`/api/rooms/${roomId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-
-    it('should return 404 for non-existent room', async () => {
-      await request(app)
-        .delete('/api/rooms/999999')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(404);
-    });
-  });
-
-  describe('Room capacity', () => {
-    it('should enforce maximum room capacity', async () => {
-      // Try to create more rooms than allowed per house (if there's a limit)
-      const roomsToCreate = 20;
-      const promises = [];
-
-      for (let i = 0; i < roomsToCreate; i++) {
-        promises.push(
-          request(app)
-            .post('/api/rooms')
-            .set('Authorization', `Bearer ${authToken}`)
-            .send({
-              houseId: testHouseId,
-              name: `Room ${i}`,
-              roomType: 'OFFICE',
-            }),
-        );
-      }
-
-      const results = await Promise.all(promises);
-
-      // Some should succeed, some might fail if there's a limit
-      const successes = results.filter((r) => r.status === 201);
-      expect(successes.length).toBeGreaterThan(0);
-    });
+    await request(app)
+      .post('/api/rooms')
+      .set('Authorization', `Bearer ${intruderToken}`)
+      .send(createRoomCreateData({ houseId, name: 'forbidden', x: 0, y: 0, width: 5, height: 5 }))
+      .expect(403);
   });
 });

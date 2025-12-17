@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  GitHubDependencyAnalyzer,
-  DependencyGraph,
-} from '../../github/dependency-analyzer';
+import { GitHubDependencyAnalyzer, DependencyGraph } from '../../github/dependency-analyzer';
 import { GitHubClient } from '../../github/client';
 import { ModuleInfo } from '../../github/module-classifier';
 import { ModuleType } from '../../analysis/module-classifier';
@@ -232,11 +229,7 @@ describe('GitHubDependencyAnalyzer', () => {
       const result = analyzer.analyzeDependenciesFromContent(files, modules);
 
       expect(result.recommendations.length).toBeGreaterThan(0);
-      expect(
-        result.recommendations.some((r) =>
-          r.toLowerCase().includes('circular'),
-        ),
-      ).toBe(true);
+      expect(result.recommendations.some((r) => r.toLowerCase().includes('circular'))).toBe(true);
     });
   });
 
@@ -306,7 +299,7 @@ describe('GitHubDependencyAnalyzer', () => {
         reason: 'Utility',
       }));
 
-      const result = analyzer.analyzeDependenciesFromContent(files, modules);
+      analyzer.analyzeDependenciesFromContent(files, modules);
 
       const coreGraph = dependencyAnalyzer.buildDependencyGraph(files);
 
@@ -335,7 +328,7 @@ describe('GitHubDependencyAnalyzer', () => {
         reason: 'Service',
       }));
 
-      const result = analyzer.analyzeDependenciesFromContent(files, modules);
+      analyzer.analyzeDependenciesFromContent(files, modules);
 
       const coreGraph = dependencyAnalyzer.buildDependencyGraph(files);
 
@@ -366,7 +359,7 @@ describe('GitHubDependencyAnalyzer', () => {
         reason: 'Service',
       }));
 
-      const result = analyzer.analyzeDependenciesFromContent(files, modules);
+      analyzer.analyzeDependenciesFromContent(files, modules);
 
       const coreGraph = dependencyAnalyzer.buildDependencyGraph(files);
 
@@ -398,7 +391,7 @@ describe('GitHubDependencyAnalyzer', () => {
         reason: 'Utility',
       }));
 
-      const result = analyzer.analyzeDependenciesFromContent(files, modules);
+      analyzer.analyzeDependenciesFromContent(files, modules);
 
       const coreGraph = dependencyAnalyzer.buildDependencyGraph(files);
 
@@ -453,14 +446,11 @@ describe('GitHubDependencyAnalyzer', () => {
         },
       ];
 
-      const result = analyzer.analyzeDependenciesFromContent(files, modules);
+      analyzer.analyzeDependenciesFromContent(files, modules);
 
       const coreGraph = dependencyAnalyzer.buildDependencyGraph(files);
 
-      const suggestions = analyzer.suggestPackageExtractions(
-        coreGraph,
-        modules,
-      );
+      const suggestions = analyzer.suggestPackageExtractions(coreGraph, modules);
 
       expect(suggestions.length).toBeGreaterThan(0);
       expect(suggestions[0].modulePath).toBe('/src/utils/helper.ts');
@@ -496,14 +486,11 @@ describe('GitHubDependencyAnalyzer', () => {
         },
       ];
 
-      const result = analyzer.analyzeDependenciesFromContent(files, modules);
+      analyzer.analyzeDependenciesFromContent(files, modules);
 
       const coreGraph = dependencyAnalyzer.buildDependencyGraph(files);
 
-      const suggestions = analyzer.suggestPackageExtractions(
-        coreGraph,
-        modules,
-      );
+      const suggestions = analyzer.suggestPackageExtractions(coreGraph, modules);
 
       // Should not suggest extraction for utility with only 1 dependent
       expect(suggestions).toHaveLength(0);

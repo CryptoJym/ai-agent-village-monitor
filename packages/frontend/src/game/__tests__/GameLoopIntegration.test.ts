@@ -10,7 +10,6 @@
  * - Multi-frame scenarios
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import Phaser from 'phaser';
 
 /**
  * Simulated Game Systems for Integration Testing
@@ -469,7 +468,7 @@ describe('Game Loop Integration - Playable Environment', () => {
     });
 
     it('should follow agent smoothly', () => {
-      const agent = gameLoop.spawnAgent('followed', 500, 400);
+      gameLoop.spawnAgent('followed', 500, 400);
       gameLoop.followAgent('followed');
 
       expect(gameLoop.getState().camera.isFollowing).toBe(true);
@@ -709,7 +708,7 @@ describe('Game Loop Integration - Playable Environment', () => {
       for (let i = 0; i < 50; i++) {
         const x = Math.random() * 1600;
         const y = Math.random() * 1200;
-        const agent = gameLoop.spawnAgent(`agent-${i}`, x, y);
+        gameLoop.spawnAgent(`agent-${i}`, x, y);
         gameLoop.setAgentTarget(`agent-${i}`, Math.random() * 1600, Math.random() * 1200);
       }
 

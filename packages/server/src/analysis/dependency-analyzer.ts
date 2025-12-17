@@ -222,7 +222,7 @@ export class DependencyAnalyzer {
       }
 
       // Resolve relative path
-      let resolvedPath = path.resolve(fromDir, imp);
+      const resolvedPath = path.resolve(fromDir, imp);
 
       // Try to find the actual file
       const extensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java'];
@@ -280,8 +280,7 @@ export class DependencyAnalyzer {
           const cycle = path.slice(cycleStart);
           cycle.push(neighbor);
 
-          const severity =
-            cycle.length <= 2 ? 'low' : cycle.length <= 4 ? 'medium' : 'high';
+          const severity = cycle.length <= 2 ? 'low' : cycle.length <= 4 ? 'medium' : 'high';
 
           cycles.push({ cycle, severity });
         }
@@ -312,9 +311,8 @@ export class DependencyAnalyzer {
       }
     }
 
-    const averageCoupling = couplings.length > 0
-      ? couplings.reduce((a, b) => a + b, 0) / couplings.length
-      : 0;
+    const averageCoupling =
+      couplings.length > 0 ? couplings.reduce((a, b) => a + b, 0) / couplings.length : 0;
 
     const maxCoupling = couplings.length > 0 ? Math.max(...couplings) : 0;
 

@@ -1,8 +1,4 @@
-import {
-  moduleClassifier,
-  ModuleType,
-  ModuleClassification,
-} from '../analysis/module-classifier';
+import { moduleClassifier, ModuleType } from '../analysis/module-classifier';
 import { FileMetadata } from './types';
 import { GitHubTreeEntry, DetectedLanguageStats } from './language-detector';
 
@@ -41,10 +37,7 @@ export class GitHubModuleClassifier {
    * Classify a list of GitHub tree entries as modules
    * Groups files by directory and analyzes module type, language, and complexity
    */
-  classifyModules(
-    tree: GitHubTreeEntry[],
-    languageStats: DetectedLanguageStats,
-  ): ModuleInfo[] {
+  classifyModules(tree: GitHubTreeEntry[], languageStats: DetectedLanguageStats): ModuleInfo[] {
     const modules: ModuleInfo[] = [];
     const filesByDirectory = this.groupFilesByDirectory(tree);
 
@@ -121,10 +114,7 @@ export class GitHubModuleClassifier {
   /**
    * Classify a single file as a module
    */
-  private classifyFile(
-    file: GitHubTreeEntry,
-    languageStats: DetectedLanguageStats,
-  ): ModuleInfo {
+  private classifyFile(file: GitHubTreeEntry, languageStats: DetectedLanguageStats): ModuleInfo {
     const classification = moduleClassifier.classify(file.path);
     const language = this.detectFileLanguage(file.path, languageStats);
 
@@ -143,9 +133,7 @@ export class GitHubModuleClassifier {
   /**
    * Group files by their containing directory
    */
-  private groupFilesByDirectory(
-    tree: GitHubTreeEntry[],
-  ): Map<string, GitHubTreeEntry[]> {
+  private groupFilesByDirectory(tree: GitHubTreeEntry[]): Map<string, GitHubTreeEntry[]> {
     const grouped = new Map<string, GitHubTreeEntry[]>();
 
     for (const entry of tree) {
@@ -168,14 +156,10 @@ export class GitHubModuleClassifier {
    */
   private findRepresentativeFile(files: GitHubTreeEntry[]): GitHubTreeEntry {
     // Prefer index files, then the first non-test file
-    const indexFile = files.find((f) =>
-      /index\.(ts|js|tsx|jsx|py|go|rs|java)$/.test(f.path),
-    );
+    const indexFile = files.find((f) => /index\.(ts|js|tsx|jsx|py|go|rs|java)$/.test(f.path));
     if (indexFile) return indexFile;
 
-    const nonTestFile = files.find(
-      (f) => !/\.(test|spec)\.(ts|js|tsx|jsx|py)$/.test(f.path),
-    );
+    const nonTestFile = files.find((f) => !/\.(test|spec)\.(ts|js|tsx|jsx|py)$/.test(f.path));
     if (nonTestFile) return nonTestFile;
 
     return files[0];
@@ -214,10 +198,7 @@ export class GitHubModuleClassifier {
   /**
    * Detect language of a single file
    */
-  private detectFileLanguage(
-    filePath: string,
-    languageStats: DetectedLanguageStats,
-  ): string {
+  private detectFileLanguage(filePath: string, languageStats: DetectedLanguageStats): string {
     const ext = filePath.split('.').pop()?.toLowerCase() || '';
 
     const extToLang: Record<string, string> = {
@@ -313,8 +294,7 @@ export class GitHubModuleClassifier {
       totalComplexity += module.complexity;
     }
 
-    const averageComplexity =
-      modules.length > 0 ? totalComplexity / modules.length : 0;
+    const averageComplexity = modules.length > 0 ? totalComplexity / modules.length : 0;
 
     const highComplexityModules = modules
       .filter((m) => m.complexity > averageComplexity * 1.5)
@@ -346,10 +326,7 @@ export class GitHubModuleClassifier {
   /**
    * Find modules with high complexity
    */
-  findHighComplexityModules(
-    modules: ModuleInfo[],
-    threshold: number = 5,
-  ): ModuleInfo[] {
+  findHighComplexityModules(modules: ModuleInfo[], threshold: number = 5): ModuleInfo[] {
     return modules
       .filter((m) => m.complexity >= threshold)
       .sort((a, b) => b.complexity - a.complexity);
@@ -369,8 +346,7 @@ export class GitHubModuleClassifier {
     }
 
     for (const type in distribution) {
-      distribution[type as ModuleType] =
-        (distribution[type as ModuleType] / total) * 100;
+      distribution[type as ModuleType] = (distribution[type as ModuleType] / total) * 100;
     }
 
     return distribution;

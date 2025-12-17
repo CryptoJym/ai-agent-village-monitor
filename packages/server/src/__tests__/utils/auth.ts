@@ -5,11 +5,14 @@
 
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
+import { signAccessToken } from '../../auth/jwt';
 
 /**
- * JWT secret for testing
+ * Resolve the JWT secret used by the server auth middleware.
  */
-export const TEST_JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
+function getTestJwtSecret(): string {
+  return process.env.JWT_SECRET || 'testsecret';
+}
 
 /**
  * Test user payload
@@ -25,42 +28,21 @@ export interface TestUserPayload {
  * Generate a test JWT token
  */
 export function generateTestToken(payload: Partial<TestUserPayload> = {}): string {
-  const defaultPayload: TestUserPayload = {
-    id: payload.id || 'test-user-id',
-    githubId: payload.githubId || BigInt(123456789),
-    username: payload.username || 'testuser',
-    email: payload.email || 'test@example.com',
-  };
-
-  return jwt.sign(
-    {
-      ...defaultPayload,
-      githubId: defaultPayload.githubId.toString(), // Convert BigInt to string for JWT
-    },
-    TEST_JWT_SECRET,
-    { expiresIn: '1h' }
-  );
+  const userId = payload.id || 'test-user-id';
+  const username = payload.username || 'testuser';
+  return signAccessToken(userId, username);
 }
 
 /**
  * Generate an expired test token
  */
 export function generateExpiredTestToken(payload: Partial<TestUserPayload> = {}): string {
-  const defaultPayload: TestUserPayload = {
-    id: payload.id || 'test-user-id',
-    githubId: payload.githubId || BigInt(123456789),
-    username: payload.username || 'testuser',
-    email: payload.email || 'test@example.com',
-  };
-
-  return jwt.sign(
-    {
-      ...defaultPayload,
-      githubId: defaultPayload.githubId.toString(),
-    },
-    TEST_JWT_SECRET,
-    { expiresIn: '-1h' } // Expired 1 hour ago
-  );
+  const userId = payload.id || 'test-user-id';
+  const username = payload.username || 'testuser';
+  return jwt.sign({ sub: String(userId), username, type: 'access' }, getTestJwtSecret(), {
+    algorithm: 'HS256',
+    expiresIn: '-1h',
+  });
 }
 
 /**
@@ -79,7 +61,7 @@ export function getAuthHeaders(token?: string): Record<string, string> {
 export function getCookieHeaders(token?: string): Record<string, string> {
   const authToken = token || generateTestToken();
   return {
-    Cookie: `token=${authToken}`,
+    Cookie: `access_token=${authToken}`,
   };
 }
 
@@ -90,10 +72,9 @@ export function getCookieHeaders(token?: string): Record<string, string> {
 export function mockAuthMiddleware(user: Partial<TestUserPayload> = {}) {
   return (req: Request, res: Response, next: NextFunction) => {
     req.user = {
-      id: user.id || 'test-user-id',
-      githubId: user.githubId || BigInt(123456789),
+      sub: String(user.id || 'test-user-id'),
       username: user.username || 'testuser',
-      email: user.email || 'test@example.com',
+      type: 'access',
     } as any;
     next();
   };
@@ -153,7 +134,7 @@ export function decodeTestToken(token: string): any {
  * Verify a test token
  */
 export function verifyTestToken(token: string): any {
-  return jwt.verify(token, TEST_JWT_SECRET);
+  return jwt.verify(token, getTestJwtSecret());
 }
 
 /**
@@ -167,7 +148,7 @@ export function createAuthenticatedRequest(
     body?: any;
     query?: any;
     params?: any;
-  } = {}
+  } = {},
 ): Partial<Request> {
   return {
     method: options.method || 'GET',
@@ -177,10 +158,9 @@ export function createAuthenticatedRequest(
     params: options.params || {},
     headers: getAuthHeaders(),
     user: {
-      id: user.id || 'test-user-id',
-      githubId: user.githubId || BigInt(123456789),
+      sub: String(user.id || 'test-user-id'),
       username: user.username || 'testuser',
-      email: user.email || 'test@example.com',
+      type: 'access',
     } as any,
   } as Partial<Request>;
 }

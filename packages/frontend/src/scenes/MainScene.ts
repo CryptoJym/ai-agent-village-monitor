@@ -22,6 +22,7 @@ import type { HouseSnapshot } from '../npc/types';
 import { WorldGenerator } from '../world/WorldGenerator';
 import { WorldService } from '../services/WorldService';
 import type { WorldNode } from '../world/types';
+import { csrfFetch } from '../api/csrf';
 
 type HouseMeta = {
   name: string;
@@ -643,7 +644,7 @@ export class MainScene extends Phaser.Scene {
 
       // Generate the map
       if (this.worldGenerator) {
-        const { map, layer, background } = this.worldGenerator.createWorld(node);
+        const { map, layer: _layer, background } = this.worldGenerator.createWorld(node);
         this.currentMap = map;
         this.currentBackground = background;
 
@@ -684,7 +685,12 @@ export class MainScene extends Phaser.Scene {
             exits.add(top);
 
             // Bottom
-            const bottom = this.add.zone(width / 2, height - exitThickness / 2, width, exitThickness);
+            const bottom = this.add.zone(
+              width / 2,
+              height - exitThickness / 2,
+              width,
+              exitThickness,
+            );
             this.physics.add.existing(bottom);
             exits.add(bottom);
 
@@ -694,7 +700,12 @@ export class MainScene extends Phaser.Scene {
             exits.add(left);
 
             // Right
-            const right = this.add.zone(width - exitThickness / 2, height / 2, exitThickness, height);
+            const right = this.add.zone(
+              width - exitThickness / 2,
+              height / 2,
+              exitThickness,
+              height,
+            );
             this.physics.add.existing(right);
             exits.add(right);
 
@@ -706,9 +717,9 @@ export class MainScene extends Phaser.Scene {
 
             // Track for cleanup (hacky, add to portals group for now or separate)
             // Ideally we'd have a separate group, but let's just add to currentPortals for auto-cleanup
-            // actually currentPortals is cleared, so we can add them there if we want, 
+            // actually currentPortals is cleared, so we can add them there if we want,
             // but they are zones, so it fits.
-            // However, the overlap callback is different. 
+            // However, the overlap callback is different.
             // Let's just add them to currentPortals but give them a special data tag?
             // Or just manage them.
             // For simplicity, let's just add them to currentPortals and handle the callback there?
@@ -720,14 +731,13 @@ export class MainScene extends Phaser.Scene {
             // Actually, let's just make a new group for exits?
             // Or just add to currentPortals and check data.
 
-            exits.getChildren().forEach(child => {
+            exits.getChildren().forEach((child) => {
               this.currentPortals?.add(child);
               (child as any).setData('isExit', true);
             });
           }
         }
       }
-
     } catch (e) {
       console.error('[MainScene] Failed to load world:', e);
       // Fallback to old grid if failed?
@@ -752,7 +762,7 @@ export class MainScene extends Phaser.Scene {
       onComplete: () => {
         this.isTransitioning = false;
         this.loadWorld(childId);
-      }
+      },
     });
   }
 
@@ -769,7 +779,7 @@ export class MainScene extends Phaser.Scene {
       onComplete: () => {
         this.isTransitioning = false;
         this.loadWorld(parentId);
-      }
+      },
     });
   }
 
@@ -1203,7 +1213,7 @@ export class MainScene extends Phaser.Scene {
       return;
     }
     try {
-      const res = await fetch(`/api/bugs/${encodeURIComponent(id)}/assign`, {
+      const res = await csrfFetch(`/api/bugs/${encodeURIComponent(id)}/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agentId: this.agent?.id ?? 'agent-placeholder' }),
@@ -1342,10 +1352,9 @@ export class MainScene extends Phaser.Scene {
           },
         ];
       }
-      const res = await fetch(`/api/villages/${encodeURIComponent(villageId)}/layout`, {
+      const res = await csrfFetch(`/api/villages/${encodeURIComponent(villageId)}/layout`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(payload),
       });
       if (res.ok) this.layoutVersion += 1;
@@ -2100,7 +2109,7 @@ export class MainScene extends Phaser.Scene {
     const index = this.terminalAgents.size;
     const baseX = this.scale.width * 0.5;
     const baseY = this.scale.height * 0.4;
-    const angle = (index * Math.PI * 0.4) + Math.PI * 0.1;
+    const angle = index * Math.PI * 0.4 + Math.PI * 0.1;
     const radius = 120 + index * 40;
     const x = baseX + Math.cos(angle) * radius;
     const y = baseY + Math.sin(angle) * radius;
@@ -2223,21 +2232,25 @@ export class MainScene extends Phaser.Scene {
 
     // Agent type icon (letter in center)
     const iconLetter = agentType.charAt(0).toUpperCase();
-    const icon = this.add.text(0, 0, iconLetter, {
-      color: '#ffffff',
-      fontFamily: 'monospace',
-      fontSize: '12px',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    const icon = this.add
+      .text(0, 0, iconLetter, {
+        color: '#ffffff',
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
 
     // Name label below
-    const label = this.add.text(0, 24, name, {
-      color: '#e2e8f0',
-      fontFamily: 'monospace',
-      fontSize: '10px',
-      backgroundColor: 'rgba(15, 23, 42, 0.8)',
-      padding: { x: 4, y: 2 },
-    }).setOrigin(0.5, 0);
+    const label = this.add
+      .text(0, 24, name, {
+        color: '#e2e8f0',
+        fontFamily: 'monospace',
+        fontSize: '10px',
+        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+        padding: { x: 4, y: 2 },
+      })
+      .setOrigin(0.5, 0);
 
     // Status indicator (small dot that changes color)
     const statusDot = this.add.circle(12, -12, 4, 0x22c55e, 1);

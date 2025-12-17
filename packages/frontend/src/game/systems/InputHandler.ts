@@ -152,7 +152,7 @@ export class InputHandler extends Phaser.Events.EventEmitter {
     const input = this.scene.input;
 
     // Pinch to zoom
-    input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+    input.on('pointermove', (_pointer: Phaser.Input.Pointer) => {
       if (input.pointer1.isDown && input.pointer2.isDown) {
         this.handlePinchZoom();
       }

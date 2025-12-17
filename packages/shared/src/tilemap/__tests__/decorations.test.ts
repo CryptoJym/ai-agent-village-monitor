@@ -15,14 +15,7 @@ import {
   addDecorationCollision,
 } from '../decorations';
 import { createSeededRNG } from '../generator';
-import {
-  Room,
-  RoomType,
-  Decoration,
-  DecorationCatalog,
-  DecorationItem,
-  Rectangle,
-} from '../types';
+import { Room, RoomType, Decoration, DecorationCatalog, DecorationItem, Rectangle } from '../types';
 
 // ===== Test Fixtures =====
 
@@ -35,7 +28,7 @@ function createTestRoom(
   y: number,
   width: number,
   height: number,
-  type: RoomType = 'workspace'
+  type: RoomType = 'workspace',
 ): Room {
   return {
     id,
@@ -80,7 +73,7 @@ function createTestDecorationItem(
   id: string,
   placement: 'against-wall' | 'centered' | 'corner' | 'scattered',
   size: { width: number; height: number },
-  probability: number = 1.0
+  probability: number = 1.0,
 ): DecorationItem {
   return {
     id,
@@ -214,9 +207,7 @@ describe('DEFAULT_DECORATION_CATALOGS', () => {
   });
 
   it('against-wall decorations should have appropriate properties', () => {
-    const allItems = Object.values(DEFAULT_DECORATION_CATALOGS).flatMap(
-      (catalog) => catalog.items
-    );
+    const allItems = Object.values(DEFAULT_DECORATION_CATALOGS).flatMap((catalog) => catalog.items);
 
     const wallItems = allItems.filter((item) => item.placement === 'against-wall');
 
@@ -226,8 +217,16 @@ describe('DEFAULT_DECORATION_CATALOGS', () => {
     // Valid IDs include desk, monitor, keyboard, bookshelf, safe, filing-cabinet,
     // security-console, equipment-rack, reception-desk, waiting-chair
     const validIds = [
-      'desk', 'monitor', 'keyboard', 'bookshelf', 'safe', 'filing-cabinet',
-      'security-console', 'equipment-rack', 'reception-desk', 'waiting-chair'
+      'desk',
+      'monitor',
+      'keyboard',
+      'bookshelf',
+      'safe',
+      'filing-cabinet',
+      'security-console',
+      'equipment-rack',
+      'reception-desk',
+      'waiting-chair',
     ];
 
     wallItems.forEach((item) => {
@@ -237,9 +236,7 @@ describe('DEFAULT_DECORATION_CATALOGS', () => {
   });
 
   it('centered decorations should be larger items', () => {
-    const allItems = Object.values(DEFAULT_DECORATION_CATALOGS).flatMap(
-      (catalog) => catalog.items
-    );
+    const allItems = Object.values(DEFAULT_DECORATION_CATALOGS).flatMap((catalog) => catalog.items);
 
     const centeredItems = allItems.filter((item) => item.placement === 'centered');
 
@@ -265,7 +262,7 @@ describe('canPlaceDecoration', () => {
       { width: 1, height: 1 },
       occupiedGrid,
       wallGrid,
-      roomBounds
+      roomBounds,
     );
 
     expect(result).toBe(true);
@@ -282,7 +279,7 @@ describe('canPlaceDecoration', () => {
       { width: 1, height: 1 },
       occupiedGrid,
       wallGrid,
-      roomBounds
+      roomBounds,
     );
 
     expect(result).toBe(false);
@@ -299,7 +296,7 @@ describe('canPlaceDecoration', () => {
       { width: 1, height: 1 },
       occupiedGrid,
       wallGrid,
-      roomBounds
+      roomBounds,
     );
 
     expect(result).toBe(false);
@@ -317,8 +314,8 @@ describe('canPlaceDecoration', () => {
         { width: 1, height: 1 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(false);
 
     // Too far up
@@ -328,8 +325,8 @@ describe('canPlaceDecoration', () => {
         { width: 1, height: 1 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(false);
 
     // Too far right
@@ -339,8 +336,8 @@ describe('canPlaceDecoration', () => {
         { width: 1, height: 1 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(false);
 
     // Too far down
@@ -350,8 +347,8 @@ describe('canPlaceDecoration', () => {
         { width: 1, height: 1 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(false);
   });
 
@@ -367,8 +364,8 @@ describe('canPlaceDecoration', () => {
         { width: 2, height: 2 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(true);
 
     // Mark one tile as occupied
@@ -381,8 +378,8 @@ describe('canPlaceDecoration', () => {
         { width: 2, height: 2 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(false);
   });
 
@@ -399,7 +396,7 @@ describe('canPlaceDecoration', () => {
       { width: 3, height: 2 },
       occupiedGrid,
       wallGrid,
-      roomBounds
+      roomBounds,
     );
 
     expect(result).toBe(false);
@@ -417,8 +414,8 @@ describe('canPlaceDecoration', () => {
         { width: 1, height: 1 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(false);
 
     // Should allow placement with proper padding
@@ -428,8 +425,8 @@ describe('canPlaceDecoration', () => {
         { width: 1, height: 1 },
         occupiedGrid,
         wallGrid,
-        roomBounds
-      )
+        roomBounds,
+      ),
     ).toBe(true);
   });
 });
@@ -441,23 +438,14 @@ describe('placeRoomDecorations - placement rules', () => {
     const room = createTestRoom('test', 5, 5, 10, 10, 'workspace');
     const catalog: DecorationCatalog = {
       roomType: 'workspace',
-      items: [
-        createTestDecorationItem('desk', 'against-wall', { width: 2, height: 1 }, 1.0),
-      ],
+      items: [createTestDecorationItem('desk', 'against-wall', { width: 2, height: 1 }, 1.0)],
     };
 
     const occupiedGrid = createEmptyGrid(20, 20);
     const wallGrid = createWalledGrid(20, 20);
     const rng = createSeededRNG('test-wall');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     expect(decorations.length).toBeGreaterThan(0);
 
@@ -467,11 +455,7 @@ describe('placeRoomDecorations - placement rules', () => {
     const { x: rx, y: ry, width: rw, height: rh } = room.bounds;
 
     // Should be within 1 tile of a wall
-    const nearWall =
-      x === rx + 1 ||
-      x === rx + rw - 3 ||
-      y === ry + 1 ||
-      y === ry + rh - 2;
+    const nearWall = x === rx + 1 || x === rx + rw - 3 || y === ry + 1 || y === ry + rh - 2;
 
     expect(nearWall).toBe(true);
   });
@@ -480,23 +464,14 @@ describe('placeRoomDecorations - placement rules', () => {
     const room = createTestRoom('test', 5, 5, 12, 12, 'library');
     const catalog: DecorationCatalog = {
       roomType: 'library',
-      items: [
-        createTestDecorationItem('table', 'centered', { width: 2, height: 2 }, 1.0),
-      ],
+      items: [createTestDecorationItem('table', 'centered', { width: 2, height: 2 }, 1.0)],
     };
 
     const occupiedGrid = createEmptyGrid(20, 20);
     const wallGrid = createWalledGrid(20, 20);
     const rng = createSeededRNG('test-center');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     expect(decorations.length).toBe(1);
 
@@ -513,23 +488,14 @@ describe('placeRoomDecorations - placement rules', () => {
     const room = createTestRoom('test', 5, 5, 10, 10, 'vault');
     const catalog: DecorationCatalog = {
       roomType: 'vault',
-      items: [
-        createTestDecorationItem('safe', 'corner', { width: 2, height: 2 }, 1.0),
-      ],
+      items: [createTestDecorationItem('safe', 'corner', { width: 2, height: 2 }, 1.0)],
     };
 
     const occupiedGrid = createEmptyGrid(20, 20);
     const wallGrid = createWalledGrid(20, 20);
     const rng = createSeededRNG('test-corner');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     expect(decorations.length).toBeGreaterThan(0);
 
@@ -562,14 +528,7 @@ describe('placeRoomDecorations - placement rules', () => {
     const wallGrid = createWalledGrid(25, 25);
     const rng = createSeededRNG('test-scatter');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     expect(decorations.length).toBeGreaterThan(0);
 
@@ -600,14 +559,7 @@ describe('placeRoomDecorations - no overlap', () => {
     const wallGrid = createWalledGrid(30, 30);
     const rng = createSeededRNG('test-overlap');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     // Check for overlaps
     const occupiedTiles = new Set<string>();
@@ -633,23 +585,14 @@ describe('placeRoomDecorations - no overlap', () => {
     const room = createTestRoom('test', 5, 5, 10, 10, 'workspace');
     const catalog: DecorationCatalog = {
       roomType: 'workspace',
-      items: [
-        createTestDecorationItem('desk', 'centered', { width: 3, height: 2 }, 1.0),
-      ],
+      items: [createTestDecorationItem('desk', 'centered', { width: 3, height: 2 }, 1.0)],
     };
 
     const occupiedGrid = createEmptyGrid(20, 20);
     const wallGrid = createWalledGrid(20, 20);
     const rng = createSeededRNG('test-mark');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     expect(decorations.length).toBe(1);
 
@@ -675,14 +618,7 @@ describe('placeRoomDecorations - room bounds', () => {
     const wallGrid = createWalledGrid(40, 40);
     const rng = createSeededRNG('test-bounds');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     const { x, y, width, height } = room.bounds;
 
@@ -728,14 +664,7 @@ describe('placeRoomDecorations - room bounds', () => {
     const wallGrid = createWalledGrid(20, 20);
     const rng = createSeededRNG('test-size');
 
-    const decorations = placeRoomDecorations(
-      smallRoom,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(smallRoom, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     // Should not place the decoration because room is too small
     expect(decorations.length).toBe(0);
@@ -773,14 +702,7 @@ describe('placeRoomDecorations - room bounds', () => {
     const wallGrid = createWalledGrid(20, 20);
     const rng = createSeededRNG('test-minsize');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     // Should only place the small item
     expect(decorations.length).toBe(1);
@@ -800,23 +722,14 @@ describe('placeRoomDecorations - probability', () => {
     for (let i = 0; i < 20; i++) {
       const catalog: DecorationCatalog = {
         roomType: 'workspace',
-        items: [
-          createTestDecorationItem('item', 'centered', { width: 1, height: 1 }, 0.5),
-        ],
+        items: [createTestDecorationItem('item', 'centered', { width: 1, height: 1 }, 0.5)],
       };
 
       const occupiedGrid = createEmptyGrid(30, 30);
       const wallGrid = createWalledGrid(30, 30);
       const rng = createSeededRNG(`test-prob-${i}`);
 
-      const decorations = placeRoomDecorations(
-        room,
-        catalog,
-        occupiedGrid,
-        wallGrid,
-        rng,
-        1.0
-      );
+      const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
       results.push(decorations.length);
     }
@@ -851,7 +764,7 @@ describe('placeRoomDecorations - probability', () => {
       occupiedGridFull,
       wallGridFull,
       rng,
-      1.0
+      1.0,
     );
 
     // Test with low density
@@ -864,7 +777,7 @@ describe('placeRoomDecorations - probability', () => {
       occupiedGridLow,
       wallGridLow,
       rng2,
-      0.3
+      0.3,
     );
 
     // Low density should typically result in fewer decorations
@@ -876,23 +789,14 @@ describe('placeRoomDecorations - probability', () => {
     const room = createTestRoom('test', 5, 5, 10, 10, 'workspace');
     const catalog: DecorationCatalog = {
       roomType: 'workspace',
-      items: [
-        createTestDecorationItem('item', 'centered', { width: 1, height: 1 }, 0.0),
-      ],
+      items: [createTestDecorationItem('item', 'centered', { width: 1, height: 1 }, 0.0)],
     };
 
     const occupiedGrid = createEmptyGrid(20, 20);
     const wallGrid = createWalledGrid(20, 20);
     const rng = createSeededRNG('test-zero-prob');
 
-    const decorations = placeRoomDecorations(
-      room,
-      catalog,
-      occupiedGrid,
-      wallGrid,
-      rng,
-      1.0
-    );
+    const decorations = placeRoomDecorations(room, catalog, occupiedGrid, wallGrid, rng, 1.0);
 
     expect(decorations.length).toBe(0);
   });
@@ -919,32 +823,20 @@ describe('generateDecorations', () => {
 
     // Check that decorations are distributed across rooms
     const room1Decorations = decorations.filter(
-      (d) =>
-        d.position.x >= 5 &&
-        d.position.x < 15 &&
-        d.position.y >= 5 &&
-        d.position.y < 15
+      (d) => d.position.x >= 5 && d.position.x < 15 && d.position.y >= 5 && d.position.y < 15,
     );
 
     const room2Decorations = decorations.filter(
-      (d) =>
-        d.position.x >= 20 &&
-        d.position.x < 30 &&
-        d.position.y >= 5 &&
-        d.position.y < 15
+      (d) => d.position.x >= 20 && d.position.x < 30 && d.position.y >= 5 && d.position.y < 15,
     );
 
     const room3Decorations = decorations.filter(
-      (d) =>
-        d.position.x >= 5 &&
-        d.position.x < 15 &&
-        d.position.y >= 20 &&
-        d.position.y < 30
+      (d) => d.position.x >= 5 && d.position.x < 15 && d.position.y >= 20 && d.position.y < 30,
     );
 
     // At least one room should have decorations
     expect(
-      room1Decorations.length + room2Decorations.length + room3Decorations.length
+      room1Decorations.length + room2Decorations.length + room3Decorations.length,
     ).toBeGreaterThan(0);
   });
 
@@ -989,9 +881,7 @@ describe('generateDecorations', () => {
     const decorations = generateDecorations([room], wallGrid, 30, 30, rng);
 
     // No decoration should be placed on the wall
-    const onWall = decorations.some(
-      (d) => d.position.x === 12 && d.position.y === 12
-    );
+    const onWall = decorations.some((d) => d.position.x === 12 && d.position.y === 12);
 
     expect(onWall).toBe(false);
   });
@@ -1196,9 +1086,7 @@ describe('Decoration System Integration', () => {
       'entrance',
     ];
 
-    const rooms = roomTypes.map((type, i) =>
-      createTestRoom(`room-${i}`, i * 15, 5, 12, 12, type)
-    );
+    const rooms = roomTypes.map((type, i) => createTestRoom(`room-${i}`, i * 15, 5, 12, 12, type));
 
     const wallGrid = createWalledGrid(100, 30);
     const rng = createSeededRNG('integration-test');
@@ -1229,7 +1117,7 @@ describe('Decoration System Integration', () => {
 
     const decorations = generateDecorations([room], wallGrid, 35, 35, rng);
 
-    const layer = generateDecorationLayer(decorations, 35, 35);
+    const _layer = generateDecorationLayer(decorations, 35, 35);
     const collision = new Array(35 * 35).fill(false);
     addDecorationCollision(decorations, collision, 35);
 

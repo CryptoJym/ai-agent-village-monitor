@@ -16,13 +16,7 @@ import {
   findLayer,
 } from '../generator';
 import { createDefaultTileMapping } from '../autoTile';
-import {
-  Room,
-  Corridor,
-  Direction,
-  TilemapOptions,
-  LAYER_NAMES,
-} from '../types';
+import { Room, Corridor, TilemapOptions, LAYER_NAMES } from '../types';
 
 // Test fixtures
 function createTestRoom(id: string, x: number, y: number, w: number, h: number): Room {
@@ -36,7 +30,7 @@ function createTestRoom(id: string, x: number, y: number, w: number, h: number):
 
 function createTestCorridor(
   start: { x: number; y: number },
-  end: { x: number; y: number }
+  end: { x: number; y: number },
 ): Corridor {
   return {
     start,
@@ -58,14 +52,9 @@ function createTestOptions(): TilemapOptions {
 
 describe('generateTilemap', () => {
   it('should generate a complete tilemap', () => {
-    const rooms = [
-      createTestRoom('room1', 5, 5, 10, 10),
-      createTestRoom('room2', 20, 5, 10, 10),
-    ];
+    const rooms = [createTestRoom('room1', 5, 5, 10, 10), createTestRoom('room2', 20, 5, 10, 10)];
 
-    const corridors = [
-      createTestCorridor({ x: 15, y: 9 }, { x: 20, y: 9 }),
-    ];
+    const corridors = [createTestCorridor({ x: 15, y: 9 }, { x: 20, y: 9 })];
 
     const rng = createSeededRNG('test-seed');
     const options = createTestOptions();
@@ -132,9 +121,7 @@ describe('generateTilemap', () => {
     const result = generateTilemap(rooms, corridors, rng, options);
 
     expect(result.tilemap.collision).toBeDefined();
-    expect(result.tilemap.collision.length).toBe(
-      result.tilemap.width * result.tilemap.height
-    );
+    expect(result.tilemap.collision.length).toBe(result.tilemap.width * result.tilemap.height);
   });
 
   it('should include map properties', () => {
@@ -179,19 +166,14 @@ describe('generateTilemap', () => {
 
     const result = generateTilemap(rooms, corridors, rng, options);
 
-    const decorationLayer = result.tilemap.layers.find(
-      (l) => l.name === LAYER_NAMES.DECORATIONS
-    );
+    const decorationLayer = result.tilemap.layers.find((l) => l.name === LAYER_NAMES.DECORATIONS);
     expect(decorationLayer).toBeUndefined();
   });
 });
 
 describe('calculateMapDimensions', () => {
   it('should calculate dimensions from rooms', () => {
-    const rooms = [
-      createTestRoom('room1', 5, 5, 10, 10),
-      createTestRoom('room2', 20, 10, 15, 12),
-    ];
+    const rooms = [createTestRoom('room1', 5, 5, 10, 10), createTestRoom('room2', 20, 10, 15, 12)];
 
     const corridors: Corridor[] = [];
     const dims = calculateMapDimensions(rooms, corridors);

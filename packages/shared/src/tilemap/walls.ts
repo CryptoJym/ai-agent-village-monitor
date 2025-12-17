@@ -5,18 +5,8 @@
  * Supports inner walls, outer walls, and shadow effects for depth.
  */
 
-import {
-  Room,
-  Corridor,
-  TileMapping,
-  Direction,
-} from './types';
-import {
-  calculateWallMask,
-  getWallTileId,
-  autoTileWalls,
-  isOuterWall,
-} from './autoTile';
+import { Room, Corridor, TileMapping, Direction } from './types';
+import { autoTileWalls, isOuterWall } from './autoTile';
 
 /**
  * Wall placement options
@@ -45,12 +35,10 @@ export function generateWallGrid(
   corridors: Corridor[],
   width: number,
   height: number,
-  floorData?: number[]
+  floorData?: number[],
 ): boolean[][] {
   // Initialize grid
-  const grid: boolean[][] = Array.from({ length: height }, () =>
-    Array(width).fill(false)
-  );
+  const grid: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
 
   // Mark room perimeters as walls
   for (const room of rooms) {
@@ -113,27 +101,14 @@ function markCorridorWalls(corridor: Corridor, grid: boolean[][]): void {
   if (corridor.segments && corridor.segments.length > 0) {
     // Handle L-shaped corridors
     for (const segment of corridor.segments) {
-      markCorridorSegmentWalls(
-        segment.start,
-        segment.end,
-        corridor.width,
-        segment.direction,
-        grid
-      );
+      markCorridorSegmentWalls(segment.start, segment.end, corridor.width, segment.direction, grid);
     }
   } else {
     // Simple straight corridor
     const isHorizontal =
-      Math.abs(corridor.end.x - corridor.start.x) >
-      Math.abs(corridor.end.y - corridor.start.y);
+      Math.abs(corridor.end.x - corridor.start.x) > Math.abs(corridor.end.y - corridor.start.y);
     const direction = isHorizontal ? Direction.East : Direction.South;
-    markCorridorSegmentWalls(
-      corridor.start,
-      corridor.end,
-      corridor.width,
-      direction,
-      grid
-    );
+    markCorridorSegmentWalls(corridor.start, corridor.end, corridor.width, direction, grid);
   }
 }
 
@@ -145,7 +120,7 @@ function markCorridorSegmentWalls(
   end: { x: number; y: number },
   width: number,
   direction: Direction,
-  grid: boolean[][]
+  grid: boolean[][],
 ): void {
   const minX = Math.min(start.x, end.x);
   const maxX = Math.max(start.x, end.x);
@@ -197,7 +172,7 @@ function markCorridorSegmentWalls(
 export function generateWallLayer(
   wallGrid: boolean[][],
   mapping: TileMapping,
-  options: WallOptions = {}
+  _options: WallOptions = {},
 ): number[] {
   return autoTileWalls(wallGrid, mapping);
 }
@@ -214,7 +189,7 @@ export function generateWallLayer(
 export function generateShadowLayer(
   wallGrid: boolean[][],
   mapping: TileMapping,
-  offset: number = 1
+  offset: number = 1,
 ): number[] {
   const height = wallGrid.length;
   const width = wallGrid[0]?.length ?? 0;
@@ -253,7 +228,7 @@ export function generateShadowLayer(
 export function cutDoorOpenings(
   wallGrid: boolean[][],
   doorPositions: Array<{ x: number; y: number; direction?: Direction }>,
-  doorWidth: number = 1
+  doorWidth: number = 1,
 ): void {
   const height = wallGrid.length;
   const width = wallGrid[0]?.length ?? 0;
@@ -304,7 +279,7 @@ export function addInnerWalls(
   room: Room,
   wallGrid: boolean[][],
   pattern: 'grid' | 'vertical' | 'horizontal',
-  spacing: number = 4
+  spacing: number = 4,
 ): void {
   const { x, y, width, height } = room.bounds;
   const gridHeight = wallGrid.length;
@@ -343,9 +318,7 @@ export function addInnerWalls(
 export function detectOuterWalls(wallGrid: boolean[][]): boolean[][] {
   const height = wallGrid.length;
   const width = wallGrid[0]?.length ?? 0;
-  const outerWalls: boolean[][] = Array.from({ length: height }, () =>
-    Array(width).fill(false)
-  );
+  const outerWalls: boolean[][] = Array.from({ length: height }, () => Array(width).fill(false));
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {

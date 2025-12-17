@@ -13,9 +13,6 @@ import {
   createInstantTransition,
 } from '../systems/SceneTransition';
 
-// Helper to wait
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 describe('SceneTransitionManager', () => {
   let game: Phaser.Game;
   let scene1: Phaser.Scene;
@@ -215,7 +212,7 @@ describe('SceneTransitionManager', () => {
           customData: expect.objectContaining({
             customData: 'test',
           }),
-        })
+        }),
       );
     });
 
@@ -233,14 +230,14 @@ describe('SceneTransitionManager', () => {
       const transition1 = transitionManager.transitionTo(
         scene1,
         'Scene2',
-        createFadeTransition(100)
+        createFadeTransition(100),
       );
 
       // Try to start another transition immediately
       const transition2 = transitionManager.transitionTo(
         scene1,
         'Scene2',
-        createFadeTransition(100)
+        createFadeTransition(100),
       );
 
       await transition1;
@@ -267,7 +264,7 @@ describe('SceneTransitionManager', () => {
         'Scene2',
         expect.objectContaining({
           spawnPosition: { x: 100, y: 200 },
-        })
+        }),
       );
     });
   });
@@ -294,7 +291,7 @@ describe('SceneTransitionManager', () => {
           customData: expect.objectContaining({
             restoreState: true,
           }),
-        })
+        }),
       );
     });
 
@@ -374,7 +371,7 @@ describe('SceneTransitionManager', () => {
       const transitionPromise = transitionManager.transitionTo(
         scene1,
         'Scene2',
-        createFadeTransition(100)
+        createFadeTransition(100),
       );
 
       // Note: Due to async nature, this may not always be true at this exact moment
@@ -444,7 +441,7 @@ describe('SceneTransitionManager', () => {
       });
 
       await expect(
-        transitionManager.transitionTo(scene1, 'Scene2', createInstantTransition())
+        transitionManager.transitionTo(scene1, 'Scene2', createInstantTransition()),
       ).rejects.toThrow('Scene start failed');
 
       // Should reset transition flag even on error
