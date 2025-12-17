@@ -4,6 +4,8 @@ import type { PrismaClient } from '@prisma/client';
 // a generated client or a live DATABASE_URL. E2E tests explicitly mock this
 // module with vi.mock in their own files.
 const inVitest = !!process.env.VITEST || !!process.env.VITEST_WORKER_ID;
+const useRealPrismaInVitest =
+  process.env.USE_REAL_PRISMA === '1' || process.env.USE_REAL_PRISMA === 'true';
 
 function makeStub(): any {
   return {
@@ -45,7 +47,7 @@ function makeStub(): any {
 }
 
 let prismaInstance: PrismaClient | any;
-if (inVitest) {
+if (inVitest && !useRealPrismaInVitest) {
   prismaInstance = makeStub();
 } else {
   // Prevent multiple instances in dev with hot-reload

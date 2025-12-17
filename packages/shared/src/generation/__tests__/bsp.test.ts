@@ -3,7 +3,7 @@
  * Verifies determinism, constraints, connectivity, performance, and edge cases
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { SeededRNG } from '../rng';
 import {
   generateBSPTree,
@@ -294,7 +294,7 @@ describe('BSP Tree Generation', () => {
       // Check total area equals original area
       const totalArea = leaves.reduce(
         (sum, leaf) => sum + leaf.bounds.width * leaf.bounds.height,
-        0
+        0,
       );
 
       expect(totalArea).toBe(width * height);

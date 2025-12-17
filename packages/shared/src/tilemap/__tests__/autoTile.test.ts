@@ -385,7 +385,7 @@ describe('detectCornerType', () => {
   });
 
   it('should detect outer corners', () => {
-    const grid = [
+    const _grid = [
       [true, true, true],
       [true, true, true],
       [true, true, true],

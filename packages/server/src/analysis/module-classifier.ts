@@ -39,7 +39,6 @@ export class ModuleClassifier {
   classify(filePath: string): ModuleClassification {
     const basename = path.basename(filePath);
     const ext = path.extname(filePath).toLowerCase();
-    const dirname = path.dirname(filePath);
     const normalizedPath = filePath.toLowerCase();
 
     // Check each rule in order of priority

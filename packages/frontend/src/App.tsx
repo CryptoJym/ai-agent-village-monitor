@@ -8,7 +8,7 @@ import { ToastProvider } from './ui/Toast';
 import { OfflineBanner } from './ui/OfflineBanner';
 import { GlobalErrorHooks } from './ui/GlobalErrorHooks';
 import { ConnectionOverlay } from './ui/ConnectionOverlay';
-import { ErrorBoundary, InlineErrorBoundary } from './ui/ErrorBoundary';
+import { ErrorBoundary } from './ui/ErrorBoundary';
 import { GameCanvas, GameProvider } from './game';
 import { PreloaderScene } from './scenes/PreloaderScene';
 import { WorldMapScene } from './scenes/WorldMapScene';

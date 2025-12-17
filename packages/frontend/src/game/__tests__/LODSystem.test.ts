@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Phaser from 'phaser';
-import { LODSystem, LODLevel, LODConfig } from '../rendering/LODSystem';
+import { LODSystem } from '../rendering/LODSystem';
 
 describe('LODSystem - Level of Detail Tests', () => {
   let scene: Phaser.Scene;
@@ -347,7 +347,7 @@ describe('LODSystem - Level of Detail Tests', () => {
 
       const callbacks = lodSystem.createComplexObjectCallbacks(
         mockContainer as any,
-        [decorativeChild1, decorativeChild2] as any[]
+        [decorativeChild1, decorativeChild2] as any[],
       );
 
       // HIGH detail - show everything
@@ -510,10 +510,10 @@ describe('LODSystem - Level of Detail Tests', () => {
     it('should optimize buildings based on distance', () => {
       // Simulate a village with multiple buildings
       const buildings = [
-        { id: 'tavern', x: 420, y: 320 },       // Close - HIGH detail
-        { id: 'blacksmith', x: 650, y: 350 },   // Medium - MEDIUM detail
-        { id: 'church', x: 950, y: 400 },       // Far - LOW detail
-        { id: 'watchtower', x: 1400, y: 900 },  // Very far - MINIMAL detail
+        { id: 'tavern', x: 420, y: 320 }, // Close - HIGH detail
+        { id: 'blacksmith', x: 650, y: 350 }, // Medium - MEDIUM detail
+        { id: 'church', x: 950, y: 400 }, // Far - LOW detail
+        { id: 'watchtower', x: 1400, y: 900 }, // Very far - MINIMAL detail
       ];
 
       const detailCallbacks: Record<string, Record<string, vi.Mock>> = {};

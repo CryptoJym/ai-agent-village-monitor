@@ -433,18 +433,8 @@ agentsRouter.post('/agents/:id/transition', requireAuth, async (req, res, next) 
       default: {
         // Allow custom state transitions if the event matches a valid state
         const eventLower = event.toLowerCase();
-        const validStates = [
-          'idle',
-          'working',
-          'thinking',
-          'frustrated',
-          'celebrating',
-          'resting',
-          'socializing',
-          'traveling',
-          'observing',
-        ];
-        if (validStates.includes(eventLower)) {
+        const validStates = AgentStateSchema.options;
+        if (validStates.includes(eventLower as any)) {
           newState = eventLower as any;
         }
         break;
@@ -590,7 +580,6 @@ const AgentEventSchema = z.object({
 
 agentsRouter.post('/agents/:id/event', requireAuth, async (req, res, next) => {
   try {
-    const id = String(req.params.id);
     const parsed = AgentEventSchema.safeParse(req.body ?? {});
 
     if (!parsed.success) {
@@ -609,7 +598,7 @@ agentsRouter.post('/agents/:id/event', requireAuth, async (req, res, next) => {
     };
 
     // Re-use the transition handler
-     
+
     return (agentsRouter.stack as any[])
       .find((layer) => layer.route?.path === '/agents/:id/transition' && layer.route?.methods?.post)
       ?.handle(req, res, next);

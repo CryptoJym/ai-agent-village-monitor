@@ -44,7 +44,7 @@ describe('Houses Integration Tests', () => {
         id: testUserId,
         githubId: user.githubId || BigInt(123456),
         username: user.username || 'testuser',
-      })
+      }),
     );
 
     // Create test village
@@ -183,14 +183,20 @@ describe('Houses Integration Tests', () => {
     });
 
     it('should get house with details', async () => {
-      const response = await request(app).get(`/api/houses/${houseId}`).set(authHeaders).expect(200);
+      const response = await request(app)
+        .get(`/api/houses/${houseId}`)
+        .set(authHeaders)
+        .expect(200);
 
       expect(response.body.id).toBe(houseId);
       expect(response.body.name).toBe('Test House');
     });
 
     it('should include village information', async () => {
-      const response = await request(app).get(`/api/houses/${houseId}`).set(authHeaders).expect(200);
+      const response = await request(app)
+        .get(`/api/houses/${houseId}`)
+        .set(authHeaders)
+        .expect(200);
 
       expect(response.body.villageId).toBe(villageId);
     });
@@ -343,7 +349,7 @@ describe('Houses Integration Tests', () => {
     });
 
     it('should count rooms in house', async () => {
-      const response = await request(app).get(`/api/houses/${houseId}`).set(authHeaders).expect(200);
+      await request(app).get(`/api/houses/${houseId}`).set(authHeaders).expect(200);
 
       // House should include room count in response
       const roomCount = await prisma.room.count({ where: { houseId } });
@@ -417,7 +423,7 @@ describe('Houses Integration Tests', () => {
           id: otherUserId,
           githubId: otherUser.githubId || BigInt(789012),
           username: 'otheruser',
-        })
+        }),
       );
 
       const house = await prisma.house.create({

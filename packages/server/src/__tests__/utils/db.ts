@@ -126,8 +126,8 @@ export async function cleanDatabase(prismaClient: PrismaClient = prisma) {
   for (const tablename of tablenames) {
     try {
       await prismaClient.$executeRawUnsafe(`DELETE FROM "${tablename}"`);
-    } catch (error) {
-      // Table might not exist or already empty, ignore silently
+    } catch {
+      /* ignore */
     }
   }
 

@@ -5,17 +5,13 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  SeededRNG,
-  generateBSPTree,
-  placeRoomsInBSP,
-  generateCorridors,
   validateConnectivity,
   resetRoomIdCounter,
   resetCorridorIdCounter,
   generateBuilding,
   calculateBuildingSize,
 } from '../index';
-import type { ModuleInfo, DEFAULT_BSP_OPTIONS } from '../types';
+import type { ModuleInfo } from '../types';
 
 describe('Building Generation Integration', () => {
   let sampleModules: ModuleInfo[];

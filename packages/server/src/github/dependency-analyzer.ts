@@ -1,12 +1,10 @@
 import {
   dependencyAnalyzer,
   DependencyGraph as CoreDependencyGraph,
-  DependencyEdge,
   CircularDependency,
   ModuleMetrics as CoreModuleMetrics,
 } from '../analysis/dependency-analyzer';
 import { GitHubClient } from './client';
-import { FileMetadata } from './types';
 import { ModuleInfo } from './module-classifier';
 
 export interface DependencyGraph {
@@ -56,12 +54,7 @@ export class GitHubDependencyAnalyzer {
   ): Promise<DependencyAnalysisResult> {
     // Fetch file contents for relevant source files
     const filesToAnalyze = this.getAnalyzableFiles(modules);
-    const fileContents = await this.fetchFileContents(
-      owner,
-      repo,
-      filesToAnalyze,
-      ref,
-    );
+    const fileContents = await this.fetchFileContents(owner, repo, filesToAnalyze, ref);
 
     // Build dependency graph
     const coreGraph = dependencyAnalyzer.buildDependencyGraph(fileContents);
@@ -76,11 +69,7 @@ export class GitHubDependencyAnalyzer {
     const graph = this.convertGraph(coreGraph, metrics);
 
     // Generate recommendations
-    const recommendations = this.generateRecommendations(
-      graph,
-      circular,
-      metrics,
-    );
+    const recommendations = this.generateRecommendations(graph, circular, metrics);
 
     return {
       graph,
@@ -95,17 +84,13 @@ export class GitHubDependencyAnalyzer {
    */
   analyzeDependenciesFromContent(
     files: Map<string, string>,
-    modules: ModuleInfo[],
+    _modules: ModuleInfo[],
   ): DependencyAnalysisResult {
     const coreGraph = dependencyAnalyzer.buildDependencyGraph(files);
     const circular = dependencyAnalyzer.detectCircularDependencies(coreGraph);
     const metrics = dependencyAnalyzer.calculateMetrics(coreGraph);
     const graph = this.convertGraph(coreGraph, metrics);
-    const recommendations = this.generateRecommendations(
-      graph,
-      circular,
-      metrics,
-    );
+    const recommendations = this.generateRecommendations(graph, circular, metrics);
 
     return {
       graph,
@@ -119,16 +104,7 @@ export class GitHubDependencyAnalyzer {
    * Filter modules to only those that can be analyzed for dependencies
    */
   private getAnalyzableFiles(modules: ModuleInfo[]): string[] {
-    const analyzableExtensions = [
-      '.ts',
-      '.tsx',
-      '.js',
-      '.jsx',
-      '.py',
-      '.go',
-      '.rs',
-      '.java',
-    ];
+    const analyzableExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.rs', '.java'];
 
     return modules
       .filter((module) => {
@@ -156,12 +132,7 @@ export class GitHubDependencyAnalyzer {
 
       const promises = batch.map(async (path) => {
         try {
-          const content = await this.client.getFileContent(
-            owner,
-            repo,
-            path,
-            ref,
-          );
+          const content = await this.client.getFileContent(owner, repo, path, ref);
           return { path, content };
         } catch (error) {
           console.warn(`Failed to fetch ${path}:`, error);
@@ -259,9 +230,7 @@ export class GitHubDependencyAnalyzer {
     }
 
     if (recommendations.length === 0) {
-      recommendations.push(
-        'Dependency structure looks healthy with no major issues detected.',
-      );
+      recommendations.push('Dependency structure looks healthy with no major issues detected.');
     }
 
     return recommendations;
@@ -312,10 +281,7 @@ export class GitHubDependencyAnalyzer {
     transitiveDependents: Set<string>;
     impactScore: number;
   } {
-    const directDependents = dependencyAnalyzer.findDependents(
-      coreGraph,
-      modulePath,
-    );
+    const directDependents = dependencyAnalyzer.findDependents(coreGraph, modulePath);
 
     // Find all transitive dependents (modules that depend on this module, directly or indirectly)
     const transitiveDependents = new Set<string>();
@@ -381,7 +347,7 @@ export class GitHubDependencyAnalyzer {
   ): Array<{ module: string; importance: number }> {
     const importance: Array<{ module: string; importance: number }> = [];
 
-    for (const [path, node] of coreGraph.nodes.entries()) {
+    for (const [path] of coreGraph.nodes.entries()) {
       // Importance is based on number of direct + transitive dependents
       const impact = this.analyzeImpact(coreGraph, path);
       importance.push({
@@ -417,16 +383,9 @@ export class GitHubDependencyAnalyzer {
       if (!node) continue;
 
       // Look for utility/helper modules with many dependents
-      if (
-        (module.type === 'utility' || module.type === 'service') &&
-        node.importedBy.length >= 5
-      ) {
+      if ((module.type === 'utility' || module.type === 'service') && node.importedBy.length >= 5) {
         const reusePotential =
-          node.importedBy.length >= 10
-            ? 'high'
-            : node.importedBy.length >= 7
-              ? 'medium'
-              : 'low';
+          node.importedBy.length >= 10 ? 'high' : node.importedBy.length >= 7 ? 'medium' : 'low';
 
         suggestions.push({
           modulePath: module.path,
@@ -469,8 +428,6 @@ export class GitHubDependencyAnalyzer {
   }
 }
 
-export function createGitHubDependencyAnalyzer(
-  client: GitHubClient,
-): GitHubDependencyAnalyzer {
+export function createGitHubDependencyAnalyzer(client: GitHubClient): GitHubDependencyAnalyzer {
   return new GitHubDependencyAnalyzer(client);
 }

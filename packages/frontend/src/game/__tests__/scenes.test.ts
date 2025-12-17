@@ -35,7 +35,7 @@ vi.mock('../../assets/atlases', () => ({
 }));
 
 // Helper to wait
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('Scene Transitions', () => {
   let game: Phaser.Game;
@@ -349,8 +349,8 @@ describe('Scene Transitions', () => {
       // Try to start non-existent scene
       try {
         game.scene.start('NonExistentScene');
-      } catch (error) {
-        // Error expected
+      } catch {
+        /* expected */
       }
 
       await wait(100);
@@ -372,7 +372,7 @@ describe('Scene Transitions', () => {
       await wait(100);
       // Scene should still complete loading
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[PreloadScene] Error loading')
+        expect.stringContaining('[PreloadScene] Error loading'),
       );
       consoleErrorSpy.mockRestore();
     });

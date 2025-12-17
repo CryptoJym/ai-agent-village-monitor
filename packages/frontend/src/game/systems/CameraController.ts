@@ -61,7 +61,7 @@ export class CameraController {
       this.config.worldBounds.x,
       this.config.worldBounds.y,
       this.config.worldBounds.width,
-      this.config.worldBounds.height
+      this.config.worldBounds.height,
     );
 
     // Setup input listeners
@@ -84,22 +84,25 @@ export class CameraController {
       }
     });
 
-    input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+    input.on('pointerup', (_pointer: Phaser.Input.Pointer) => {
       if (this.isDragging) {
         this.stopDrag();
       }
     });
 
     // Mouse wheel zoom
-    input.on('wheel', (pointer: Phaser.Input.Pointer, gameObjects: any[], deltaX: number, deltaY: number) => {
-      const zoomDelta = deltaY > 0 ? -0.1 : 0.1;
-      const newZoom = Phaser.Math.Clamp(
-        this.camera.zoom + zoomDelta,
-        this.config.minZoom,
-        this.config.maxZoom
-      );
-      this.setZoom(newZoom, 200);
-    });
+    input.on(
+      'wheel',
+      (_pointer: Phaser.Input.Pointer, _gameObjects: any[], _deltaX: number, deltaY: number) => {
+        const zoomDelta = deltaY > 0 ? -0.1 : 0.1;
+        const newZoom = Phaser.Math.Clamp(
+          this.camera.zoom + zoomDelta,
+          this.config.minZoom,
+          this.config.maxZoom,
+        );
+        this.setZoom(newZoom, 200);
+      },
+    );
   }
 
   private startDrag(pointer: Phaser.Input.Pointer) {
@@ -138,13 +141,13 @@ export class CameraController {
     this.camera.scrollX = Phaser.Math.Clamp(
       this.camera.scrollX,
       bounds.x,
-      Math.max(bounds.x, bounds.width - camWidth)
+      Math.max(bounds.x, bounds.width - camWidth),
     );
 
     this.camera.scrollY = Phaser.Math.Clamp(
       this.camera.scrollY,
       bounds.y,
-      Math.max(bounds.y, bounds.height - camHeight)
+      Math.max(bounds.y, bounds.height - camHeight),
     );
   }
 

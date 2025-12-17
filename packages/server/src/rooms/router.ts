@@ -199,7 +199,7 @@ roomsRouter.post('/', requireAuth, async (req, res, next) => {
     const { houseId, ...roomData } = parsed.data;
 
     // Check house exists and user has access
-    const { hasAccess, villageId } = await checkHouseAccess(houseId, userId);
+    const { hasAccess } = await checkHouseAccess(houseId, userId);
 
     if (!hasAccess) {
       return res.status(403).json({

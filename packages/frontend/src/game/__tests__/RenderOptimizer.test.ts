@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Phaser from 'phaser';
-import { RenderOptimizer, PoolConfig, PerformanceMetrics, QualitySettings } from '../rendering/RenderOptimizer';
+import { RenderOptimizer } from '../rendering/RenderOptimizer';
 
 describe('RenderOptimizer - Performance Tests', () => {
   let scene: Phaser.Scene;
@@ -42,8 +42,8 @@ describe('RenderOptimizer - Performance Tests', () => {
       children: { length: 100 },
       textures: {
         list: {
-          '__DEFAULT': {},
-          '__MISSING': {},
+          __DEFAULT: {},
+          __MISSING: {},
           'agent-sprite': {},
           'tile-atlas': {},
         },
@@ -526,8 +526,12 @@ describe('RenderOptimizer - Performance Tests', () => {
         y: 0,
         active: false,
         visible: true, // Start visible so they can be culled
-        setActive: vi.fn(function (this: any, a: boolean) { this.active = a; }),
-        setVisible: vi.fn(function (this: any, v: boolean) { this.visible = v; }),
+        setActive: vi.fn(function (this: any, a: boolean) {
+          this.active = a;
+        }),
+        setVisible: vi.fn(function (this: any, v: boolean) {
+          this.visible = v;
+        }),
         destroy: vi.fn(),
       }));
 
@@ -571,7 +575,9 @@ describe('RenderOptimizer - Performance Tests', () => {
         x: 0,
         y: 0,
         active: false,
-        setActive: vi.fn(function (a: boolean) { this.active = a; }),
+        setActive: vi.fn(function (a: boolean) {
+          this.active = a;
+        }),
         setVisible: vi.fn(),
         destroy: vi.fn(),
       }));
@@ -632,7 +638,12 @@ describe('RenderOptimizer - Performance Tests', () => {
       renderOptimizer.createPool('test', {
         initialSize: 10,
         maxSize: 20,
-        createFunc: () => ({ active: false, setActive: vi.fn(), setVisible: vi.fn(), destroy: vi.fn() }),
+        createFunc: () => ({
+          active: false,
+          setActive: vi.fn(),
+          setVisible: vi.fn(),
+          destroy: vi.fn(),
+        }),
       });
 
       // Register atlas

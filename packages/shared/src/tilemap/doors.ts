@@ -5,13 +5,7 @@
  * Doors create openings in walls and provide interaction zones.
  */
 
-import {
-  Room,
-  Corridor,
-  Direction,
-  TileMapping,
-  Rectangle,
-} from './types';
+import { Room, Corridor, Direction, TileMapping, Rectangle } from './types';
 
 /**
  * A placed door in the map
@@ -40,7 +34,7 @@ export interface Door {
  */
 export function findDoorPositions(
   room: Room,
-  corridor: Corridor
+  corridor: Corridor,
 ): Array<{ x: number; y: number; direction: Direction }> {
   const positions: Array<{ x: number; y: number; direction: Direction }> = [];
   const { x, y, width, height } = room.bounds;
@@ -58,8 +52,12 @@ export function findDoorPositions(
       x + 1,
       Math.min(
         x + width - 2,
-        Math.floor((Math.max(corridor.start.x, corridor.end.x) + Math.min(corridor.start.x, corridor.end.x)) / 2)
-      )
+        Math.floor(
+          (Math.max(corridor.start.x, corridor.end.x) +
+            Math.min(corridor.start.x, corridor.end.x)) /
+            2,
+        ),
+      ),
     );
     positions.push({ x: doorX, y, direction: Direction.North });
   }
@@ -75,8 +73,12 @@ export function findDoorPositions(
       x + 1,
       Math.min(
         x + width - 2,
-        Math.floor((Math.max(corridor.start.x, corridor.end.x) + Math.min(corridor.start.x, corridor.end.x)) / 2)
-      )
+        Math.floor(
+          (Math.max(corridor.start.x, corridor.end.x) +
+            Math.min(corridor.start.x, corridor.end.x)) /
+            2,
+        ),
+      ),
     );
     positions.push({ x: doorX, y: y + height - 1, direction: Direction.South });
   }
@@ -92,8 +94,12 @@ export function findDoorPositions(
       y + 1,
       Math.min(
         y + height - 2,
-        Math.floor((Math.max(corridor.start.y, corridor.end.y) + Math.min(corridor.start.y, corridor.end.y)) / 2)
-      )
+        Math.floor(
+          (Math.max(corridor.start.y, corridor.end.y) +
+            Math.min(corridor.start.y, corridor.end.y)) /
+            2,
+        ),
+      ),
     );
     positions.push({ x, y: doorY, direction: Direction.West });
   }
@@ -109,8 +115,12 @@ export function findDoorPositions(
       y + 1,
       Math.min(
         y + height - 2,
-        Math.floor((Math.max(corridor.start.y, corridor.end.y) + Math.min(corridor.start.y, corridor.end.y)) / 2)
-      )
+        Math.floor(
+          (Math.max(corridor.start.y, corridor.end.y) +
+            Math.min(corridor.start.y, corridor.end.y)) /
+            2,
+        ),
+      ),
     );
     positions.push({ x: x + width - 1, y: doorY, direction: Direction.East });
   }
@@ -127,7 +137,7 @@ export function findDoorPositions(
  */
 export function findRoomDoorPosition(
   room1: Room,
-  room2: Room
+  room2: Room,
 ): { x: number; y: number; direction: Direction } | null {
   const r1 = room1.bounds;
   const r2 = room2.bounds;
@@ -194,7 +204,7 @@ export function placeDoorTiles(
   doorData: number[],
   width: number,
   height: number,
-  mapping: TileMapping
+  _mapping: TileMapping,
 ): void {
   for (const door of doors) {
     const { x, y } = door.position;
@@ -221,7 +231,7 @@ export function createDoor(
   direction: Direction,
   mapping: TileMapping,
   isOpen: boolean = false,
-  connects?: [string, string]
+  connects?: [string, string],
 ): Door {
   // Get tile ID based on direction
   let tileId: number;
@@ -268,11 +278,7 @@ export function createDoor(
  * @param mapping - Tile mapping configuration
  * @returns Array of all doors
  */
-export function generateDoors(
-  rooms: Room[],
-  corridors: Corridor[],
-  mapping: TileMapping
-): Door[] {
+export function generateDoors(rooms: Room[], corridors: Corridor[], mapping: TileMapping): Door[] {
   const doors: Door[] = [];
 
   // Find doors between rooms and corridors
@@ -281,12 +287,7 @@ export function generateDoors(
       const positions = findDoorPositions(room, corridor);
 
       for (const pos of positions) {
-        const door = createDoor(
-          { x: pos.x, y: pos.y },
-          pos.direction,
-          mapping,
-          false
-        );
+        const door = createDoor({ x: pos.x, y: pos.y }, pos.direction, mapping, false);
         doors.push(door);
       }
     }
@@ -297,13 +298,10 @@ export function generateDoors(
     for (let j = i + 1; j < rooms.length; j++) {
       const pos = findRoomDoorPosition(rooms[i], rooms[j]);
       if (pos) {
-        const door = createDoor(
-          { x: pos.x, y: pos.y },
-          pos.direction,
-          mapping,
-          false,
-          [rooms[i].id, rooms[j].id]
-        );
+        const door = createDoor({ x: pos.x, y: pos.y }, pos.direction, mapping, false, [
+          rooms[i].id,
+          rooms[j].id,
+        ]);
         doors.push(door);
       }
     }
@@ -325,7 +323,7 @@ export function generateDoorLayer(
   doors: Door[],
   width: number,
   height: number,
-  mapping: TileMapping
+  mapping: TileMapping,
 ): number[] {
   const doorData = new Array(width * height).fill(0);
   placeDoorTiles(doors, doorData, width, height, mapping);
@@ -339,21 +337,13 @@ export function generateDoorLayer(
  * @param door - Door to check against
  * @returns True if position is in interaction zone
  */
-export function isInInteractionZone(
-  position: { x: number; y: number },
-  door: Door
-): boolean {
+export function isInInteractionZone(position: { x: number; y: number }, door: Door): boolean {
   if (!door.interactionZone) {
     return false;
   }
 
   const { x, y, width, height } = door.interactionZone;
-  return (
-    position.x >= x &&
-    position.x < x + width &&
-    position.y >= y &&
-    position.y < y + height
-  );
+  return position.x >= x && position.x < x + width && position.y >= y && position.y < y + height;
 }
 
 /**
@@ -376,9 +366,7 @@ export function getDoorTileForState(door: Door, isOpen: boolean): number {
  * @param door - Door to frame
  * @returns Array of frame tile positions and IDs
  */
-export function createDoorFrame(
-  door: Door
-): Array<{ x: number; y: number; tileId: number }> {
+export function createDoorFrame(door: Door): Array<{ x: number; y: number; tileId: number }> {
   const frames: Array<{ x: number; y: number; tileId: number }> = [];
   const { x, y } = door.position;
 

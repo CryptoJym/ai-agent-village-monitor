@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../db/client';
-import { requireAuth, requireVillageRole } from '../auth/middleware';
+import { requireAuth } from '../auth/middleware';
 import { sanitizeString } from '../middleware/sanitize';
 import { enqueueHouseRepoAnalysis } from './repoAnalysisQueue';
 

@@ -59,7 +59,7 @@ export class CollisionSystem {
     this.mapHeight = this.tilemap.height;
 
     console.log(
-      `[CollisionSystem] Initializing collision for map ${this.mapWidth}x${this.mapHeight} (tile size: ${this.tileSize})`
+      `[CollisionSystem] Initializing collision for map ${this.mapWidth}x${this.mapHeight} (tile size: ${this.tileSize})`,
     );
 
     // Setup collision for each specified layer
@@ -113,7 +113,7 @@ export class CollisionSystem {
     }
 
     // Check against dynamic bodies
-    for (const [id, body] of this.dynamicBodies) {
+    for (const [_id, body] of this.dynamicBodies) {
       const bodyBounds = body.getBounds();
       if (Phaser.Geom.Rectangle.Overlaps(bounds, bodyBounds)) {
         return {
@@ -168,7 +168,7 @@ export class CollisionSystem {
     id: string,
     bounds: Phaser.Geom.Rectangle,
     callback: () => void,
-    data?: Record<string, any>
+    data?: Record<string, any>,
   ): void {
     const triggerZone: TriggerZone = {
       id,
@@ -258,7 +258,7 @@ export class CollisionSystem {
 
     // Initialize obstacle map
     this.obstacleMap = Array.from({ length: this.mapHeight }, () =>
-      Array.from({ length: this.mapWidth }, () => false)
+      Array.from({ length: this.mapWidth }, () => false),
     );
 
     // Mark collision tiles as obstacles
@@ -323,7 +323,7 @@ export class CollisionSystem {
     x: number,
     y: number,
     width: number,
-    height: number
+    height: number,
   ): Phaser.GameObjects.Rectangle {
     const body = this.scene.add.rectangle(x, y, width, height);
     body.setVisible(false); // Invisible collision body

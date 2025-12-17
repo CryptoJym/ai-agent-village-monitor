@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TreeFetcher } from '../../github/tree-fetcher';
-import { GitHubClient } from '../../github/client';
 import { TreeEntry } from '../../github/types';
 
 describe('TreeFetcher', () => {

@@ -1,5 +1,5 @@
 import { GitHubClient } from './client';
-import { TreeEntry, FileMetadata, CommitInfo } from './types';
+import { FileMetadata, CommitInfo } from './types';
 
 export interface TreeFetcherOptions {
   maxDepth?: number;
@@ -144,9 +144,7 @@ export class TreeFetcher {
     const normalizedPath = dirPath.endsWith('/') ? dirPath : `${dirPath}/`;
 
     return tree
-      .filter(
-        (entry) => entry.path.startsWith(normalizedPath) && entry.type === 'blob',
-      )
+      .filter((entry) => entry.path.startsWith(normalizedPath) && entry.type === 'blob')
       .map((entry) => ({
         path: entry.path,
         size: entry.size || 0,

@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "test:unit": "vitest run --exclude 'src/__tests__/integration/**'",
     "test:unit:ci": "vitest run --exclude 'src/__tests__/integration/**' --coverage --reporter=junit --reporter=default --outputFile=test-results.xml",
-    "test:integration": "vitest run src/__tests__/integration",
+    "test:integration": "USE_REAL_PRISMA=1 vitest run src/__tests__/integration",
     "test:coverage": "VITEST_COVERAGE=true vitest run --coverage",
     "test:ci": "vitest run --coverage --reporter=junit --reporter=default --outputFile=test-results.xml",
     "typecheck": "tsc --noEmit",

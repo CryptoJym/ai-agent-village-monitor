@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createActor } from 'xstate';
-import { agentMachine, type AgentContext, defaultAgentContext } from '../agentMachine';
+import { agentMachine } from '../agentMachine';
 
 describe('Agent State Machine', () => {
   describe('Initial State', () => {

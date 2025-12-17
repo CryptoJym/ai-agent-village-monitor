@@ -3,7 +3,7 @@ import { CameraController } from '../systems/CameraController';
 import { InputHandler } from '../systems/InputHandler';
 import { LayerManager } from '../rendering/LayerManager';
 import { RenderOptimizer } from '../rendering/RenderOptimizer';
-import { LODSystem, LODLevel } from '../rendering/LODSystem';
+import { LODSystem } from '../rendering/LODSystem';
 import { PerformanceMonitor } from '../ui/PerformanceMonitor';
 import { eventBus } from '../../realtime/EventBus';
 
@@ -211,7 +211,7 @@ export class OptimizedVillageScene extends Phaser.Scene {
     y: number,
     color: number,
     name: string,
-    layer: Phaser.GameObjects.Container
+    layer: Phaser.GameObjects.Container,
   ): void {
     // Create container for house
     const houseContainer = this.add.container(x, y);
@@ -253,7 +253,7 @@ export class OptimizedVillageScene extends Phaser.Scene {
     // Register with LOD system
     const lodCallbacks = this.lodSystem.createComplexObjectCallbacks(
       houseContainer,
-      decorativeElements
+      decorativeElements,
     );
     this.lodSystem.registerObject(id, houseContainer, lodCallbacks);
   }

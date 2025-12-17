@@ -1,4 +1,4 @@
-import type { AgentContext, AgentEvent } from './agentMachine';
+import type { AgentContext } from './agentMachine';
 
 /**
  * Guard: Check if frustration level is high (> 70)

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth, requireVillageRole } from '../auth/middleware';
-import { enqueueVillageSync } from './sync';
 import { prisma } from '../db/client';
 import { Queue } from 'bullmq';
 import { getRedis } from '../queue/redis';
@@ -325,7 +324,12 @@ villagesRouter.put(
         where: { id },
         data: {
           orgName: data.name ?? undefined,
-          config: 'config' in data ? (data.config as any) : 'villageConfig' in data ? (data.villageConfig as any) : undefined,
+          config:
+            'config' in data
+              ? (data.config as any)
+              : 'villageConfig' in data
+                ? (data.villageConfig as any)
+                : undefined,
         },
       });
       res.json({ id: updated.id, name: (updated as any).orgName ?? `Village ${updated.id}` });

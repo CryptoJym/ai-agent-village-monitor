@@ -201,9 +201,7 @@ import com.example.models.*;
         const imports = analyzer.parseImports(content, 'App.java');
         // The parser captures up to the wildcard
         expect(imports.some((imp) => imp.includes('java.util'))).toBe(true);
-        expect(imports.some((imp) => imp.includes('com.example.models'))).toBe(
-          true,
-        );
+        expect(imports.some((imp) => imp.includes('com.example.models'))).toBe(true);
       });
     });
   });
@@ -261,16 +259,13 @@ import com.example.models.*;
 
       const graph = analyzer.buildDependencyGraph(files);
 
-      const nodeA = graph.nodes.get('/src/a.ts');
       const nodeB = graph.nodes.get('/src/b.ts');
 
       expect(nodeB?.importedBy).toContain('/src/a.ts');
     });
 
     it('should handle files with no dependencies', () => {
-      const files = new Map<string, string>([
-        ['/src/isolated.ts', 'export const x = 1;'],
-      ]);
+      const files = new Map<string, string>([['/src/isolated.ts', 'export const x = 1;']]);
 
       const graph = analyzer.buildDependencyGraph(files);
 
@@ -502,11 +497,7 @@ import com.example.models.*;
       ]);
 
       const graph = analyzer.buildDependencyGraph(files);
-      const transitive = analyzer.getTransitiveDependencies(
-        graph,
-        '/src/a.ts',
-        2,
-      );
+      const transitive = analyzer.getTransitiveDependencies(graph, '/src/a.ts', 2);
 
       // With depth 2, should only get b and c, not d
       expect(transitive.size).toBeLessThanOrEqual(2);

@@ -171,8 +171,8 @@ export function Minimap({
     // Draw camera viewport
     const viewportWidth = (effectiveWidth / cameraZoom) * scaleX;
     const viewportHeight = (effectiveHeight / cameraZoom) * scaleY;
-    const viewportX = (cameraX * scaleX) - (viewportWidth / 2);
-    const viewportY = (cameraY * scaleY) - (viewportHeight / 2);
+    const viewportX = cameraX * scaleX - viewportWidth / 2;
+    const viewportY = cameraY * scaleY - viewportHeight / 2;
 
     ctx.strokeStyle = 'rgba(96, 165, 250, 0.8)';
     ctx.lineWidth = 2 / minimapZoom;
@@ -185,8 +185,18 @@ export function Minimap({
     ctx.fill();
 
     ctx.restore();
-
-  }, [worldWidth, worldHeight, cameraX, cameraY, cameraZoom, width, height, rooms, agents, minimapZoom]);
+  }, [
+    worldWidth,
+    worldHeight,
+    cameraX,
+    cameraY,
+    cameraZoom,
+    width,
+    height,
+    rooms,
+    agents,
+    minimapZoom,
+  ]);
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!onClick) return;
@@ -210,15 +220,18 @@ export function Minimap({
   const handleZoomIn = () => {
     const newZoom = Math.min(minimapZoom + 0.2, 2.0);
     setMinimapZoom(newZoom);
+    onZoomChange?.(newZoom);
   };
 
   const handleZoomOut = () => {
     const newZoom = Math.max(minimapZoom - 0.2, 0.5);
     setMinimapZoom(newZoom);
+    onZoomChange?.(newZoom);
   };
 
   const handleResetZoom = () => {
     setMinimapZoom(1.0);
+    onZoomChange?.(1.0);
   };
 
   return (

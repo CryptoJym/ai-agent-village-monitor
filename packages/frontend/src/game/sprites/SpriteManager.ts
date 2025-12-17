@@ -128,7 +128,11 @@ export class SpriteManager {
   /**
    * Create agent sprite with animations
    */
-  createAgentSprite(x: number, y: number, agentType: string = 'default'): Phaser.GameObjects.Sprite {
+  createAgentSprite(
+    x: number,
+    y: number,
+    agentType: string = 'default',
+  ): Phaser.GameObjects.Sprite {
     const sprite = this.createSprite(x, y, {
       key: 'agents',
       frame: 0,
@@ -143,7 +147,7 @@ export class SpriteManager {
   /**
    * Create building sprite
    */
-  createBuildingSprite(x: number, y: number, buildingType: string): Phaser.GameObjects.Sprite {
+  createBuildingSprite(x: number, y: number, _buildingType: string): Phaser.GameObjects.Sprite {
     return this.createSprite(x, y, {
       key: 'buildings',
       frame: 0,
@@ -157,7 +161,7 @@ export class SpriteManager {
     key: string,
     prompt: string,
     width: number,
-    height: number
+    height: number,
   ): Promise<void> {
     console.log(`[SpriteManager] Generating runtime sprite: ${key}`);
     console.log(`[SpriteManager] Prompt: ${prompt}, Size: ${width}x${height}`);

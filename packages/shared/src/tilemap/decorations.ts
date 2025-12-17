@@ -10,7 +10,6 @@ import {
   Decoration,
   DecorationCatalog,
   DecorationItem,
-  PlacementRule,
   RoomType,
   SeededRNG,
   Rectangle,
@@ -304,7 +303,7 @@ function findValidPositions(
   room: Room,
   occupiedGrid: boolean[][],
   wallGrid: boolean[][],
-  rng: SeededRNG,
+  _rng: SeededRNG,
 ): Array<{ x: number; y: number }> {
   const positions: Array<{ x: number; y: number }> = [];
   const { x, y, width, height } = room.bounds;

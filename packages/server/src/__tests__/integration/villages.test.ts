@@ -12,7 +12,6 @@ import { generateTestToken, getAuthHeaders } from '../utils/auth';
 import {
   createVillageCreateData,
   createVillageDbData,
-  createUserFixture,
   createUserCreateData,
 } from '../utils/fixtures';
 
@@ -52,14 +51,14 @@ describe('Villages Integration Tests', () => {
         id: testUser1Id,
         githubId: user1.githubId || BigInt(123456),
         username: user1.username || 'testuser1',
-      })
+      }),
     );
     authHeaders2 = getAuthHeaders(
       generateTestToken({
         id: testUser2Id,
         githubId: user2.githubId || BigInt(789012),
         username: user2.username || 'testuser2',
-      })
+      }),
     );
   });
 
@@ -94,12 +93,8 @@ describe('Villages Integration Tests', () => {
         // API doesn't support visibility param in create anymore, skipping visibility check
       });
 
-      const response = await request(app)
-        .post('/api/villages')
-        .set(authHeaders1)
-        .send(villageData)
-        .expect(201);
-      
+      await request(app).post('/api/villages').set(authHeaders1).send(villageData).expect(201);
+
       // expect(response.body.visibility).toBe('PRIVATE'); // Removed check
     });
 
@@ -123,18 +118,15 @@ describe('Villages Integration Tests', () => {
     });
 
     it('should fail with duplicate githubOrgId', async () => {
-      const villageData = createVillageCreateData({
-        name: 'Village 1',
-        githubOrgId: 'duplicate-org-id',
-      });
-
       const v = await prisma.village.create({
         data: {
-          orgName: "Village 1",
-          githubOrgId: "duplicate-org-id",
-        }
+          orgName: 'Village 1',
+          githubOrgId: 'duplicate-org-id',
+        },
       });
-      await prisma.villageAccess.create({ data: { villageId: v.id, userId: testUser1Id, role: 'owner' } });
+      await prisma.villageAccess.create({
+        data: { villageId: v.id, userId: testUser1Id, role: 'owner' },
+      });
 
       const duplicateData = createVillageCreateData({
         name: 'Village 2',
@@ -142,28 +134,40 @@ describe('Villages Integration Tests', () => {
         ownerId: testUser1Id,
       });
 
-      await request(app)
-        .post('/api/villages')
-        .set(authHeaders1)
-        .send(duplicateData)
-        .expect(409); // Conflict
+      await request(app).post('/api/villages').set(authHeaders1).send(duplicateData).expect(409); // Conflict
     });
   });
 
   describe('GET /api/villages - List Villages', () => {
     beforeEach(async () => {
       // Create test villages
-      const v1 = await prisma.village.create({ data: { orgName: "Public Village 1", githubOrgId: "12345" } });
-      await prisma.villageAccess.create({ data: { villageId: v1.id, userId: testUser1Id, role: 'owner' } });
+      const v1 = await prisma.village.create({
+        data: { orgName: 'Public Village 1', githubOrgId: '12345' },
+      });
+      await prisma.villageAccess.create({
+        data: { villageId: v1.id, userId: testUser1Id, role: 'owner' },
+      });
 
-      const v2 = await prisma.village.create({ data: { orgName: "Public Village 2", githubOrgId: "67890" } });
-      await prisma.villageAccess.create({ data: { villageId: v2.id, userId: testUser1Id, role: 'owner' } });
+      const v2 = await prisma.village.create({
+        data: { orgName: 'Public Village 2', githubOrgId: '67890' },
+      });
+      await prisma.villageAccess.create({
+        data: { villageId: v2.id, userId: testUser1Id, role: 'owner' },
+      });
 
-      const v3 = await prisma.village.create({ data: { orgName: "Private Village", githubOrgId: "11223" } });
-      await prisma.villageAccess.create({ data: { villageId: v3.id, userId: testUser1Id, role: 'owner' } });
+      const v3 = await prisma.village.create({
+        data: { orgName: 'Private Village', githubOrgId: '11223' },
+      });
+      await prisma.villageAccess.create({
+        data: { villageId: v3.id, userId: testUser1Id, role: 'owner' },
+      });
 
-      const v4 = await prisma.village.create({ data: { orgName: "Other User Village", githubOrgId: "44556" } });
-      await prisma.villageAccess.create({ data: { villageId: v4.id, userId: testUser2Id, role: 'owner' } });
+      const v4 = await prisma.village.create({
+        data: { orgName: 'Other User Village', githubOrgId: '44556' },
+      });
+      await prisma.villageAccess.create({
+        data: { villageId: v4.id, userId: testUser2Id, role: 'owner' },
+      });
     });
 
     it('should list all public villages', async () => {
@@ -209,14 +213,18 @@ describe('Villages Integration Tests', () => {
           name: 'Public Village',
         }),
       });
-      await prisma.villageAccess.create({ data: { villageId: publicVillage.id, userId: testUser1Id, role: 'owner' } });
+      await prisma.villageAccess.create({
+        data: { villageId: publicVillage.id, userId: testUser1Id, role: 'owner' },
+      });
 
       const privateVillage = await prisma.village.create({
         data: createVillageDbData({
           name: 'Private Village',
         }),
       });
-      await prisma.villageAccess.create({ data: { villageId: privateVillage.id, userId: testUser1Id, role: 'owner' } });
+      await prisma.villageAccess.create({
+        data: { villageId: privateVillage.id, userId: testUser1Id, role: 'owner' },
+      });
 
       villageId = publicVillage.id;
       privateVillageId = privateVillage.id;
@@ -254,11 +262,13 @@ describe('Villages Integration Tests', () => {
     beforeEach(async () => {
       const village = await prisma.village.create({
         data: {
-          orgName: "Original Village",
-          githubOrgId: "554433",
-        }
+          orgName: 'Original Village',
+          githubOrgId: '554433',
+        },
       });
-      await prisma.villageAccess.create({ data: { villageId: village.id, userId: testUser1Id, role: 'owner' } });
+      await prisma.villageAccess.create({
+        data: { villageId: village.id, userId: testUser1Id, role: 'owner' },
+      });
       villageId = village.id;
     });
 
@@ -291,10 +301,7 @@ describe('Villages Integration Tests', () => {
     });
 
     it('should fail without authentication', async () => {
-      await request(app)
-        .patch(`/api/villages/${villageId}`)
-        .send({ name: 'New Name' })
-        .expect(401);
+      await request(app).patch(`/api/villages/${villageId}`).send({ name: 'New Name' }).expect(401);
     });
 
     it('should reject invalid updates', async () => {
@@ -312,11 +319,13 @@ describe('Villages Integration Tests', () => {
     beforeEach(async () => {
       const village = await prisma.village.create({
         data: {
-          orgName: "Village to Delete",
-          githubOrgId: "776655",
-        }
+          orgName: 'Village to Delete',
+          githubOrgId: '776655',
+        },
       });
-      await prisma.villageAccess.create({ data: { villageId: village.id, userId: testUser1Id, role: 'owner' } });
+      await prisma.villageAccess.create({
+        data: { villageId: village.id, userId: testUser1Id, role: 'owner' },
+      });
       villageId = village.id;
     });
 
@@ -374,14 +383,18 @@ describe('Villages Integration Tests', () => {
           name: 'Public Village',
         }),
       });
-      await prisma.villageAccess.create({ data: { villageId: publicVillage.id, userId: testUser1Id, role: 'owner' } });
+      await prisma.villageAccess.create({
+        data: { villageId: publicVillage.id, userId: testUser1Id, role: 'owner' },
+      });
 
       const privateVillage = await prisma.village.create({
         data: createVillageDbData({
           name: 'Private Village',
         }),
       });
-      await prisma.villageAccess.create({ data: { villageId: privateVillage.id, userId: testUser1Id, role: 'owner' } });
+      await prisma.villageAccess.create({
+        data: { villageId: privateVillage.id, userId: testUser1Id, role: 'owner' },
+      });
 
       publicVillageId = publicVillage.id;
       privateVillageId = privateVillage.id;
