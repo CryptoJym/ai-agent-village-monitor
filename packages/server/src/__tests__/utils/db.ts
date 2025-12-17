@@ -5,19 +5,57 @@
 
 import { PrismaClient } from '@prisma/client';
 import { beforeEach, afterEach } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 
 let prisma: PrismaClient;
 let testPrisma: PrismaClient;
+let testPrismaUrl: string | null = null;
+let schemaEnsured = false;
+
+function resolveTestDatabaseUrl(): string {
+  const candidate = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  if (candidate && candidate.startsWith('file:')) return candidate;
+  return 'file:./prisma/tmp-unit.db';
+}
+
+function ensureTestDatabaseSchema(databaseUrl: string) {
+  if (schemaEnsured) return;
+
+  const prismaBinary = path.resolve(
+    process.cwd(),
+    process.platform === 'win32' ? 'node_modules/.bin/prisma.cmd' : 'node_modules/.bin/prisma',
+  );
+  const schemaPath = path.resolve(process.cwd(), 'prisma/schema.prisma');
+
+  const result = spawnSync(
+    prismaBinary,
+    ['db', 'push', '--schema', schemaPath, '--skip-generate'],
+    {
+      env: { ...process.env, DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+    },
+  );
+
+  if (result.status !== 0) {
+    const combined = [result.stdout, result.stderr].filter(Boolean).join('\n');
+    throw new Error(`Failed to provision test DB schema via prisma db push.\n${combined}`);
+  }
+
+  schemaEnsured = true;
+}
 
 /**
  * Get or create the test Prisma client
  */
 export function getTestPrisma(): PrismaClient {
-  if (!testPrisma) {
+  const databaseUrl = resolveTestDatabaseUrl();
+  if (!testPrisma || testPrismaUrl !== databaseUrl) {
+    testPrismaUrl = databaseUrl;
     testPrisma = new PrismaClient({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL || 'file:./test.db',
+          url: databaseUrl,
         },
       },
     });
@@ -30,6 +68,7 @@ export function getTestPrisma(): PrismaClient {
  * Call this in your test setup
  */
 export async function setupTestDatabase() {
+  ensureTestDatabaseSchema(resolveTestDatabaseUrl());
   prisma = getTestPrisma();
   await prisma.$connect();
   return prisma;

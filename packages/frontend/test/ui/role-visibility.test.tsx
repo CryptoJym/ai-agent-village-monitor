@@ -2,6 +2,25 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Mock Phaser to avoid canvas requirements in jsdom
 vi.mock('phaser3spectorjs', () => ({}));
 vi.mock('phaser', () => {
+  class EventEmitter {
+    private listeners: Map<string, Set<Function>> = new Map();
+
+    on(event: string, fn: Function) {
+      if (!this.listeners.has(event)) this.listeners.set(event, new Set());
+      this.listeners.get(event)!.add(fn);
+      return this;
+    }
+
+    off(event: string, fn: Function) {
+      this.listeners.get(event)?.delete(fn);
+      return this;
+    }
+
+    emit(event: string, ...args: any[]) {
+      this.listeners.get(event)?.forEach((fn) => fn(...args));
+      return this;
+    }
+  }
   class Scene {}
   class Game {
     destroy = vi.fn();
@@ -15,6 +34,7 @@ vi.mock('phaser', () => {
       Scene,
       Game,
       AUTO: 0,
+      Events: { EventEmitter },
       GameObjects: { Container, Text, Arc },
       Math: {
         Between: (a: number, _b: number) => a,
