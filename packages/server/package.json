@@ -38,7 +38,7 @@
   "dependencies": {
     "@ai-agent-village-monitor/runner": "workspace:*",
     "@octokit/graphql": "^8.2.0",
-    "@octokit/plugin-retry": "^6.0.1",
+    "@octokit/plugin-retry": "^8.0.2",
     "@octokit/plugin-throttling": "^9.3.0",
     "@octokit/rest": "^21.1.1",
     "@socket.io/redis-adapter": "^8.2.0",
