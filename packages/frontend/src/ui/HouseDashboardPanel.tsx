@@ -139,9 +139,26 @@ export function HouseDashboardPanel({ open, data, onClose, viewerRole }: Props) 
           </div>
         </section>
 
-        {data.metrics && (
-          <section style={{ marginTop: 20 }}>
-            <h3 style={{ margin: '0 0 8px', fontSize: 14, color: '#e2e8f0' }}>SLO metrics</h3>
+        <section style={{ marginTop: 20 }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 14, color: '#e2e8f0' }}>SLO metrics</h3>
+          {!data.metrics ? (
+            <div
+              style={{
+                border: '1px dashed #334155',
+                borderRadius: 10,
+                padding: '16px 12px',
+                background: '#0b1220',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>
+                No metrics data available
+              </div>
+              <div style={{ fontSize: 11, color: '#475569' }}>
+                Metrics will appear after commands are executed
+              </div>
+            </div>
+          ) : (
             <div
               style={{
                 display: 'grid',
@@ -154,7 +171,7 @@ export function HouseDashboardPanel({ open, data, onClose, viewerRole }: Props) 
                 label="Error rate"
                 value={`${Math.round((data.metrics.errorRate || 0) * 100)}%`}
               />
-              <StatCard label="Avg latency" value={`${data.metrics.avgLatencyMs} ms`} />
+              <StatCard label="Avg latency" value={`${data.metrics.avgLatencyMs ?? '—'} ms`} />
               <StatCard
                 label="Last command"
                 value={
@@ -164,8 +181,8 @@ export function HouseDashboardPanel({ open, data, onClose, viewerRole }: Props) 
                 }
               />
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         <section style={{ marginTop: 20 }}>
           <h3 style={{ margin: '0 0 8px', fontSize: 14, color: '#e2e8f0' }}>Agents on repo</h3>
